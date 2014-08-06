@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes" ?>
+<CodeBlocks_workspace_file>
+	<Workspace title="NPSep">
+		<Project filename="checker/checker.cbp">
+			<Depends filename="libnpsep.cbp" />
+		</Project>
+		<Project filename="libnpsep.cbp" />
+		<Project filename="../glpri/glpri.cbp" />
+		<Project filename="cbc/cbcnps.cbp" />
+		<Project filename="grasp/grasp.cbp" />
+		<Project filename="glpbc/glpbc.cbp" />
+		<Project filename="cbcroot/cbcroot.cbp" active="1" />
+	</Workspace>
+</CodeBlocks_workspace_file>

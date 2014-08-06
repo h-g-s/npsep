@@ -1,0 +1,15 @@
+writeclqw
+
+loaded eil33.2 
+	4516 variables (4516 integer) 32 rows 44243 nz
+
+osi_cgraph took 0.010 seconds.
+original cgraph dimensions: n: 4516 m: 19258666 t: 0.010
+solving relaxation ... Initial dual bound 811.279
+solved in 0.030
+original conflict graph : n 4516 e 19258666 - minD 440 maxD 4491 smallD 0
+
+End of root node relaxation. Dual limit: 811.279 time: 0.030 
+pre-processed conflict graph : n 30 e 1788 - minD 24 maxD 99 smallD 0
+
+File name: eil33.2

@@ -1,0 +1,28 @@
+using at max 0 two mir passes.
+using at max 0 gomory passes.
+Coin0008I vpphard read with 0 errors
+cbcroot: root node relaxation and clique cuts
+
+loaded vpphard 
+	51471 variables (51471 integer) 47280 rows
+
+osi_cgraph took 0.080 seconds.
+Clique Separation Parameters:
+	max depth         : 3
+	max passes        : 9999
+	minimum violation : 0.0200
+	minimum frac. val : 0.0010
+	extend cliques    : 0
+	enum max. degree  : 10
+	verbose           : 1
+	maximum time bk   : 20
+solving relaxation ... Initial dual bound 0
+solved in 6.210
+verbose mode now 1.
+pre-processed graph - part 1 : n 709 e 5120 - minD 1 maxD 14 smallD 650
+Enumeration finished in 0.060 seconds. Found 0 violated cliques. Removed 650 nodes from graph.
+pre-processed graph - part 2 : n 59 e 292 - minD 0 maxD 10 smallD 59
+bk took 0 seconds
+round 1 : def separated 0 cuts in 0.0600 seconds. dual limit now: 0 time: 6.270
+
+End of root node relaxation. Dual limit: 0 time: 6.270 

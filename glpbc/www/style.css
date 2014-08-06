@@ -1,0 +1,13 @@
+<!--
+   BODY { "sans-serif", "Verdana" }
+	P,li,td { background: transparent; page-break-before: auto; font-family: "sans-serif", "Verdana"; page-break-after: auto }
+	P.small { font-size:small }
+	P.smallRight { font-size:small ; text-align: right }
+	P.smallCenterTop { font-size:small ; text-align: center; margin-top: 0; padding-top: 0; border-top-width: 0; border: 0; padding: 0; vertical-align: super }
+	TD P { background: transparent; page-break-before: auto; page-break-after: auto ; font-family: "sans-serif", "Verdana"}
+	TD P.western { font-family: "sans-serif", "Verdana"; font-size: 11pt; so-language: en-US }
+	H1 { font-family: "sans-serif", "Verdana"; font-size: "180%" }
+	H2 { font-family: "sans-serif", "Verdana"; font-size: "140%" }
+	H3 { font-family: "sans-serif", "Verdana"; font-size: "110%" }
+	H4 { font-family: "sans-serif", "Verdana"; font-size: "100%" }
+-->

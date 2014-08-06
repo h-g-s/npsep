@@ -1,0 +1,4 @@
+rm erros.txt
+valgrind --leak-check=full ./cbcsep ~/Dropbox/inst/miplibClique/air03.lp 2> erros.txt
+vim erros.txt
+

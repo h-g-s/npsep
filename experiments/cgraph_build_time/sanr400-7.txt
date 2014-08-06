@@ -1,0 +1,16 @@
+Coin0009I  CoinLpIO::readLp(): Maximization problem reformulated as minimization
+writeclqw
+
+loaded sanr400-7 
+	400 variables (400 integer) 5054 rows 26866 nz
+
+osi_cgraph took 0.010 seconds.
+original cgraph dimensions: n: 400 m: 47862 t: 0.010
+solving relaxation ... Initial dual bound -62.8767
+solved in 1.700
+original conflict graph : n 400 e 47862 - minD 89 maxD 147 smallD 0
+
+End of root node relaxation. Dual limit: -62.8767 time: 1.700 
+pre-processed conflict graph : n 400 e 47862 - minD 89 maxD 147 smallD 0
+
+File name: sanr400-7

@@ -1,0 +1,44 @@
+cbcroot: root node relaxation and clique cuts
+
+loaded long_late04_j 
+	62070 variables (62070 integer) 27875 rows
+
+Clique Separation Parameters:
+	max depth         : 3
+	max passes        : 20
+	minimum violation : 0.0200
+	minimum frac. val : 0.0010
+	extend cliques    : 2
+	enum max. degree  : 10
+	verbose           : 1
+	maximum time bk   : 20
+solving relaxation ... Initial dual bound 72
+solved in 32.930
+round 1 : def separated 518 cuts in 0.6500 seconds. dual limit now: 72 time: 33.580
+resolving relaxation ... solved in 17.370 after adding cuts of pass 1. dual limit now 72
+
+round 2 : def separated 471 cuts in 0.6300 seconds. dual limit now: 72 time: 51.580
+resolving relaxation ... solved in 34.280 after adding cuts of pass 2. dual limit now 72
+
+round 3 : def separated 262 cuts in 0.3500 seconds. dual limit now: 72 time: 86.210
+resolving relaxation ... solved in 77.800 after adding cuts of pass 3. dual limit now 114.539
+
+round 4 : def separated 295 cuts in 0.5100 seconds. dual limit now: 114.539 time: 164.520
+resolving relaxation ... solved in 54.650 after adding cuts of pass 4. dual limit now 137.747
+
+round 5 : def separated 220 cuts in 0.4200 seconds. dual limit now: 137.747 time: 219.590
+resolving relaxation ... solved in 90.190 after adding cuts of pass 5. dual limit now 164.417
+
+round 6 : def separated 260 cuts in 0.5200 seconds. dual limit now: 164.417 time: 310.300
+resolving relaxation ... solved in 79.810 after adding cuts of pass 6. dual limit now 172.226
+
+round 7 : def separated 227 cuts in 0.4800 seconds. dual limit now: 172.226 time: 390.590
+resolving relaxation ... solved in 72.030 after adding cuts of pass 7. dual limit now 178.905
+
+round 8 : def separated 198 cuts in 0.4300 seconds. dual limit now: 178.905 time: 463.050
+resolving relaxation ... solved in 63.640 after adding cuts of pass 8. dual limit now 182.436
+
+time limit reached. discarding cuts.
+round 9 : def separated 0 cuts in 0.4600 seconds. dual limit now: 182.436 time: 527.150
+
+End of root node relaxation. Dual limit: 182.436 time: 527.150 

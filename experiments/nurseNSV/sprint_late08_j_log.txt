@@ -1,0 +1,46 @@
+cbcroot: root node relaxation and clique cuts
+
+loaded sprint_late08_j 
+	9610 variables (9610 integer) 3032 rows
+
+Clique Separation Parameters:
+	max depth         : 3
+	max passes        : 20
+	minimum violation : 0.0200
+	minimum frac. val : 0.0010
+	extend cliques    : 2
+	enum max. degree  : 10
+	verbose           : 1
+	maximum time bk   : 20
+solving relaxation ... Initial dual bound 8
+solved in 0.510
+round 1 : def separated 190 cuts in 0.2400 seconds. dual limit now: 8 time: 0.760
+resolving relaxation ... solved in 0.760 after adding cuts of pass 1. dual limit now 8
+
+round 2 : def separated 123 cuts in 0.1600 seconds. dual limit now: 8 time: 1.680
+resolving relaxation ... solved in 0.990 after adding cuts of pass 2. dual limit now 8.92857
+
+round 3 : def separated 71 cuts in 0.1000 seconds. dual limit now: 8.92857 time: 2.770
+resolving relaxation ... solved in 0.660 after adding cuts of pass 3. dual limit now 9.94334
+
+round 4 : def separated 71 cuts in 0.1300 seconds. dual limit now: 9.94334 time: 3.560
+resolving relaxation ... solved in 0.590 after adding cuts of pass 4. dual limit now 10.7114
+
+round 5 : def separated 43 cuts in 0.0700 seconds. dual limit now: 10.7114 time: 4.220
+resolving relaxation ... solved in 0.410 after adding cuts of pass 5. dual limit now 11
+
+round 6 : def separated 21 cuts in 0.0400 seconds. dual limit now: 11 time: 4.670
+resolving relaxation ... solved in 0.330 after adding cuts of pass 6. dual limit now 11
+
+round 7 : def separated 14 cuts in 0.0200 seconds. dual limit now: 11 time: 5.020
+resolving relaxation ... solved in 0.300 after adding cuts of pass 7. dual limit now 11
+
+round 8 : def separated 11 cuts in 0.0300 seconds. dual limit now: 11 time: 5.350
+resolving relaxation ... solved in 0.170 after adding cuts of pass 8. dual limit now 11
+
+round 9 : def separated 3 cuts in 0.0100 seconds. dual limit now: 11 time: 5.530
+resolving relaxation ... solved in 0.060 after adding cuts of pass 9. dual limit now 11
+
+round 10 : def separated 0 cuts in 0.0100 seconds. dual limit now: 11 time: 5.600
+
+End of root node relaxation. Dual limit: 11 time: 5.600 

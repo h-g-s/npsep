@@ -1,0 +1,8 @@
+ctags -R --c++-kinds=+p --fields=+iaS --extra=+q *.c *.cpp *.h *.hpp ../../include/ /usr/include/stdlib.h \
+          /usr/include/stdio.h \
+          /usr/include/ctype.h \
+          /usr/include/math.h \
+          /usr/include/stdint.h \
+          /usr/include/limits.h \
+          /usr/include/coin/*.hpp  
+

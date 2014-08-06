@@ -1,0 +1,299 @@
+Using COIN CGL separation.
+cbcroot: root node relaxation and clique cuts
+
+loaded medium_late05_j 
+	35205 variables (35205 integer) 14450 rows
+
+Clique Separation Parameters:
+	max depth         : 3
+	max passes        : 20
+	minimum violation : 0.0200
+	minimum frac. val : 0.0010
+	extend cliques    : 2
+	enum max. degree  : 10
+	verbose           : 1
+	maximum time bk   : 20
+solving relaxation ... Initial dual bound 28.0278
+solved in 12.520
+
+rcl Found 1880 new violated cliques with the row-clique method
+rcl The largest admissible number was 15 (threshold 12)
+rcl    not all row cliques have been eliminated
+
+scl Found 190 new violated cliques with the star-clique method
+scl The largest star size was 11 (threshold 12)
+scl Enumeration 212 times, found 190 maxl cliques
+scl Greedy 0 times, found 0 maxl cliques
+scl Skipped a star b/c of small solution value 239 times
+scl    all cliques have been enumerated
+round 1 : cgl separated 195 cuts in 0.0300 seconds. dual limit now: 28.0278 time: 12.550
+resolving relaxation ... solved in 2.440 after adding cuts of pass 1. dual limit now 29.2903
+
+
+rcl Found 2417 new violated cliques with the row-clique method
+rcl The largest admissible number was 17 (threshold 12)
+rcl    not all row cliques have been eliminated
+
+scl Found 250 new violated cliques with the star-clique method
+scl The largest star size was 14 (threshold 12)
+scl Enumeration 221 times, found 248 maxl cliques
+scl Greedy 5 times, found 2 maxl cliques
+scl Skipped a star b/c of small solution value 318 times
+scl    not all cliques have been eliminated
+round 2 : cgl separated 230 cuts in 0.0400 seconds. dual limit now: 29.2903 time: 15.030
+resolving relaxation ... solved in 2.630 after adding cuts of pass 2. dual limit now 30.4421
+
+
+rcl Found 3199 new violated cliques with the row-clique method
+rcl The largest admissible number was 23 (threshold 12)
+rcl    not all row cliques have been eliminated
+
+scl Found 334 new violated cliques with the star-clique method
+scl The largest star size was 15 (threshold 12)
+scl Enumeration 266 times, found 324 maxl cliques
+scl Greedy 14 times, found 10 maxl cliques
+scl Skipped a star b/c of small solution value 503 times
+scl    not all cliques have been eliminated
+round 3 : cgl separated 291 cuts in 0.0600 seconds. dual limit now: 30.4421 time: 17.720
+resolving relaxation ... solved in 3.120 after adding cuts of pass 3. dual limit now 31.7387
+
+
+rcl Found 3740 new violated cliques with the row-clique method
+rcl The largest admissible number was 22 (threshold 12)
+rcl    not all row cliques have been eliminated
+
+scl Found 302 new violated cliques with the star-clique method
+scl The largest star size was 16 (threshold 12)
+scl Enumeration 267 times, found 297 maxl cliques
+scl Greedy 10 times, found 5 maxl cliques
+scl Skipped a star b/c of small solution value 486 times
+scl    not all cliques have been eliminated
+round 4 : cgl separated 290 cuts in 0.0500 seconds. dual limit now: 31.7387 time: 20.890
+resolving relaxation ... solved in 2.110 after adding cuts of pass 4. dual limit now 32.3303
+
+
+rcl Found 3860 new violated cliques with the row-clique method
+rcl The largest admissible number was 22 (threshold 12)
+rcl    not all row cliques have been eliminated
+
+scl Found 313 new violated cliques with the star-clique method
+scl The largest star size was 18 (threshold 12)
+scl Enumeration 274 times, found 298 maxl cliques
+scl Greedy 21 times, found 15 maxl cliques
+scl Skipped a star b/c of small solution value 574 times
+scl    not all cliques have been eliminated
+round 5 : cgl separated 292 cuts in 0.0600 seconds. dual limit now: 32.3303 time: 23.060
+resolving relaxation ... solved in 3.550 after adding cuts of pass 5. dual limit now 32.922
+
+
+rcl Found 4295 new violated cliques with the row-clique method
+rcl The largest admissible number was 25 (threshold 12)
+rcl    not all row cliques have been eliminated
+
+scl Found 274 new violated cliques with the star-clique method
+scl The largest star size was 18 (threshold 12)
+scl Enumeration 257 times, found 256 maxl cliques
+scl Greedy 32 times, found 18 maxl cliques
+scl Skipped a star b/c of small solution value 607 times
+scl    not all cliques have been eliminated
+round 6 : cgl separated 310 cuts in 0.0700 seconds. dual limit now: 32.922 time: 26.680
+resolving relaxation ... solved in 2.640 after adding cuts of pass 6. dual limit now 33.3069
+
+
+rcl Found 5221 new violated cliques with the row-clique method
+rcl The largest admissible number was 24 (threshold 12)
+rcl    not all row cliques have been eliminated
+
+scl Found 315 new violated cliques with the star-clique method
+scl The largest star size was 20 (threshold 12)
+scl Enumeration 246 times, found 282 maxl cliques
+scl Greedy 46 times, found 33 maxl cliques
+scl Skipped a star b/c of small solution value 689 times
+scl    not all cliques have been eliminated
+round 7 : cgl separated 330 cuts in 0.0800 seconds. dual limit now: 33.3069 time: 29.400
+resolving relaxation ... solved in 3.010 after adding cuts of pass 7. dual limit now 33.9941
+
+
+rcl Found 5270 new violated cliques with the row-clique method
+rcl The largest admissible number was 28 (threshold 12)
+rcl    not all row cliques have been eliminated
+
+scl Found 249 new violated cliques with the star-clique method
+scl The largest star size was 25 (threshold 12)
+scl Enumeration 230 times, found 211 maxl cliques
+scl Greedy 65 times, found 38 maxl cliques
+scl Skipped a star b/c of small solution value 806 times
+scl    not all cliques have been eliminated
+round 8 : cgl separated 339 cuts in 0.1000 seconds. dual limit now: 33.9941 time: 32.510
+resolving relaxation ... solved in 2.480 after adding cuts of pass 8. dual limit now 34.6555
+
+
+rcl Found 5429 new violated cliques with the row-clique method
+rcl The largest admissible number was 27 (threshold 12)
+rcl    not all row cliques have been eliminated
+
+scl Found 246 new violated cliques with the star-clique method
+scl The largest star size was 27 (threshold 12)
+scl Enumeration 223 times, found 195 maxl cliques
+scl Greedy 89 times, found 51 maxl cliques
+scl Skipped a star b/c of small solution value 816 times
+scl    not all cliques have been eliminated
+round 9 : cgl separated 347 cuts in 0.1100 seconds. dual limit now: 34.6555 time: 35.100
+resolving relaxation ... solved in 2.540 after adding cuts of pass 9. dual limit now 35.2354
+
+
+rcl Found 5677 new violated cliques with the row-clique method
+rcl The largest admissible number was 27 (threshold 12)
+rcl    not all row cliques have been eliminated
+
+scl Found 239 new violated cliques with the star-clique method
+scl The largest star size was 25 (threshold 12)
+scl Enumeration 212 times, found 192 maxl cliques
+scl Greedy 95 times, found 47 maxl cliques
+scl Skipped a star b/c of small solution value 888 times
+scl    not all cliques have been eliminated
+round 10 : cgl separated 349 cuts in 0.1200 seconds. dual limit now: 35.2354 time: 37.760
+resolving relaxation ... solved in 2.720 after adding cuts of pass 10. dual limit now 35.8478
+
+
+rcl Found 6193 new violated cliques with the row-clique method
+rcl The largest admissible number was 30 (threshold 12)
+rcl    not all row cliques have been eliminated
+
+scl Found 227 new violated cliques with the star-clique method
+scl The largest star size was 26 (threshold 12)
+scl Enumeration 215 times, found 182 maxl cliques
+scl Greedy 93 times, found 45 maxl cliques
+scl Skipped a star b/c of small solution value 869 times
+scl    not all cliques have been eliminated
+round 11 : cgl separated 378 cuts in 0.1300 seconds. dual limit now: 35.8478 time: 40.610
+resolving relaxation ... solved in 3.090 after adding cuts of pass 11. dual limit now 36.2781
+
+
+rcl Found 5819 new violated cliques with the row-clique method
+rcl The largest admissible number was 31 (threshold 12)
+rcl    not all row cliques have been eliminated
+
+scl Found 169 new violated cliques with the star-clique method
+scl The largest star size was 28 (threshold 12)
+scl Enumeration 192 times, found 113 maxl cliques
+scl Greedy 117 times, found 56 maxl cliques
+scl Skipped a star b/c of small solution value 956 times
+scl    not all cliques have been eliminated
+round 12 : cgl separated 347 cuts in 0.1500 seconds. dual limit now: 36.2781 time: 43.850
+resolving relaxation ... solved in 4.120 after adding cuts of pass 12. dual limit now 37.0147
+
+
+rcl Found 6304 new violated cliques with the row-clique method
+rcl The largest admissible number was 31 (threshold 12)
+rcl    not all row cliques have been eliminated
+
+scl Found 175 new violated cliques with the star-clique method
+scl The largest star size was 30 (threshold 12)
+scl Enumeration 201 times, found 125 maxl cliques
+scl Greedy 106 times, found 50 maxl cliques
+scl Skipped a star b/c of small solution value 1011 times
+scl    not all cliques have been eliminated
+round 13 : cgl separated 363 cuts in 0.1600 seconds. dual limit now: 37.0147 time: 48.130
+resolving relaxation ... solved in 2.910 after adding cuts of pass 13. dual limit now 37.5118
+
+
+rcl Found 6628 new violated cliques with the row-clique method
+rcl The largest admissible number was 32 (threshold 12)
+rcl    not all row cliques have been eliminated
+
+scl Found 199 new violated cliques with the star-clique method
+scl The largest star size was 31 (threshold 12)
+scl Enumeration 182 times, found 136 maxl cliques
+scl Greedy 141 times, found 63 maxl cliques
+scl Skipped a star b/c of small solution value 1043 times
+scl    not all cliques have been eliminated
+round 14 : cgl separated 360 cuts in 0.1800 seconds. dual limit now: 37.5118 time: 51.220
+resolving relaxation ... solved in 4.130 after adding cuts of pass 14. dual limit now 38.1006
+
+
+rcl Found 6714 new violated cliques with the row-clique method
+rcl The largest admissible number was 36 (threshold 12)
+rcl    not all row cliques have been eliminated
+
+scl Found 207 new violated cliques with the star-clique method
+scl The largest star size was 38 (threshold 12)
+scl Enumeration 170 times, found 130 maxl cliques
+scl Greedy 149 times, found 77 maxl cliques
+scl Skipped a star b/c of small solution value 1159 times
+scl    not all cliques have been eliminated
+round 15 : cgl separated 380 cuts in 0.2100 seconds. dual limit now: 38.1006 time: 55.560
+resolving relaxation ... solved in 4.160 after adding cuts of pass 15. dual limit now 38.6836
+
+
+rcl Found 6357 new violated cliques with the row-clique method
+rcl The largest admissible number was 33 (threshold 12)
+rcl    not all row cliques have been eliminated
+
+scl Found 181 new violated cliques with the star-clique method
+scl The largest star size was 33 (threshold 12)
+scl Enumeration 202 times, found 134 maxl cliques
+scl Greedy 127 times, found 47 maxl cliques
+scl Skipped a star b/c of small solution value 1047 times
+scl    not all cliques have been eliminated
+round 16 : cgl separated 337 cuts in 0.2100 seconds. dual limit now: 38.6836 time: 59.930
+resolving relaxation ... solved in 5.550 after adding cuts of pass 16. dual limit now 39.2734
+
+
+rcl Found 7065 new violated cliques with the row-clique method
+rcl The largest admissible number was 37 (threshold 12)
+rcl    not all row cliques have been eliminated
+
+scl Found 194 new violated cliques with the star-clique method
+scl The largest star size was 39 (threshold 12)
+scl Enumeration 167 times, found 134 maxl cliques
+scl Greedy 154 times, found 60 maxl cliques
+scl Skipped a star b/c of small solution value 1261 times
+scl    not all cliques have been eliminated
+round 17 : cgl separated 401 cuts in 0.2400 seconds. dual limit now: 39.2734 time: 65.720
+resolving relaxation ... solved in 5.810 after adding cuts of pass 17. dual limit now 39.8341
+
+
+rcl Found 7376 new violated cliques with the row-clique method
+rcl The largest admissible number was 38 (threshold 12)
+rcl    not all row cliques have been eliminated
+
+scl Found 177 new violated cliques with the star-clique method
+scl The largest star size was 35 (threshold 12)
+scl Enumeration 162 times, found 103 maxl cliques
+scl Greedy 168 times, found 74 maxl cliques
+scl Skipped a star b/c of small solution value 1299 times
+scl    not all cliques have been eliminated
+round 18 : cgl separated 391 cuts in 0.2700 seconds. dual limit now: 39.8341 time: 71.800
+resolving relaxation ... solved in 5.670 after adding cuts of pass 18. dual limit now 40.3972
+
+
+rcl Found 6871 new violated cliques with the row-clique method
+rcl The largest admissible number was 33 (threshold 12)
+rcl    not all row cliques have been eliminated
+
+scl Found 118 new violated cliques with the star-clique method
+scl The largest star size was 40 (threshold 12)
+scl Enumeration 185 times, found 69 maxl cliques
+scl Greedy 146 times, found 49 maxl cliques
+scl Skipped a star b/c of small solution value 1132 times
+scl    not all cliques have been eliminated
+round 19 : cgl separated 358 cuts in 0.2500 seconds. dual limit now: 40.3972 time: 77.720
+resolving relaxation ... solved in 7.110 after adding cuts of pass 19. dual limit now 40.9623
+
+
+rcl Found 6810 new violated cliques with the row-clique method
+rcl The largest admissible number was 37 (threshold 12)
+rcl    not all row cliques have been eliminated
+
+scl Found 173 new violated cliques with the star-clique method
+scl The largest star size was 37 (threshold 12)
+scl Enumeration 160 times, found 117 maxl cliques
+scl Greedy 173 times, found 56 maxl cliques
+scl Skipped a star b/c of small solution value 1355 times
+scl    not all cliques have been eliminated
+round 20 : cgl separated 353 cuts in 0.3200 seconds. dual limit now: 40.9623 time: 85.150
+resolving relaxation ... solved in 5.540 after adding cuts of pass 20. dual limit now 41.4349
+
+
+End of root node relaxation. Dual limit: 41.4349 time: 90.690 

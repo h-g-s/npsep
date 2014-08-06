@@ -1,0 +1,8 @@
+writeclqw
+
+loaded bab1 
+	61152 variables (61152 integer) 60680 rows 854392 nz
+
+
+creating conflict graph ... done in 5.8600 seconds.
+original cgraph dimensions: n: 61152 m: 11257844 t: 5.860

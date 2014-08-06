@@ -1,0 +1,15 @@
+writeclqw
+
+loaded t1717 
+	73885 variables (73885 integer) 551 rows 325689 nz
+
+osi_cgraph took 0.070 seconds.
+original cgraph dimensions: n: 73885 m: 140417274 t: 0.070
+solving relaxation ... Initial dual bound 134531
+solved in 5.210
+original conflict graph : n 73885 e 140417274 - minD 584 maxD 5078 smallD 0
+
+End of root node relaxation. Dual limit: 134531 time: 5.210 
+pre-processed conflict graph : n 509 e 19516 - minD 12 maxD 74 smallD 5
+
+File name: t1717

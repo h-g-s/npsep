@@ -1,0 +1,8 @@
+writeclqw
+
+loaded momentum1 
+	5174 variables (2349 integer) 42680 rows 103198 nz
+
+
+creating conflict graph ... done in 0.0200 seconds.
+original cgraph dimensions: n: 5174 m: 98848 t: 0.020

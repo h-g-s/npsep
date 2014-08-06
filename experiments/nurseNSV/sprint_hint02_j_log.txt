@@ -1,0 +1,43 @@
+cbcroot: root node relaxation and clique cuts
+
+loaded sprint_hint02_j 
+	9610 variables (9610 integer) 3032 rows
+
+Clique Separation Parameters:
+	max depth         : 3
+	max passes        : 20
+	minimum violation : 0.0200
+	minimum frac. val : 0.0010
+	extend cliques    : 2
+	enum max. degree  : 10
+	verbose           : 1
+	maximum time bk   : 20
+solving relaxation ... Initial dual bound 32.8532
+solved in 0.370
+round 1 : def separated 62 cuts in 0.0800 seconds. dual limit now: 32.8532 time: 0.450
+resolving relaxation ... solved in 0.120 after adding cuts of pass 1. dual limit now 35.1944
+
+round 2 : def separated 66 cuts in 0.0900 seconds. dual limit now: 35.1944 time: 0.660
+resolving relaxation ... solved in 0.240 after adding cuts of pass 2. dual limit now 38.9534
+
+round 3 : def separated 61 cuts in 0.0800 seconds. dual limit now: 38.9534 time: 0.980
+resolving relaxation ... solved in 0.250 after adding cuts of pass 3. dual limit now 40.777
+
+round 4 : def separated 36 cuts in 0.0500 seconds. dual limit now: 40.777 time: 1.280
+resolving relaxation ... solved in 0.190 after adding cuts of pass 4. dual limit now 41.7188
+
+round 5 : def separated 25 cuts in 0.0400 seconds. dual limit now: 41.7188 time: 1.510
+resolving relaxation ... solved in 0.130 after adding cuts of pass 5. dual limit now 42.0317
+
+round 6 : def separated 18 cuts in 0.0200 seconds. dual limit now: 42.0317 time: 1.660
+resolving relaxation ... solved in 0.140 after adding cuts of pass 6. dual limit now 42.2222
+
+round 7 : def separated 5 cuts in 0.0100 seconds. dual limit now: 42.2222 time: 1.810
+resolving relaxation ... solved in 0.050 after adding cuts of pass 7. dual limit now 42.2222
+
+round 8 : def separated 2 cuts in 0.0100 seconds. dual limit now: 42.2222 time: 1.870
+resolving relaxation ... solved in 0.020 after adding cuts of pass 8. dual limit now 42.2222
+
+round 9 : def separated 0 cuts in 0.0000 seconds. dual limit now: 42.2222 time: 1.890
+
+End of root node relaxation. Dual limit: 42.2222 time: 1.890 

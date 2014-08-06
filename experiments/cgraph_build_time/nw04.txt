@@ -1,0 +1,15 @@
+writeclqw
+
+loaded nw04 
+	87482 variables (87482 integer) 36 rows 636666 nz
+
+osi_cgraph took 0.110 seconds.
+original cgraph dimensions: n: 87482 m: 6771189162 t: 0.110
+solving relaxation ... Initial dual bound 16310.7
+solved in 0.820
+original conflict graph : n 87482 e -1818745430 - minD 598 maxD 86711 smallD 0
+
+End of root node relaxation. Dual limit: 16310.7 time: 0.820 
+pre-processed conflict graph : n 6 e 64 - minD 7 maxD 14 smallD 6
+
+File name: nw04

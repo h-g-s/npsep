@@ -1,0 +1,40 @@
+cbcroot: root node relaxation and clique cuts
+
+loaded long03_j 
+	51793 variables (51793 integer) 17241 rows
+
+Clique Separation Parameters:
+	max depth         : 3
+	max passes        : 20
+	minimum violation : 0.0200
+	minimum frac. val : 0.0010
+	extend cliques    : 2
+	enum max. degree  : 10
+	verbose           : 1
+	maximum time bk   : 20
+solving relaxation ... Initial dual bound 223.5
+solved in 6.420
+round 1 : def separated 196 cuts in 0.2400 seconds. dual limit now: 223.5 time: 6.660
+resolving relaxation ... solved in 2.090 after adding cuts of pass 1. dual limit now 223.889
+
+round 2 : def separated 144 cuts in 0.2000 seconds. dual limit now: 223.889 time: 8.950
+resolving relaxation ... solved in 2.590 after adding cuts of pass 2. dual limit now 224.167
+
+round 3 : def separated 77 cuts in 0.1000 seconds. dual limit now: 224.167 time: 11.640
+resolving relaxation ... solved in 2.260 after adding cuts of pass 3. dual limit now 224.167
+
+round 4 : def separated 23 cuts in 0.0400 seconds. dual limit now: 224.167 time: 13.940
+resolving relaxation ... solved in 1.260 after adding cuts of pass 4. dual limit now 224.167
+
+round 5 : def separated 22 cuts in 0.0500 seconds. dual limit now: 224.167 time: 15.250
+resolving relaxation ... solved in 1.070 after adding cuts of pass 5. dual limit now 224.167
+
+round 6 : def separated 9 cuts in 0.0300 seconds. dual limit now: 224.167 time: 16.350
+resolving relaxation ... solved in 0.740 after adding cuts of pass 6. dual limit now 224.167
+
+round 7 : def separated 8 cuts in 0.0200 seconds. dual limit now: 224.167 time: 17.110
+resolving relaxation ... solved in 0.340 after adding cuts of pass 7. dual limit now 224.167
+
+round 8 : def separated 0 cuts in 0.0100 seconds. dual limit now: 224.167 time: 17.460
+
+End of root node relaxation. Dual limit: 224.167 time: 17.460 

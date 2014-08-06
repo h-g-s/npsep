@@ -1,0 +1,31 @@
+Set Packing Instances
+
+These are difficult random instances with density = 5%.
+
+"c" = cardinality	(all costs = 1);
+"w" = weighted		(random integral costs from 1 to 10)
+
+Upper bounds from LP relaxation:
+
+PK11c:  21.38	PK21c:  30.50	PK31c:  37.04	PK41c:  45.48
+PK12c:  15.69	PK22c:  20.84	PK32c:  23.29	PK42c:  26.76
+PK13c:  15.26	PK23c:  18.27	PK33c:  21.86	PK43c:  22.18
+PK14c:  13.18	PK24c:  17.18	PK34c:  18.55	PK44c:  20.23
+
+PK11w:  134.4	PK21w:  192.0	PK31w:  235.7	PK41w:  291.6
+PK12w:   96.8	PK22w:  134.9	PK32w:  159.4	PK42w:  179.3
+PK13w:  103.2	PK23w:  117.4	PK33w:  147.4	PK43w:  149.7 
+PK14w:   85.1	PK24w:  108.4	PK34w:  124.3	PK44w:  140.8
+
+Optimal solutions:
+
+PK11c:  20	PK21c:  30 	PK31c:  36 	PK41c:  45 
+PK12c:  13	PK22c:  16 	PK32c:  19 	PK42c:  21
+PK13c:  11	PK23c:  12 	PK33c:  14 	PK43c:  14 
+PK14c:   8	PK24c:  10 	PK34c:  10 	PK44c:  11 
+
+PK11w: 130	PK21w: 190 	PK31w: 231 	PK41w:  287 
+PK12w:  81	PK22w: 111 	PK32w: 130 	PK42w:  144 
+PK13w:  82 	PK23w:  75 	PK33w: 102 	PK43w:  98 
+PK14w:  53 	PK24w:  67 	PK34w:  68  	PK44w:  72 
+

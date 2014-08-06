@@ -1,0 +1,34 @@
+using at max 0 two mir passes.
+using at max 0 gomory passes.
+Coin0008I roll3000 read with 0 errors
+cbcroot: root node relaxation and clique cuts
+
+loaded roll3000 
+	1166 variables (738 integer) 2295 rows
+
+osi_cgraph took 0.000 seconds.
+Clique Separation Parameters:
+	max depth         : 3
+	max passes        : 9999
+	minimum violation : 0.0200
+	minimum frac. val : 0.0010
+	extend cliques    : 0
+	enum max. degree  : 10
+	verbose           : 1
+	maximum time bk   : 20
+solving relaxation ... Initial dual bound 11097.1
+solved in 0.080
+verbose mode now 1.
+pre-processed graph - part 1 : n 166 e 240 - minD 0 maxD 4 smallD 166
+Enumeration finished in 0.000 seconds. Found 4 violated cliques. Removed 166 nodes from graph.
+pre-processed graph - part 2 - no nodes left. all cliques have been enumerated.
+round 1 : def separated 4 cuts in 0.0000 seconds. dual limit now: 11097.1 time: 0.080
+resolving relaxation ... solved in 0.010 after adding cuts of pass 1. dual limit now 11097.4
+
+verbose mode now 1.
+pre-processed graph - part 1 : n 172 e 258 - minD 0 maxD 4 smallD 172
+Enumeration finished in 0.000 seconds. Found 0 violated cliques. Removed 172 nodes from graph.
+pre-processed graph - part 2 - no nodes left. all cliques have been enumerated.
+round 2 : def separated 0 cuts in 0.0000 seconds. dual limit now: 11097.4 time: 0.090
+
+End of root node relaxation. Dual limit: 11097.4 time: 0.090 

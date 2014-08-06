@@ -1,0 +1,12 @@
+Details of the random set packing instances.
+
+Each file is a text file with a name of the form pknmt.lp
+n represents the number of variables in hundreds
+m represents the number of constraints in hundreds
+t represents the type of problem:
+	t=c for "cardinality" problems when all objective coefficients are 1.
+	t=w for "weighted" problems where objective coefficients are random
+	 integers uniformly distributed between 1 and 10.
+
+In each case the coefficient of a variable in any constraint is 0 or 1 and is
+generated randomly. The probability any constraint coefficient is 1 is 5%.

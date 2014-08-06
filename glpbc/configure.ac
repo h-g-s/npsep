@@ -1,0 +1,36 @@
+#                                               -*- Autoconf -*-
+# Process this file with autoconf to produce a configure script.
+
+AC_PREREQ(2.50)
+AC_INIT(glpbc, 0.1, haroldo.santos@gmail.com)
+AC_CONFIG_SRCDIR(src/glpbc.c)
+AM_INIT_AUTOMAKE
+AC_CONFIG_HEADERS([config.h])
+
+# Checks for programs.
+# AC_PROG_CXX
+AC_PROG_CC
+AC_PROG_LIBTOOL
+
+# Checks for libraries.
+AC_CHECK_LIB([m], [fabs], )
+AC_CHECK_LIB([glpk], [glp_create_prob], )
+
+# Checks for header files.
+AC_HEADER_STDC
+AC_CHECK_HEADERS([float.h limits.h stdlib.h string.h stdio.h math.h glpk.h])
+
+# Checks for typedefs, structures, and compiler characteristics.
+AC_C_CONST
+AC_TYPE_SIZE_T
+
+# Checks for library functions.
+AC_FUNC_ALLOCA
+AC_FUNC_MALLOC
+AC_FUNC_REALLOC
+AC_CHECK_FUNCS([memset strstr])
+
+AC_CONFIG_FILES([Makefile src/Makefile])
+
+AC_OUTPUT
+

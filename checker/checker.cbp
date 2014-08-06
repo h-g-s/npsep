@@ -1,0 +1,50 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes" ?>
+<CodeBlocks_project_file>
+	<FileVersion major="1" minor="6" />
+	<Project>
+		<Option title="checker" />
+		<Option pch_mode="2" />
+		<Option compiler="gcc" />
+		<Build>
+			<Target title="dbg">
+				<Option output="bin/dbg/checker" prefix_auto="1" extension_auto="1" />
+				<Option object_output="obj/dbg/" />
+				<Option type="1" />
+				<Option compiler="gcc" />
+				<Option parameters="/home/haroldo/Dropbox/inst/wClique/keller4.clqw /home/haroldo/cliques.txt" />
+				<Compiler>
+					<Add option="-g" />
+					<Add option="-fpic" />
+				</Compiler>
+				<Linker>
+					<Add library="../bin/dbg/npsep.so" />
+				</Linker>
+			</Target>
+			<Target title="opt">
+				<Option output="bin/opt/checker" prefix_auto="1" extension_auto="1" />
+				<Option object_output="obj/opt/" />
+				<Option type="1" />
+				<Option compiler="gcc" />
+				<Compiler>
+					<Add option="-O2" />
+					<Add option="-fpic" />
+				</Compiler>
+				<Linker>
+					<Add option="-s" />
+					<Add library="../bin/opt/npsep.so" />
+				</Linker>
+			</Target>
+		</Build>
+		<Compiler>
+			<Add option="-Wall" />
+			<Add directory="../include" />
+		</Compiler>
+		<Unit filename="checker.cpp" />
+		<Extensions>
+			<code_completion />
+			<envvars />
+			<debugger />
+			<lib_finder disable_auto="1" />
+		</Extensions>
+	</Project>
+</CodeBlocks_project_file>

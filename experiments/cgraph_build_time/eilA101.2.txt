@@ -1,0 +1,15 @@
+writeclqw
+
+loaded eilA101.2 
+	65832 variables (65832 integer) 100 rows 959373 nz
+
+osi_cgraph took 0.170 seconds.
+original cgraph dimensions: n: 65832 m: 3623463372 t: 0.170
+solving relaxation ... Initial dual bound 803.374
+solved in 3.010
+original conflict graph : n 65832 e -671503924 - minD 2217 maxD 65540 smallD 0
+
+End of root node relaxation. Dual limit: 803.374 time: 3.010 
+pre-processed conflict graph : n 69 e 8732 - minD 66 maxD 196 smallD 0
+
+File name: eilA101.2

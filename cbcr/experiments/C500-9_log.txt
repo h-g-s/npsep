@@ -1,0 +1,44 @@
+Coin0009I  CoinLpIO::readLp(): Maximization problem reformulated as minimization
+cbcroot: root node relaxation and clique cuts
+
+loaded C500-9 
+	500 variables (500 integer) 5502 rows
+
+
+creating conflict graph ... done in 0.0300 seconds.
+Clique Separation Parameters:
+	max depth         : 3
+	max passes        : 3
+	minimum violation : 0.0200
+	minimum frac. val : 0.0010
+	extend cliques    : 2
+	enum max. degree  : 10
+	verbose           : 1
+solving relaxation ... Initial dual bound -124.692
+solved in 1.460
+separating ... pre-processed graph - part 1 : n 499 e 24726 - minD 31 maxD 67 smallD 0
+Enumeration finished in 0.000 seconds. Found 0 violated cliques. Removed 0 nodes from graph.
+pre-processed graph - part 2 : n 499 e 24726 - minD 31 maxD 67 smallD 0
+clique extension took 0.000 seconds.
+done in 0.000 seconds
+round 1 : def separated 191 cuts in 0.1600 seconds. dual limit now: -124.692 time: 1.620
+resolving relaxation ... solved in 0.970 after adding cuts of pass 1. dual limit now -123.327
+
+separating ... pre-processed graph - part 1 : n 500 e 24836 - minD 31 maxD 68 smallD 0
+Enumeration finished in 0.000 seconds. Found 0 violated cliques. Removed 0 nodes from graph.
+pre-processed graph - part 2 : n 500 e 24836 - minD 31 maxD 68 smallD 0
+clique extension took 0.000 seconds.
+done in 0.000 seconds
+round 2 : def separated 71 cuts in 0.1500 seconds. dual limit now: -123.327 time: 2.740
+resolving relaxation ... solved in 0.590 after adding cuts of pass 2. dual limit now -123.01
+
+separating ... pre-processed graph - part 1 : n 499 e 24726 - minD 31 maxD 67 smallD 0
+Enumeration finished in 0.000 seconds. Found 0 violated cliques. Removed 0 nodes from graph.
+pre-processed graph - part 2 : n 499 e 24726 - minD 31 maxD 67 smallD 0
+clique extension took 0.000 seconds.
+done in 0.000 seconds
+round 3 : def separated 13 cuts in 0.1300 seconds. dual limit now: -123.01 time: 3.460
+resolving relaxation ... solved in 0.210 after adding cuts of pass 3. dual limit now -122.957
+
+
+End of root node relaxation. Dual limit: -122.957 time: 3.670 

@@ -1,0 +1,16 @@
+Coin0009I  CoinLpIO::readLp(): Maximization problem reformulated as minimization
+writeclqw
+
+loaded C500-9 
+	500 variables (500 integer) 5502 rows 17704 nz
+
+osi_cgraph took 0.010 seconds.
+original cgraph dimensions: n: 500 m: 24836 t: 0.010
+solving relaxation ... Initial dual bound -124.692
+solved in 1.430
+original conflict graph : n 500 e 24836 - minD 31 maxD 68 smallD 0
+
+End of root node relaxation. Dual limit: -124.692 time: 1.430 
+pre-processed conflict graph : n 499 e 24726 - minD 31 maxD 67 smallD 0
+
+File name: C500-9

@@ -1,0 +1,36 @@
+using at max 0 two mir passes.
+using at max 0 gomory passes.
+Using COIN CGL separation.
+Coin0008I bley_xl1 read with 0 errors
+cbcroot: root node relaxation and clique cuts
+
+loaded bley_xl1 
+	5831 variables (5831 integer) 175620 rows
+
+osi_cgraph took 0.130 seconds.
+Clique Separation Parameters:
+	max depth         : 3
+	max passes        : 9999
+	minimum violation : 0.0200
+	minimum frac. val : 0.0010
+	extend cliques    : 0
+	enum max. degree  : 10
+	verbose           : 1
+	maximum time bk   : 20
+solving relaxation ... Initial dual bound 154.39
+solved in 7404.250
+
+rcl Found 0 new violated cliques with the row-clique method
+rcl The largest admissible number was 18 (threshold 12)
+rcl    not all row cliques have been eliminated
+
+scl Found 0 new violated cliques with the star-clique method
+scl The largest star size was 19 (threshold 12)
+scl Enumeration 428 times, found 0 maxl cliques
+scl Greedy 43 times, found 0 maxl cliques
+scl Skipped a star b/c of small solution value 418 times
+scl    not all cliques have been eliminated
+time limit reached. discarding cuts.
+round 1 : cgl separated 0 cuts in 0.0800 seconds. dual limit now: 154.39 time: 7404.330
+
+End of root node relaxation. Dual limit: 154.39 time: 7404.330 

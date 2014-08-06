@@ -1,0 +1,15 @@
+writeclqw
+
+loaded uct-subprob 
+	2256 variables (379 integer) 1973 rows 10147 nz
+
+osi_cgraph took 0.000 seconds.
+original cgraph dimensions: n: 2256 m: 3242 t: 0.000
+solving relaxation ... Initial dual bound 242
+solved in 0.140
+original conflict graph : n 2256 e 3242 - minD 0 maxD 27 smallD 2231
+
+End of root node relaxation. Dual limit: 242 time: 0.140 
+pre-processed conflict graph : n 217 e 1340 - minD 2 maxD 19 smallD 214
+
+File name: uct-subprob

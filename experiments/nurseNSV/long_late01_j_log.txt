@@ -1,0 +1,44 @@
+cbcroot: root node relaxation and clique cuts
+
+loaded long_late01_j 
+	62070 variables (62070 integer) 27875 rows
+
+Clique Separation Parameters:
+	max depth         : 3
+	max passes        : 20
+	minimum violation : 0.0200
+	minimum frac. val : 0.0010
+	extend cliques    : 2
+	enum max. degree  : 10
+	verbose           : 1
+	maximum time bk   : 20
+solving relaxation ... Initial dual bound 88
+solved in 28.440
+round 1 : def separated 659 cuts in 0.9100 seconds. dual limit now: 88 time: 29.350
+resolving relaxation ... solved in 21.400 after adding cuts of pass 1. dual limit now 88
+
+round 2 : def separated 615 cuts in 0.8900 seconds. dual limit now: 88 time: 51.640
+resolving relaxation ... solved in 36.280 after adding cuts of pass 2. dual limit now 88
+
+round 3 : def separated 341 cuts in 0.4900 seconds. dual limit now: 88 time: 88.410
+resolving relaxation ... solved in 77.040 after adding cuts of pass 3. dual limit now 109.909
+
+round 4 : def separated 273 cuts in 0.5000 seconds. dual limit now: 109.909 time: 165.950
+resolving relaxation ... solved in 52.220 after adding cuts of pass 4. dual limit now 119.438
+
+round 5 : def separated 234 cuts in 0.4800 seconds. dual limit now: 119.438 time: 218.650
+resolving relaxation ... solved in 98.730 after adding cuts of pass 5. dual limit now 143.513
+
+round 6 : def separated 240 cuts in 0.5200 seconds. dual limit now: 143.513 time: 317.900
+resolving relaxation ... solved in 67.720 after adding cuts of pass 6. dual limit now 151.611
+
+round 7 : def separated 224 cuts in 0.4800 seconds. dual limit now: 151.611 time: 386.100
+resolving relaxation ... solved in 76.390 after adding cuts of pass 7. dual limit now 159.883
+
+round 8 : def separated 181 cuts in 0.4100 seconds. dual limit now: 159.883 time: 462.900
+resolving relaxation ... solved in 73.370 after adding cuts of pass 8. dual limit now 164.07
+
+time limit reached. discarding cuts.
+round 9 : def separated 0 cuts in 0.3900 seconds. dual limit now: 164.07 time: 536.660
+
+End of root node relaxation. Dual limit: 164.07 time: 536.660 

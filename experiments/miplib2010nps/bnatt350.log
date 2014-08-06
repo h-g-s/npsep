@@ -1,0 +1,41 @@
+using at max 0 two mir passes.
+using at max 0 gomory passes.
+Coin0008I bnatt350 read with 0 errors
+cbcroot: root node relaxation and clique cuts
+
+loaded bnatt350 
+	3150 variables (3150 integer) 4923 rows
+
+osi_cgraph took 0.010 seconds.
+Clique Separation Parameters:
+	max depth         : 3
+	max passes        : 9999
+	minimum violation : 0.0200
+	minimum frac. val : 0.0010
+	extend cliques    : 0
+	enum max. degree  : 10
+	verbose           : 1
+	maximum time bk   : 20
+solving relaxation ... Initial dual bound 0
+solved in 0.040
+verbose mode now 1.
+pre-processed graph - part 1 : n 460 e 904 - minD 0 maxD 7 smallD 460
+Enumeration finished in 0.000 seconds. Found 15 violated cliques. Removed 460 nodes from graph.
+pre-processed graph - part 2 - no nodes left. all cliques have been enumerated.
+round 1 : def separated 15 cuts in 0.0000 seconds. dual limit now: 0 time: 0.040
+resolving relaxation ... solved in 0.030 after adding cuts of pass 1. dual limit now 0
+
+verbose mode now 1.
+pre-processed graph - part 1 : n 463 e 918 - minD 0 maxD 7 smallD 463
+Enumeration finished in 0.000 seconds. Found 2 violated cliques. Removed 463 nodes from graph.
+pre-processed graph - part 2 - no nodes left. all cliques have been enumerated.
+round 2 : def separated 2 cuts in 0.0000 seconds. dual limit now: 0 time: 0.070
+resolving relaxation ... solved in 0.010 after adding cuts of pass 2. dual limit now 0
+
+verbose mode now 1.
+pre-processed graph - part 1 : n 475 e 980 - minD 0 maxD 7 smallD 475
+Enumeration finished in 0.000 seconds. Found 0 violated cliques. Removed 475 nodes from graph.
+pre-processed graph - part 2 - no nodes left. all cliques have been enumerated.
+round 3 : def separated 0 cuts in 0.0000 seconds. dual limit now: 0 time: 0.080
+
+End of root node relaxation. Dual limit: 0 time: 0.080 

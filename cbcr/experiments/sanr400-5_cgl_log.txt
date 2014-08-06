@@ -1,0 +1,47 @@
+Using COIN CGL separation.
+Coin0009I  CoinLpIO::readLp(): Maximization problem reformulated as minimization
+cbcroot: root node relaxation and clique cuts
+
+loaded sanr400-5 
+	400 variables (400 integer) 4190 rows
+
+
+creating conflict graph ... done in 0.4300 seconds.
+Clique Separation Parameters:
+	max depth         : 3
+	max passes        : 3
+	minimum violation : 0.0200
+	minimum frac. val : 0.0010
+	extend cliques    : 2
+	enum max. degree  : 10
+	verbose           : 1
+solving relaxation ... Initial dual bound -41.6106
+solved in 2.330
+
+rcl Found 6 new violated cliques with the row-clique method
+rcl The largest admissible number was 6 (threshold 12)
+rcl    all row cliques have been enumerated
+
+scl Found 3 new violated cliques with the star-clique method
+scl The largest star size was 200 (threshold 12)
+scl Enumeration 0 times, found 0 maxl cliques
+scl Greedy 361 times, found 3 maxl cliques
+scl Skipped a star b/c of small solution value 34 times
+scl    not all cliques have been eliminated
+round 1 : cgl separated 8 cuts in 0.0600 seconds. dual limit now: -41.6106 time: 2.390
+resolving relaxation ... solved in 0.460 after adding cuts of pass 1. dual limit now -41.5765
+
+
+rcl Found 0 new violated cliques with the row-clique method
+rcl The largest admissible number was 6 (threshold 12)
+rcl    all row cliques have been enumerated
+
+scl Found 0 new violated cliques with the star-clique method
+scl The largest star size was 202 (threshold 12)
+scl Enumeration 0 times, found 0 maxl cliques
+scl Greedy 363 times, found 0 maxl cliques
+scl Skipped a star b/c of small solution value 31 times
+scl    not all cliques have been eliminated
+round 2 : cgl separated 0 cuts in 0.0500 seconds. dual limit now: -41.5765 time: 2.900
+
+End of root node relaxation. Dual limit: -41.5765 time: 2.900 

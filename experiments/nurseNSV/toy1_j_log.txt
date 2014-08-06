@@ -1,0 +1,31 @@
+cbcroot: root node relaxation and clique cuts
+
+loaded toy1_j 
+	576 variables (576 integer) 477 rows
+
+Clique Separation Parameters:
+	max depth         : 3
+	max passes        : 20
+	minimum violation : 0.0200
+	minimum frac. val : 0.0010
+	extend cliques    : 2
+	enum max. degree  : 10
+	verbose           : 1
+	maximum time bk   : 20
+solving relaxation ... Initial dual bound 7
+solved in 0.010
+round 1 : def separated 30 cuts in 0.0100 seconds. dual limit now: 7 time: 0.020
+resolving relaxation ... solved in 0.010 after adding cuts of pass 1. dual limit now 10.25
+
+round 2 : def separated 24 cuts in 0.0000 seconds. dual limit now: 10.25 time: 0.030
+resolving relaxation ... solved in 0.010 after adding cuts of pass 2. dual limit now 17
+
+round 3 : def separated 7 cuts in 0.0000 seconds. dual limit now: 17 time: 0.040
+resolving relaxation ... solved in 0.000 after adding cuts of pass 3. dual limit now 17
+
+round 4 : def separated 1 cuts in 0.0100 seconds. dual limit now: 17 time: 0.050
+resolving relaxation ... solved in 0.000 after adding cuts of pass 4. dual limit now 17
+
+round 5 : def separated 0 cuts in 0.0000 seconds. dual limit now: 17 time: 0.050
+
+End of root node relaxation. Dual limit: 17 time: 0.050 

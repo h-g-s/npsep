@@ -1,0 +1,15 @@
+writeclqw
+
+loaded neos-1440225 
+	1285 variables (1285 integer) 330 rows 14168 nz
+
+osi_cgraph took 0.060 seconds.
+original cgraph dimensions: n: 1285 m: 310792 t: 0.060
+solving relaxation ... Initial dual bound 36
+solved in 0.060
+original conflict graph : n 1285 e 310792 - minD 22 maxD 321 smallD 0
+
+End of root node relaxation. Dual limit: 36 time: 0.060 
+pre-processed conflict graph : n 248 e 8436 - minD 7 maxD 56 smallD 14
+
+File name: neos-1440225

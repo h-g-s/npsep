@@ -1,0 +1,43 @@
+cbcroot: root node relaxation and clique cuts
+
+loaded neos-1601936 
+	4446 variables (3906 integer) 3131 rows
+
+
+creating conflict graph ... done in 0.0300 seconds.
+Clique Separation Parameters:
+	max depth         : 3
+	max passes        : 3
+	minimum violation : 0.0200
+	minimum frac. val : 0.0010
+	extend cliques    : 2
+	enum max. degree  : 10
+	verbose           : 1
+solving relaxation ... Initial dual bound 1
+solved in 6.430
+separating ... pre-processed graph - part 1 : n 605 e 4672 - minD 1 maxD 17 smallD 461
+Enumeration finished in 0.020 seconds. Found 15 violated cliques. Removed 461 nodes from graph.
+pre-processed graph - part 2 : n 144 e 1004 - minD 1 maxD 13 smallD 136
+clique extension took 0.000 seconds.
+done in 0.000 seconds
+round 1 : def separated 15 cuts in 0.0300 seconds. dual limit now: 1 time: 6.460
+resolving relaxation ... solved in 6.530 after adding cuts of pass 1. dual limit now 3
+
+separating ... pre-processed graph - part 1 : n 693 e 6134 - minD 1 maxD 21 smallD 422
+Enumeration finished in 0.040 seconds. Found 7 violated cliques. Removed 422 nodes from graph.
+pre-processed graph - part 2 : n 271 e 2414 - minD 0 maxD 19 smallD 200
+clique extension took 0.000 seconds.
+done in 0.000 seconds
+round 2 : def separated 9 cuts in 0.0400 seconds. dual limit now: 3 time: 13.030
+resolving relaxation ... solved in 6.250 after adding cuts of pass 2. dual limit now 3
+
+separating ... pre-processed graph - part 1 : n 659 e 5454 - minD 1 maxD 20 smallD 461
+Enumeration finished in 0.050 seconds. Found 17 violated cliques. Removed 461 nodes from graph.
+pre-processed graph - part 2 : n 198 e 1620 - minD 3 maxD 17 smallD 161
+clique extension took 0.000 seconds.
+done in 0.000 seconds
+round 3 : def separated 17 cuts in 0.0600 seconds. dual limit now: 3 time: 19.340
+resolving relaxation ... solved in 6.470 after adding cuts of pass 3. dual limit now 3
+
+
+End of root node relaxation. Dual limit: 3 time: 25.810 

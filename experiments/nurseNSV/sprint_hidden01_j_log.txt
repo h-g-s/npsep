@@ -1,0 +1,52 @@
+cbcroot: root node relaxation and clique cuts
+
+loaded sprint_hidden01_j 
+	10250 variables (10250 integer) 3814 rows
+
+Clique Separation Parameters:
+	max depth         : 3
+	max passes        : 20
+	minimum violation : 0.0200
+	minimum frac. val : 0.0010
+	extend cliques    : 2
+	enum max. degree  : 10
+	verbose           : 1
+	maximum time bk   : 20
+solving relaxation ... Initial dual bound 19.4093
+solved in 0.510
+round 1 : def separated 78 cuts in 0.0900 seconds. dual limit now: 19.4093 time: 0.600
+resolving relaxation ... solved in 0.280 after adding cuts of pass 1. dual limit now 22.7097
+
+round 2 : def separated 70 cuts in 0.0900 seconds. dual limit now: 22.7097 time: 0.970
+resolving relaxation ... solved in 0.300 after adding cuts of pass 2. dual limit now 24.5171
+
+round 3 : def separated 35 cuts in 0.0500 seconds. dual limit now: 24.5171 time: 1.320
+resolving relaxation ... solved in 0.240 after adding cuts of pass 3. dual limit now 25.2975
+
+round 4 : def separated 33 cuts in 0.0500 seconds. dual limit now: 25.2975 time: 1.610
+resolving relaxation ... solved in 0.180 after adding cuts of pass 4. dual limit now 25.5637
+
+round 5 : def separated 18 cuts in 0.0200 seconds. dual limit now: 25.5637 time: 1.810
+resolving relaxation ... solved in 0.140 after adding cuts of pass 5. dual limit now 25.8573
+
+round 6 : def separated 12 cuts in 0.0300 seconds. dual limit now: 25.8573 time: 1.980
+resolving relaxation ... solved in 0.100 after adding cuts of pass 6. dual limit now 25.9617
+
+round 7 : def separated 12 cuts in 0.0200 seconds. dual limit now: 25.9617 time: 2.100
+resolving relaxation ... solved in 0.120 after adding cuts of pass 7. dual limit now 26.0696
+
+round 8 : def separated 6 cuts in 0.0100 seconds. dual limit now: 26.0696 time: 2.230
+resolving relaxation ... solved in 0.060 after adding cuts of pass 8. dual limit now 26.1605
+
+round 9 : def separated 6 cuts in 0.4100 seconds. dual limit now: 26.1605 time: 2.700
+resolving relaxation ... solved in 0.040 after adding cuts of pass 9. dual limit now 26.1695
+
+round 10 : def separated 4 cuts in 1.9600 seconds. dual limit now: 26.1695 time: 4.700
+resolving relaxation ... solved in 0.060 after adding cuts of pass 10. dual limit now 26.1815
+
+round 11 : def separated 2 cuts in 0.0100 seconds. dual limit now: 26.1815 time: 4.770
+resolving relaxation ... solved in 0.020 after adding cuts of pass 11. dual limit now 26.1815
+
+round 12 : def separated 0 cuts in 0.0000 seconds. dual limit now: 26.1815 time: 4.790
+
+End of root node relaxation. Dual limit: 26.1815 time: 4.790 

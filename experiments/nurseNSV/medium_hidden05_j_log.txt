@@ -1,0 +1,78 @@
+cbcroot: root node relaxation and clique cuts
+
+loaded medium_hidden05_j 
+	36880 variables (36880 integer) 16070 rows
+
+Clique Separation Parameters:
+	max depth         : 3
+	max passes        : 20
+	minimum violation : 0.0200
+	minimum frac. val : 0.0010
+	extend cliques    : 2
+	enum max. degree  : 10
+	verbose           : 1
+	maximum time bk   : 20
+solving relaxation ... Initial dual bound 56
+solved in 11.750
+round 1 : def separated 348 cuts in 0.5000 seconds. dual limit now: 56 time: 12.250
+resolving relaxation ... solved in 8.350 after adding cuts of pass 1. dual limit now 56
+
+round 2 : def separated 323 cuts in 0.5200 seconds. dual limit now: 56 time: 21.120
+resolving relaxation ... solved in 12.310 after adding cuts of pass 2. dual limit now 56
+
+round 3 : def separated 164 cuts in 0.5100 seconds. dual limit now: 56 time: 33.940
+resolving relaxation ... solved in 13.690 after adding cuts of pass 3. dual limit now 56
+
+round 4 : def separated 110 cuts in 0.2800 seconds. dual limit now: 56 time: 47.910
+resolving relaxation ... solved in 14.020 after adding cuts of pass 4. dual limit now 56
+
+round 5 : def separated 81 cuts in 0.4800 seconds. dual limit now: 56 time: 62.410
+resolving relaxation ... solved in 13.650 after adding cuts of pass 5. dual limit now 56.0207
+
+round 6 : def separated 38 cuts in 0.2300 seconds. dual limit now: 56.0207 time: 76.290
+resolving relaxation ... solved in 13.120 after adding cuts of pass 6. dual limit now 56.0435
+
+round 7 : def separated 38 cuts in 4.0600 seconds. dual limit now: 56.0435 time: 93.470
+resolving relaxation ... solved in 18.010 after adding cuts of pass 7. dual limit now 56.0652
+
+round 8 : def separated 21 cuts in 0.1600 seconds. dual limit now: 56.0652 time: 111.640
+resolving relaxation ... solved in 20.370 after adding cuts of pass 8. dual limit now 56.2124
+
+round 9 : def separated 28 cuts in 0.1800 seconds. dual limit now: 56.2124 time: 132.190
+resolving relaxation ... solved in 23.940 after adding cuts of pass 9. dual limit now 56.4364
+
+round 10 : def separated 27 cuts in 2.4900 seconds. dual limit now: 56.4364 time: 158.620
+resolving relaxation ... solved in 8.830 after adding cuts of pass 10. dual limit now 56.6239
+
+round 11 : def separated 20 cuts in 12.4200 seconds. dual limit now: 56.6239 time: 179.870
+resolving relaxation ... solved in 10.060 after adding cuts of pass 11. dual limit now 57.1179
+
+round 12 : def separated 29 cuts in 14.0200 seconds. dual limit now: 57.1179 time: 203.950
+resolving relaxation ... solved in 6.270 after adding cuts of pass 12. dual limit now 57.3191
+
+round 13 : def separated 37 cuts in 24.9800 seconds. dual limit now: 57.3191 time: 235.200
+resolving relaxation ... solved in 8.700 after adding cuts of pass 13. dual limit now 57.6416
+
+round 14 : def separated 25 cuts in 31.9900 seconds. dual limit now: 57.6416 time: 275.890
+resolving relaxation ... solved in 11.800 after adding cuts of pass 14. dual limit now 57.7568
+
+round 15 : def separated 17 cuts in 22.8700 seconds. dual limit now: 57.7568 time: 310.560
+resolving relaxation ... solved in 11.220 after adding cuts of pass 15. dual limit now 57.8631
+
+round 16 : def separated 22 cuts in 22.9200 seconds. dual limit now: 57.8631 time: 344.700
+resolving relaxation ... solved in 8.200 after adding cuts of pass 16. dual limit now 57.935
+
+round 17 : def separated 20 cuts in 11.5600 seconds. dual limit now: 57.935 time: 364.460
+resolving relaxation ... solved in 11.870 after adding cuts of pass 17. dual limit now 58.0476
+
+round 18 : def separated 16 cuts in 22.3600 seconds. dual limit now: 58.0476 time: 398.690
+resolving relaxation ... solved in 10.250 after adding cuts of pass 18. dual limit now 58.1351
+
+round 19 : def separated 30 cuts in 17.8800 seconds. dual limit now: 58.1351 time: 426.820
+resolving relaxation ... solved in 10.670 after adding cuts of pass 19. dual limit now 58.457
+
+round 20 : def separated 29 cuts in 9.8500 seconds. dual limit now: 58.457 time: 447.340
+resolving relaxation ... solved in 7.630 after adding cuts of pass 20. dual limit now 58.6203
+
+
+End of root node relaxation. Dual limit: 58.6203 time: 454.970 

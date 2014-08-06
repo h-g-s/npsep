@@ -1,0 +1,9 @@
+#!/bin/bash
+
+for file in ~/inst/miplib2010/*.lp;
+do
+   instName=`basename $file .lp`
+   ./cbcr $file -cgl -mtm=0 -mgm=0 -maxPasses=10 \
+        > ${instName}.log
+done
+                           

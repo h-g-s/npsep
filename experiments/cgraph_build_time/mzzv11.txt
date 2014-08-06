@@ -1,0 +1,15 @@
+writeclqw
+
+loaded mzzv11 
+	10240 variables (10240 integer) 9499 rows 134603 nz
+
+osi_cgraph took 0.200 seconds.
+original cgraph dimensions: n: 10240 m: 475060 t: 0.200
+solving relaxation ... Initial dual bound -22945.2
+solved in 71.210
+original conflict graph : n 10240 e 475060 - minD 0 maxD 182 smallD 2789
+
+End of root node relaxation. Dual limit: -22945.2 time: 71.210 
+pre-processed conflict graph : n 921 e 6320 - minD 0 maxD 26 smallD 836
+
+File name: mzzv11

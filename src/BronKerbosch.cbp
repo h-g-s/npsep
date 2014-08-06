@@ -1,0 +1,94 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes" ?>
+<CodeBlocks_project_file>
+	<FileVersion major="1" minor="6" />
+	<Project>
+		<Option title="BronKerbosch" />
+		<Option pch_mode="2" />
+		<Option compiler="gcc" />
+		<Build>
+			<Target title="Debug">
+				<Option output="bin/Debug/BronKerbosch" prefix_auto="1" extension_auto="1" />
+				<Option object_output="obj/Debug/" />
+				<Option type="1" />
+				<Option compiler="gcc" />
+				<Option parameters="ns1696083bug.gr" />
+				<Compiler>
+					<Add option="-g" />
+				</Compiler>
+			</Target>
+			<Target title="Release">
+				<Option output="bin/Release/BronKerbosch" prefix_auto="1" extension_auto="1" />
+				<Option object_output="obj/Release/" />
+				<Option type="1" />
+				<Option compiler="gcc" />
+				<Option parameters="../instances/wClique/ns1769397.clqw" />
+				<Compiler>
+					<Add option="-O2" />
+				</Compiler>
+				<Linker>
+					<Add option="-s" />
+				</Linker>
+			</Target>
+		</Build>
+		<Compiler>
+			<Add option="-Wall" />
+			<Add option="-fexceptions" />
+			<Add directory="../include" />
+			<Add directory="../src" />
+		</Compiler>
+		<Unit filename="BKGraph.cpp" />
+		<Unit filename="BKGraph.hpp" />
+		<Unit filename="BKVertex.cpp" />
+		<Unit filename="BKVertex.hpp" />
+		<Unit filename="bkmain.cpp" />
+		<Unit filename="bron_kerbosch.cpp" />
+		<Unit filename="bron_kerbosch.h" />
+		<Unit filename="../src/cgraph.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="../src/clique.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="../src/clique_enum.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="../src/clique_extender.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="../src/clique_separation.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="../src/conflict_discover.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="../src/grasp.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="../src/lp_callbacks.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="../src/memory.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="../src/node_heap.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="../src/strUtils.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="../src/vectormgm.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="../src/vint_set.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="../src/vnode_degree.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Extensions>
+			<code_completion />
+			<debugger />
+			<envvars />
+		</Extensions>
+	</Project>
+</CodeBlocks_project_file>

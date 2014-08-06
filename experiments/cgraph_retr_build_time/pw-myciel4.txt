@@ -1,0 +1,8 @@
+writeclqw
+
+loaded pw-myciel4 
+	1059 variables (1059 integer) 8164 rows 17779 nz
+
+
+creating conflict graph ... done in 0.0000 seconds.
+original cgraph dimensions: n: 1059 m: 30360 t: 0.000

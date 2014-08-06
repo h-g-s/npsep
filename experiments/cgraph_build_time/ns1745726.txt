@@ -1,0 +1,15 @@
+writeclqw
+
+loaded ns1745726 
+	3208 variables (3208 integer) 4687 rows 90278 nz
+
+osi_cgraph took 0.330 seconds.
+original cgraph dimensions: n: 3208 m: 1392642 t: 0.330
+solving relaxation ... Initial dual bound 3
+solved in 0.040
+original conflict graph : n 3208 e 1392642 - minD 4 maxD 783 smallD 349
+
+End of root node relaxation. Dual limit: 3 time: 0.040 
+pre-processed conflict graph : n 49 e 19996 - minD 1 maxD 711 smallD 9
+
+File name: ns1745726

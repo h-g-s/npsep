@@ -1,0 +1,27 @@
+using at max 0 two mir passes.
+using at max 0 gomory passes.
+Coin0008I net12 read with 0 errors
+cbcroot: root node relaxation and clique cuts
+
+loaded net12 
+	14115 variables (1603 integer) 14021 rows
+
+osi_cgraph took 0.010 seconds.
+Clique Separation Parameters:
+	max depth         : 3
+	max passes        : 9999
+	minimum violation : 0.0200
+	minimum frac. val : 0.0010
+	extend cliques    : 0
+	enum max. degree  : 10
+	verbose           : 1
+	maximum time bk   : 20
+solving relaxation ... Initial dual bound 17.2495
+solved in 0.590
+verbose mode now 1.
+pre-processed graph - part 1 : n 433 e 308 - minD 0 maxD 2 smallD 433
+Enumeration finished in 0.000 seconds. Found 0 violated cliques. Removed 433 nodes from graph.
+pre-processed graph - part 2 - no nodes left. all cliques have been enumerated.
+round 1 : def separated 0 cuts in 0.0000 seconds. dual limit now: 17.2495 time: 0.590
+
+End of root node relaxation. Dual limit: 17.2495 time: 0.590 

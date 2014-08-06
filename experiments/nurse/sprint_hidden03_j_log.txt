@@ -1,0 +1,109 @@
+cbcroot: root node relaxation and clique cuts
+
+loaded sprint_hidden03_j 
+	12868 variables (12868 integer) 5960 rows
+
+osi_cgraph took 1.050 seconds.
+Clique Separation Parameters:
+	max depth         : 3
+	max passes        : 10
+	minimum violation : 0.0200
+	minimum frac. val : 0.0010
+	extend cliques    : 2
+	enum max. degree  : 10
+	verbose           : 1
+	maximum time bk   : 20
+solving relaxation ... Initial dual bound 51.6256
+solved in 0.950
+separating ... pre-processed graph - part 1 : n 531 e 2748 - minD 1 maxD 27 smallD 476
+Enumeration finished in 0.010 seconds. Found 68 violated cliques. Removed 476 nodes from graph.
+pre-processed graph - part 2 : n 55 e 572 - minD 0 maxD 23 smallD 31
+bk took 0 seconds
+clique extension took 0.100 seconds.
+done in 0.000 seconds
+round 1 : def separated 80 cuts in 0.2200 seconds. dual limit now: 51.6256 time: 1.170
+resolving relaxation ... solved in 0.820 after adding cuts of pass 1. dual limit now 54.4879
+
+separating ... pre-processed graph - part 1 : n 630 e 4594 - minD 1 maxD 38 smallD 499
+Enumeration finished in 0.010 seconds. Found 51 violated cliques. Removed 499 nodes from graph.
+pre-processed graph - part 2 : n 131 e 1922 - minD 0 maxD 35 smallD 44
+bk took 0.01 seconds
+clique extension took 0.140 seconds.
+done in 0.000 seconds
+round 2 : def separated 95 cuts in 0.2800 seconds. dual limit now: 54.4879 time: 2.270
+resolving relaxation ... solved in 1.320 after adding cuts of pass 2. dual limit now 56.0738
+
+separating ... pre-processed graph - part 1 : n 587 e 4472 - minD 1 maxD 41 smallD 452
+Enumeration finished in 0.010 seconds. Found 43 violated cliques. Removed 452 nodes from graph.
+pre-processed graph - part 2 : n 135 e 2226 - minD 2 maxD 41 smallD 42
+bk took 0 seconds
+clique extension took 0.120 seconds.
+done in 0.000 seconds
+round 3 : def separated 80 cuts in 0.2300 seconds. dual limit now: 56.0738 time: 3.820
+resolving relaxation ... solved in 1.700 after adding cuts of pass 3. dual limit now 57.2294
+
+separating ... pre-processed graph - part 1 : n 640 e 5360 - minD 1 maxD 44 smallD 466
+Enumeration finished in 0.070 seconds. Found 31 violated cliques. Removed 466 nodes from graph.
+pre-processed graph - part 2 : n 174 e 2978 - minD 2 maxD 38 smallD 34
+bk took 0 seconds
+clique extension took 0.150 seconds.
+done in 0.000 seconds
+round 4 : def separated 97 cuts in 0.3500 seconds. dual limit now: 57.2294 time: 5.870
+resolving relaxation ... solved in 2.760 after adding cuts of pass 4. dual limit now 58.5029
+
+separating ... pre-processed graph - part 1 : n 596 e 5246 - minD 1 maxD 45 smallD 437
+Enumeration finished in 0.010 seconds. Found 16 violated cliques. Removed 437 nodes from graph.
+pre-processed graph - part 2 : n 159 e 3056 - minD 0 maxD 37 smallD 25
+bk took 0.01 seconds
+clique extension took 0.110 seconds.
+done in 0.000 seconds
+round 5 : def separated 72 cuts in 0.2300 seconds. dual limit now: 58.5029 time: 8.860
+resolving relaxation ... solved in 1.790 after adding cuts of pass 5. dual limit now 58.9703
+
+separating ... pre-processed graph - part 1 : n 608 e 6714 - minD 1 maxD 86 smallD 442
+Enumeration finished in 0.330 seconds. Found 14 violated cliques. Removed 442 nodes from graph.
+pre-processed graph - part 2 : n 166 e 4462 - minD 0 maxD 83 smallD 29
+bk took 0.01 seconds
+clique extension took 0.090 seconds.
+done in 0.000 seconds
+round 6 : def separated 54 cuts in 0.5000 seconds. dual limit now: 58.9703 time: 11.150
+resolving relaxation ... solved in 3.020 after adding cuts of pass 6. dual limit now 59.5202
+
+separating ... pre-processed graph - part 1 : n 671 e 9492 - minD 1 maxD 96 smallD 443
+Enumeration finished in 0.440 seconds. Found 7 violated cliques. Removed 443 nodes from graph.
+pre-processed graph - part 2 : n 228 e 7046 - minD 0 maxD 95 smallD 21
+bk took 0.02 seconds
+clique extension took 0.110 seconds.
+done in 0.000 seconds
+round 7 : def separated 65 cuts in 0.6700 seconds. dual limit now: 59.5202 time: 14.840
+resolving relaxation ... solved in 3.500 after adding cuts of pass 7. dual limit now 59.8849
+
+separating ... pre-processed graph - part 1 : n 705 e 9834 - minD 1 maxD 123 smallD 463
+Enumeration finished in 5.820 seconds. Found 11 violated cliques. Removed 463 nodes from graph.
+pre-processed graph - part 2 : n 242 e 7242 - minD 0 maxD 113 smallD 28
+bk took 0.01 seconds
+clique extension took 0.140 seconds.
+done in 0.000 seconds
+round 8 : def separated 78 cuts in 6.0800 seconds. dual limit now: 59.8849 time: 24.420
+resolving relaxation ... solved in 3.560 after adding cuts of pass 8. dual limit now 60.2882
+
+separating ... pre-processed graph - part 1 : n 684 e 11492 - minD 1 maxD 151 smallD 415
+Enumeration finished in 1.510 seconds. Found 5 violated cliques. Removed 415 nodes from graph.
+pre-processed graph - part 2 : n 269 e 9174 - minD 1 maxD 144 smallD 32
+bk took 0.01 seconds
+clique extension took 0.080 seconds.
+done in 0.000 seconds
+round 9 : def separated 48 cuts in 1.6800 seconds. dual limit now: 60.2882 time: 29.660
+resolving relaxation ... solved in 3.900 after adding cuts of pass 9. dual limit now 60.6108
+
+separating ... pre-processed graph - part 1 : n 736 e 11822 - minD 1 maxD 143 smallD 461
+Enumeration finished in 3.250 seconds. Found 10 violated cliques. Removed 461 nodes from graph.
+pre-processed graph - part 2 : n 275 e 9066 - minD 0 maxD 142 smallD 24
+bk took 0.02 seconds
+clique extension took 0.110 seconds.
+done in 0.000 seconds
+round 10 : def separated 71 cuts in 3.5100 seconds. dual limit now: 60.6108 time: 37.070
+resolving relaxation ... solved in 3.620 after adding cuts of pass 10. dual limit now 60.8306
+
+
+End of root node relaxation. Dual limit: 60.8306 time: 40.690 

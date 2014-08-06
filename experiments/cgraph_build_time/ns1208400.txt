@@ -1,0 +1,15 @@
+writeclqw
+
+loaded ns1208400 
+	2883 variables (2880 integer) 4289 rows 81746 nz
+
+osi_cgraph took 0.040 seconds.
+original cgraph dimensions: n: 2883 m: 196776 t: 0.040
+solving relaxation ... Initial dual bound 0
+solved in 0.850
+original conflict graph : n 2883 e 196776 - minD 0 maxD 81 smallD 3
+
+End of root node relaxation. Dual limit: 0 time: 0.850 
+pre-processed conflict graph : n 424 e 3148 - minD 2 maxD 17 smallD 421
+
+File name: ns1208400

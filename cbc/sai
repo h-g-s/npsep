@@ -1,0 +1,333 @@
+Flat profile:
+
+Each sample counts as 0.01 seconds.
+  %   cumulative   self              self     total           
+ time   seconds   seconds    calls   s/call   s/call  name    
+ 30.86      1.37     1.37    22026     0.00     0.00  vint_set_init
+ 18.47      2.19     0.82                             cd_conflict_order_i
+ 14.64      2.84     0.65                             vint_set_cmp_int
+ 10.81      3.32     0.48                             clq_set_load
+  7.43      3.65     0.33                             cd_conflict_order_j
+  4.51      3.85     0.20      124     0.00     0.01  cd_process_row
+  2.70      3.97     0.12 22567524     0.00     0.00  cgraph_conflicting_nodes
+  2.48      4.08     0.11    67688     0.00     0.00  cgraph_add_node_conflicts_no_sim
+  2.03      4.17     0.09       93     0.00     0.01  cd_add_conflicts_cgraph
+  1.80      4.25     0.08 22619354     0.00     0.00  vint_set_find
+  1.80      4.33     0.08   124810     0.00     0.00  vint_set_add
+  0.45      4.35     0.02 15280170     0.00     0.00  vint_set_get_elements
+  0.45      4.37     0.02       31     0.00     0.00  cgraph_add_clique
+  0.45      4.39     0.02                             cgraph_print
+  0.23      4.40     0.01 11283762     0.00     0.00  cd_check_cv_cap
+  0.23      4.41     0.01   124779     0.00     0.00  cgraph_check_node_size
+  0.23      4.42     0.01      124     0.00     0.00  cbc_get_row_info(void*, int, double*, double*, int*, int*, double*)
+  0.23      4.43     0.01                             cd_free
+  0.23      4.44     0.01                             vint_set_int_find
+  0.00      4.44     0.00 15280170     0.00     0.00  vint_set_size
+  0.00      4.44     0.00   182304     0.00     0.00  CoinPackedMatrix::getVectorLast(int) const
+  0.00      4.44     0.00    60415     0.00     0.00  xrealloc
+  0.00      4.44     0.00    21126     0.00     0.00  xmalloc
+  0.00      4.44     0.00    10757     0.00     0.00  cbc_get_col_info(void*, int, double*, double*, char*)
+  0.00      4.44     0.00      248     0.00     0.00  CoinPackedMatrix::getVectorFirst(int) const
+  0.00      4.44     0.00       31     0.00     0.00  cgraph_check_clique_size
+  0.00      4.44     0.00        1     0.00     0.00  global constructors keyed to cbc_get_num_cols(void*)
+  0.00      4.44     0.00        1     0.00     0.00  global constructors keyed to MIPSep::MIPSep(_CGraph*, double const*, std::vector<std::string, std::allocator<std::string> > const&, char const*)
+  0.00      4.44     0.00        1     0.00     0.00  global constructors keyed to MPName::MPName(char const*, char)
+  0.00      4.44     0.00        1     0.00     0.00  global constructors keyed to MSepEvent::MSepEvent(CbcModel*, _CGraph*, std::set<std::set<int, std::less<int>, std::allocator<int> >, std::less<std::set<int, std::less<int>, std::allocator<int> > >, std::allocator<std::set<int, std::less<int>, std::allocator<int> > > >*, int const*)
+  0.00      4.44     0.00        1     0.00     0.00  global constructors keyed to main
+  0.00      4.44     0.00        1     0.00     0.00  cbc_get_num_cols(void*)
+  0.00      4.44     0.00        1     0.00     0.00  cbc_get_num_rows(void*)
+  0.00      4.44     0.00        1     0.00     0.00  applyInversion
+  0.00      4.44     0.00        1     0.00     0.75  cd_create
+  0.00      4.44     0.00        1     0.00     0.00  cd_update_col_info
+  0.00      4.44     0.00        1     0.00     1.37  cgraph_create
+  0.00      4.44     0.00        1     0.00     0.00  getFileName
+
+ %         the percentage of the total running time of the
+time       program used by this function.
+
+cumulative a running sum of the number of seconds accounted
+ seconds   for by this function and those listed above it.
+
+ self      the number of seconds accounted for by this
+seconds    function alone.  This is the major sort for this
+           listing.
+
+calls      the number of times this function was invoked, if
+           this function is profiled, else blank.
+ 
+ self      the average number of milliseconds spent in this
+ms/call    function per call, if this function is profiled,
+	   else blank.
+
+ total     the average number of milliseconds spent in this
+ms/call    function and its descendents per call, if this 
+	   function is profiled, else blank.
+
+name       the name of the function.  This is the minor sort
+           for this listing. The index shows the location of
+	   the function in the gprof listing. If the index is
+	   in parenthesis it shows where it would appear in
+	   the gprof listing if it were to be printed.
+
+		     Call graph (explanation follows)
+
+
+granularity: each sample hit covers 2 byte(s) for 0.23% of 4.44 seconds
+
+index % time    self  children    called     name
+                                                 <spontaneous>
+[1]     47.7    0.00    2.12                 main [1]
+                0.00    1.37       1/1           cgraph_create [3]
+                0.00    0.75       1/1           cd_create [6]
+                0.00    0.00       1/1           getFileName [29]
+-----------------------------------------------
+                1.37    0.00   22026/22026       cgraph_create [3]
+[2]     30.9    1.37    0.00   22026         vint_set_init [2]
+-----------------------------------------------
+                0.00    1.37       1/1           main [1]
+[3]     30.9    0.00    1.37       1         cgraph_create [3]
+                1.37    0.00   22026/22026       vint_set_init [2]
+                0.00    0.00       6/21126       xmalloc [25]
+-----------------------------------------------
+                                                 <spontaneous>
+[4]     18.5    0.82    0.00                 cd_conflict_order_i [4]
+-----------------------------------------------
+                0.20    0.55     124/124         cd_create [6]
+[5]     16.9    0.20    0.55     124         cd_process_row [5]
+                0.09    0.38      93/93          cd_add_conflicts_cgraph [9]
+                0.02    0.04      31/31          cgraph_add_clique [15]
+                0.01    0.00 11283762/11283762     cd_check_cv_cap [18]
+                0.01    0.00     124/124         cbc_get_row_info(void*, int, double*, double*, int*, int*, double*) [22]
+                0.00    0.00      93/67688       cgraph_add_node_conflicts_no_sim [10]
+                0.00    0.00      93/124810      vint_set_add [14]
+-----------------------------------------------
+                0.00    0.75       1/1           main [1]
+[6]     16.9    0.00    0.75       1         cd_create [6]
+                0.20    0.55     124/124         cd_process_row [5]
+                0.00    0.00       9/21126       xmalloc [25]
+                0.00    0.00       1/1           cbc_get_num_cols(void*) [85]
+                0.00    0.00       1/1           cbc_get_num_rows(void*) [86]
+                0.00    0.00       1/1           cd_update_col_info [28]
+-----------------------------------------------
+                                                 <spontaneous>
+[7]     14.6    0.65    0.00                 vint_set_cmp_int [7]
+-----------------------------------------------
+                                                 <spontaneous>
+[8]     10.8    0.48    0.00                 clq_set_load [8]
+-----------------------------------------------
+                0.09    0.38      93/93          cd_process_row [5]
+[9]     10.5    0.09    0.38      93         cd_add_conflicts_cgraph [9]
+                0.11    0.23   67595/67688       cgraph_add_node_conflicts_no_sim [10]
+                0.04    0.00   67595/124810      vint_set_add [14]
+-----------------------------------------------
+                0.00    0.00      93/67688       cd_process_row [5]
+                0.11    0.23   67595/67688       cd_add_conflicts_cgraph [9]
+[10]     7.6    0.11    0.23   67688         cgraph_add_node_conflicts_no_sim [10]
+                0.12    0.10 22567524/22567524     cgraph_conflicting_nodes [12]
+                0.01    0.00   67688/124779      cgraph_check_node_size [19]
+-----------------------------------------------
+                                                 <spontaneous>
+[11]     7.4    0.33    0.00                 cd_conflict_order_j [11]
+-----------------------------------------------
+                0.12    0.10 22567524/22567524     cgraph_add_node_conflicts_no_sim [10]
+[12]     5.0    0.12    0.10 22567524         cgraph_conflicting_nodes [12]
+                0.08    0.00 22619354/22619354     vint_set_find [13]
+                0.02    0.00 15280170/15280170     vint_set_get_elements [16]
+                0.00    0.00 15280170/15280170     vint_set_size [23]
+-----------------------------------------------
+                0.08    0.00 22619354/22619354     cgraph_conflicting_nodes [12]
+[13]     1.8    0.08    0.00 22619354         vint_set_find [13]
+-----------------------------------------------
+                0.00    0.00      93/124810      cd_process_row [5]
+                0.04    0.00   57122/124810      cgraph_add_clique [15]
+                0.04    0.00   67595/124810      cd_add_conflicts_cgraph [9]
+[14]     1.8    0.08    0.00  124810         vint_set_add [14]
+                0.00    0.00   60399/60415       xrealloc [24]
+                0.00    0.00   21111/21126       xmalloc [25]
+-----------------------------------------------
+                0.02    0.04      31/31          cd_process_row [5]
+[15]     1.4    0.02    0.04      31         cgraph_add_clique [15]
+                0.04    0.00   57122/124810      vint_set_add [14]
+                0.00    0.00   57091/124779      cgraph_check_node_size [19]
+                0.00    0.00      31/31          cgraph_check_clique_size [26]
+-----------------------------------------------
+                0.02    0.00 15280170/15280170     cgraph_conflicting_nodes [12]
+[16]     0.5    0.02    0.00 15280170         vint_set_get_elements [16]
+-----------------------------------------------
+                                                 <spontaneous>
+[17]     0.5    0.02    0.00                 cgraph_print [17]
+-----------------------------------------------
+                0.01    0.00 11283762/11283762     cd_process_row [5]
+[18]     0.2    0.01    0.00 11283762         cd_check_cv_cap [18]
+                0.00    0.00      16/60415       xrealloc [24]
+-----------------------------------------------
+                0.00    0.00   57091/124779      cgraph_add_clique [15]
+                0.01    0.00   67688/124779      cgraph_add_node_conflicts_no_sim [10]
+[19]     0.2    0.01    0.00  124779         cgraph_check_node_size [19]
+-----------------------------------------------
+                                                 <spontaneous>
+[20]     0.2    0.01    0.00                 cd_free [20]
+-----------------------------------------------
+                                                 <spontaneous>
+[21]     0.2    0.01    0.00                 vint_set_int_find [21]
+-----------------------------------------------
+                0.01    0.00     124/124         cd_process_row [5]
+[22]     0.2    0.01    0.00     124         cbc_get_row_info(void*, int, double*, double*, int*, int*, double*) [22]
+                0.00    0.00  182304/182304      CoinPackedMatrix::getVectorLast(int) const [77]
+                0.00    0.00     248/248         CoinPackedMatrix::getVectorFirst(int) const [79]
+-----------------------------------------------
+                0.00    0.00 15280170/15280170     cgraph_conflicting_nodes [12]
+[23]     0.0    0.00    0.00 15280170         vint_set_size [23]
+-----------------------------------------------
+                0.00    0.00      16/60415       cd_check_cv_cap [18]
+                0.00    0.00   60399/60415       vint_set_add [14]
+[24]     0.0    0.00    0.00   60415         xrealloc [24]
+-----------------------------------------------
+                0.00    0.00       6/21126       cgraph_create [3]
+                0.00    0.00       9/21126       cd_create [6]
+                0.00    0.00   21111/21126       vint_set_add [14]
+[25]     0.0    0.00    0.00   21126         xmalloc [25]
+-----------------------------------------------
+                0.00    0.00      31/31          cgraph_add_clique [15]
+[26]     0.0    0.00    0.00      31         cgraph_check_clique_size [26]
+-----------------------------------------------
+                0.00    0.00       1/1           getFileName [29]
+[27]     0.0    0.00    0.00       1         applyInversion [27]
+-----------------------------------------------
+                0.00    0.00       1/1           cd_create [6]
+[28]     0.0    0.00    0.00       1         cd_update_col_info [28]
+                0.00    0.00   10757/10757       cbc_get_col_info(void*, int, double*, double*, char*) [78]
+-----------------------------------------------
+                0.00    0.00       1/1           main [1]
+[29]     0.0    0.00    0.00       1         getFileName [29]
+                0.00    0.00       1/1           applyInversion [27]
+-----------------------------------------------
+                0.00    0.00  182304/182304      cbc_get_row_info(void*, int, double*, double*, int*, int*, double*) [22]
+[77]     0.0    0.00    0.00  182304         CoinPackedMatrix::getVectorLast(int) const [77]
+-----------------------------------------------
+                0.00    0.00   10757/10757       cd_update_col_info [28]
+[78]     0.0    0.00    0.00   10757         cbc_get_col_info(void*, int, double*, double*, char*) [78]
+-----------------------------------------------
+                0.00    0.00     248/248         cbc_get_row_info(void*, int, double*, double*, int*, int*, double*) [22]
+[79]     0.0    0.00    0.00     248         CoinPackedMatrix::getVectorFirst(int) const [79]
+-----------------------------------------------
+                0.00    0.00       1/1           __do_global_ctors_aux [181]
+[80]     0.0    0.00    0.00       1         global constructors keyed to cbc_get_num_cols(void*) [80]
+-----------------------------------------------
+                0.00    0.00       1/1           __do_global_ctors_aux [181]
+[81]     0.0    0.00    0.00       1         global constructors keyed to MIPSep::MIPSep(_CGraph*, double const*, std::vector<std::string, std::allocator<std::string> > const&, char const*) [81]
+-----------------------------------------------
+                0.00    0.00       1/1           __do_global_ctors_aux [181]
+[82]     0.0    0.00    0.00       1         global constructors keyed to MPName::MPName(char const*, char) [82]
+-----------------------------------------------
+                0.00    0.00       1/1           __do_global_ctors_aux [181]
+[83]     0.0    0.00    0.00       1         global constructors keyed to MSepEvent::MSepEvent(CbcModel*, _CGraph*, std::set<std::set<int, std::less<int>, std::allocator<int> >, std::less<std::set<int, std::less<int>, std::allocator<int> > >, std::allocator<std::set<int, std::less<int>, std::allocator<int> > > >*, int const*) [83]
+-----------------------------------------------
+                0.00    0.00       1/1           __do_global_ctors_aux [181]
+[84]     0.0    0.00    0.00       1         global constructors keyed to main [84]
+-----------------------------------------------
+                0.00    0.00       1/1           cd_create [6]
+[85]     0.0    0.00    0.00       1         cbc_get_num_cols(void*) [85]
+-----------------------------------------------
+                0.00    0.00       1/1           cd_create [6]
+[86]     0.0    0.00    0.00       1         cbc_get_num_rows(void*) [86]
+-----------------------------------------------
+
+ This table describes the call tree of the program, and was sorted by
+ the total amount of time spent in each function and its children.
+
+ Each entry in this table consists of several lines.  The line with the
+ index number at the left hand margin lists the current function.
+ The lines above it list the functions that called this function,
+ and the lines below it list the functions this one called.
+ This line lists:
+     index	A unique number given to each element of the table.
+		Index numbers are sorted numerically.
+		The index number is printed next to every function name so
+		it is easier to look up where the function in the table.
+
+     % time	This is the percentage of the `total' time that was spent
+		in this function and its children.  Note that due to
+		different viewpoints, functions excluded by options, etc,
+		these numbers will NOT add up to 100%.
+
+     self	This is the total amount of time spent in this function.
+
+     children	This is the total amount of time propagated into this
+		function by its children.
+
+     called	This is the number of times the function was called.
+		If the function called itself recursively, the number
+		only includes non-recursive calls, and is followed by
+		a `+' and the number of recursive calls.
+
+     name	The name of the current function.  The index number is
+		printed after it.  If the function is a member of a
+		cycle, the cycle number is printed between the
+		function's name and the index number.
+
+
+ For the function's parents, the fields have the following meanings:
+
+     self	This is the amount of time that was propagated directly
+		from the function into this parent.
+
+     children	This is the amount of time that was propagated from
+		the function's children into this parent.
+
+     called	This is the number of times this parent called the
+		function `/' the total number of times the function
+		was called.  Recursive calls to the function are not
+		included in the number after the `/'.
+
+     name	This is the name of the parent.  The parent's index
+		number is printed after it.  If the parent is a
+		member of a cycle, the cycle number is printed between
+		the name and the index number.
+
+ If the parents of the function cannot be determined, the word
+ `<spontaneous>' is printed in the `name' field, and all the other
+ fields are blank.
+
+ For the function's children, the fields have the following meanings:
+
+     self	This is the amount of time that was propagated directly
+		from the child into the function.
+
+     children	This is the amount of time that was propagated from the
+		child's children to the function.
+
+     called	This is the number of times the function called
+		this child `/' the total number of times the child
+		was called.  Recursive calls by the child are not
+		listed in the number after the `/'.
+
+     name	This is the name of the child.  The child's index
+		number is printed after it.  If the child is a
+		member of a cycle, the cycle number is printed
+		between the name and the index number.
+
+ If there are any cycles (circles) in the call graph, there is an
+ entry for the cycle-as-a-whole.  This entry shows who called the
+ cycle (as parents) and the members of the cycle (as children.)
+ The `+' recursive calls entry shows the number of function calls that
+ were internal to the cycle, and the calls entry for each member shows,
+ for that member, how many times it was called from other members of
+ the cycle.
+
+
+Index by function name
+
+  [80] global constructors keyed to cbc_get_num_cols(void*) (cbc_hooks.cpp) [18] cd_check_cv_cap [17] cgraph_print
+  [81] global constructors keyed to MIPSep::MIPSep(_CGraph*, double const*, std::vector<std::string, std::allocator<std::string> > const&, char const*) (MIPSep.cpp) [4] cd_conflict_order_i [8] clq_set_load
+  [82] global constructors keyed to MPName::MPName(char const*, char) (mpName.cpp) [11] cd_conflict_order_j [29] getFileName
+  [83] global constructors keyed to MSepEvent::MSepEvent(CbcModel*, _CGraph*, std::set<std::set<int, std::less<int>, std::allocator<int> >, std::less<std::set<int, std::less<int>, std::allocator<int> > >, std::allocator<std::set<int, std::less<int>, std::allocator<int> > > >*, int const*) (MSepEvent.cpp) [6] cd_create [14] vint_set_add
+  [84] global constructors keyed to main (main.cpp) [20] cd_free [7] vint_set_cmp_int
+  [78] cbc_get_col_info(void*, int, double*, double*, char*) [5] cd_process_row [13] vint_set_find
+  [85] cbc_get_num_cols(void*) [28] cd_update_col_info    [16] vint_set_get_elements
+  [86] cbc_get_num_rows(void*) [15] cgraph_add_clique      [2] vint_set_init
+  [22] cbc_get_row_info(void*, int, double*, double*, int*, int*, double*) [10] cgraph_add_node_conflicts_no_sim [21] vint_set_int_find
+  [77] CoinPackedMatrix::getVectorLast(int) const [26] cgraph_check_clique_size [23] vint_set_size
+  [79] CoinPackedMatrix::getVectorFirst(int) const [19] cgraph_check_node_size [25] xmalloc
+  [27] applyInversion         [12] cgraph_conflicting_nodes [24] xrealloc
+   [9] cd_add_conflicts_cgraph [3] cgraph_create

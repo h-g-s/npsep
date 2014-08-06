@@ -1,0 +1,27 @@
+using at max 0 two mir passes.
+using at max 0 gomory passes.
+Coin0008I aflow40b read with 0 errors
+cbcroot: root node relaxation and clique cuts
+
+loaded aflow40b 
+	2728 variables (1364 integer) 1442 rows
+
+osi_cgraph took 0.010 seconds.
+Clique Separation Parameters:
+	max depth         : 3
+	max passes        : 9999
+	minimum violation : 0.0200
+	minimum frac. val : 0.0010
+	extend cliques    : 0
+	enum max. degree  : 10
+	verbose           : 1
+	maximum time bk   : 20
+solving relaxation ... Initial dual bound 1005.66
+solved in 0.070
+verbose mode now 1.
+pre-processed graph - part 1 : n 38 e 44 - minD 1 maxD 2 smallD 38
+Enumeration finished in 0.000 seconds. Found 0 violated cliques. Removed 38 nodes from graph.
+pre-processed graph - part 2 - no nodes left. all cliques have been enumerated.
+round 1 : def separated 0 cuts in 0.0000 seconds. dual limit now: 1005.66 time: 0.070
+
+End of root node relaxation. Dual limit: 1005.66 time: 0.070 

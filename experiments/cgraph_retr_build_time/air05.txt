@@ -1,0 +1,8 @@
+writeclqw
+
+loaded air05 
+	7195 variables (7195 integer) 426 rows 52121 nz
+
+
+creating conflict graph ... done in 1.1100 seconds.
+original cgraph dimensions: n: 7195 m: 5040116 t: 1.110

@@ -1,0 +1,26 @@
+using at max 0 two mir passes.
+using at max 0 gomory passes.
+Coin0008I iis-bupa-cov read with 0 errors
+cbcroot: root node relaxation and clique cuts
+
+loaded iis-bupa-cov 
+	345 variables (345 integer) 4803 rows
+
+osi_cgraph took 0.000 seconds.
+Clique Separation Parameters:
+	max depth         : 3
+	max passes        : 9999
+	minimum violation : 0.0200
+	minimum frac. val : 0.0010
+	extend cliques    : 0
+	enum max. degree  : 10
+	verbose           : 1
+	maximum time bk   : 20
+solving relaxation ... Initial dual bound 26.4972
+solved in 0.330
+verbose mode now 1.
+pre-processed graph - part 1 : n 0 e 0 - minD 2147483647 maxD 0 smallD 0
+pre-processed graph - part 2 - no nodes left. all cliques have been enumerated.
+round 1 : def separated 0 cuts in 0.0000 seconds. dual limit now: 26.4972 time: 0.330
+
+End of root node relaxation. Dual limit: 26.4972 time: 0.330 
