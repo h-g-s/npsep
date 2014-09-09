@@ -35,6 +35,12 @@ using namespace std;
 
 const double LARGE_CONST = std::min( DBL_MAX/10.0, 1e20 );
 
+double maxRowTime = 0.0;
+int maxRowTimeIdx = -1;
+int activePairwise = 0, activeReadyToUse = 0, inactivePairwise = 0,
+    inactiveReadyToUse = 0, mixedPairwise = 0;
+int success = 1;
+
 struct sort_sec_pair
 {
     bool operator()(const std::pair<int,int> &left, const std::pair<int,int> &right)
@@ -64,17 +70,17 @@ int compute_row_priority( OsiSolverInterface *lp, const int r );
 
 CGraph *osi_build_cgraph( void *_lp )
 {
-    clock_t start = clock();
+    clock_t start = clock(), end;
+    double cpuTime;
+
     OsiSolverInterface *lp = (OsiSolverInterface *)_lp;
 
     if (lp->getNumIntegers()<2)
         return 0;
 
-    int cgraphSize = lp->getNumCols();
-#ifdef CONSIDER_BINARY_COMPLEMENT
-    cgraphSize *= 2;
-    printf("cgraph: considering binary complement.\n");
-#endif
+    int cgraphSize = lp->getNumCols() * 2; //considering binary complement
+    									  //using extra memory to facilitate indexing
+
     CGraph *cgraph = cgraph_create( cgraphSize );
     const char *ctype = lp->getColType();
     const CoinPackedMatrix *M = lp->getMatrixByRow();
@@ -97,6 +103,7 @@ CGraph *osi_build_cgraph( void *_lp )
 
     for(idxRow = 0; idxRow < nRows; idxRow++)
     {
+        clock_t rowStart = clock();
 #define FIXED_IN_ZERO( idx ) ( (fabs(colLb[idx])<EPS) && (fabs(colUb[idx])<EPS) )
         const CoinShallowPackedVector &row = M->getVector(idxRow);
         const int *idx = row.getIndices();
@@ -105,11 +112,20 @@ CGraph *osi_build_cgraph( void *_lp )
         double minCoef = numeric_limits<double>::max();
         double maxCoef = -1.0 * numeric_limits<double>::max();
         int nInts = 0; // number of integer variables
+        int nBools = 0; // number of binary variables
         int nPos  = 0; // variables which may assume only zero or some positive value
         int nNeg  = 0; // variables which may assume negative values
 
         if ( (row.getNumElements()<2) || (fabs(rhs[idxRow])>=LARGE_CONST) )
             continue;
+
+        end = clock();
+        cpuTime = ((double) (end - start)) / CLOCKS_PER_SEC;
+        if(cpuTime > 60.0)
+        {
+            success = 0;
+            break;
+        }
 
         if ( sense[idxRow] == 'R' )  // lets not consider ranged constraints by now
         {
@@ -123,18 +139,18 @@ CGraph *osi_build_cgraph( void *_lp )
         confS.clear();
 #endif /* DEBUG_CONF */
 
-#ifdef CONSIDER_BINARY_COMPLEMENT
         /* inserting trivial conflicts: variable-complement */
         for(j = 0; j < row.getNumElements(); j++)
         {
             const int cidx = idx[j];
+            if(ctype[cidx] != 1) //consider only binary variables
+            	continue;
             cvec.push_back( pair<int, int>(cidx, cidx + nCols) );
 #ifdef DEBUG_CONF
-            /*newConflicts++;
-            confS.push_back( pair<int,int>(cidx, cidx + nCols) );*/
+            newConflicts++;
+            confS.push_back( pair<int,int>(cidx, cidx + nCols) );
 #endif /* DEBUG_CONF */
         }
-#endif /* CONSIDER_BINARY_COMPLEMENT */
 
         /* checking number of integers and limits for variables */
         double mult = 1.0;
@@ -151,7 +167,11 @@ CGraph *osi_build_cgraph( void *_lp )
                 continue;
 
             if (ctype[cidx])
+            {
                 nInts++;
+                if(ctype[cidx] == 1)
+                	nBools++;
+            }
 
             /* variable which only accepts positive (or zero) value */
             if ( colLb[cidx] >= -EPS )
@@ -186,7 +206,8 @@ CGraph *osi_build_cgraph( void *_lp )
                 (minCoef>EPS) && ((sense[idxRow]=='E') || (sense[idxRow]=='L'))
                 && (nInts==row.getNumElements()) && (nPos==row.getNumElements()) )
         {
-        	printf("Row: %s \t special case: ready to use cliques!\n", lp->getRowName(idxRow).c_str());
+        	//printf("Row: %s \t special case: ready to use cliques!\n", lp->getRowName(idxRow).c_str());
+            activeReadyToUse++;
             processClique( row.getNumElements(), (const int *)idx, cgraph, cvec, colLb, colUb );
         }
         /* another special case: x1 + x2 + ... + xn {>=, =} n - 1*/
@@ -194,13 +215,14 @@ CGraph *osi_build_cgraph( void *_lp )
         		&& ((DBL_EQUAL( maxCoef, 1.0 ) && (sense[idxRow]=='E')) || 
         		   (DBL_EQUAL( maxCoef, -1.0 ) && (sense[idxRow]=='G')))
     			&& DBL_EQUAL( rhs[idxRow], ((double)(row.getNumElements()-1)) )
-            	&& (nInts==row.getNumElements()) && (nPos==row.getNumElements()) )
+            	&& (nBools==row.getNumElements()) )
         {
         	int compIdxs[row.getNumElements()];
         	for(int i = 0; i < row.getNumElements(); i++)
         		compIdxs[i] = idx[i] + nCols;
         	processClique( row.getNumElements(), (const int *)compIdxs, cgraph, cvec, colLb, colUb );
-        	printf("Row: %s \t special case: ready to use cliques (complement of variables)!\n", lp->getRowName(idxRow).c_str());
+        	//printf("Row: %s \t special case: ready to use cliques (complement of variables)!\n", lp->getRowName(idxRow).c_str());
+            inactiveReadyToUse++;
         }
         else
         {
@@ -215,6 +237,14 @@ CGraph *osi_build_cgraph( void *_lp )
                     continue;
 
                 const double pos1 = unitaryContribution( coefs[j1], sense[idxRow], colLb[cidx1], colUb[cidx1] );
+
+                end = clock();
+                cpuTime = ((double) (end - start)) / CLOCKS_PER_SEC;
+                if(cpuTime > 60.0)
+                {
+                    success = 0;
+                    break;
+                }
 
                 /* variable cannot be activated anyway, this is the case of integer variables
                  * with strictly positive lower bounds, e.g. miplib 2010 30n20b8, variable s4 */
@@ -233,6 +263,14 @@ CGraph *osi_build_cgraph( void *_lp )
                     if ( pos2-EPS >= thisRhs )
                         continue;
 
+                    end = clock();
+                    cpuTime = ((double) (end - start)) / CLOCKS_PER_SEC;
+                    if(cpuTime > 60.0)
+                    {
+                        success = 0;
+                        break;
+                    }
+
                     /* recalculating thisRhs, excluding fixed variables */
                     const double neg1 = mostNegativeContribution( coefs[j1], sense[idxRow], colLb[cidx1], colUb[cidx1] );
                     const double neg2 = mostNegativeContribution( coefs[j2], sense[idxRow], colLb[cidx2], colUb[cidx2] );
@@ -241,16 +279,20 @@ CGraph *osi_build_cgraph( void *_lp )
                     if (pos1+pos2>newThisRhs+0.001)
                     {
                         cvec.push_back( pair<int,int>(cidx1,cidx2) );
+                        activePairwise++;
 #ifdef DEBUG_CONF
                         newConflicts++;
                         confS.push_back( pair<int,int>(cidx1,cidx2) );
 #endif
                     }
 
-#ifdef CONSIDER_BINARY_COMPLEMENT
+                    if(ctype[cidx1] != 1 || ctype[cidx2] != 1)
+                    	continue;
+
                     if (pos1>newThisRhs+0.001) /* cidx1 = 1 and cidx2 = 0 */
                     {
                         cvec.push_back( pair<int,int>(cidx1,cidx2+nCols) );
+                        mixedPairwise++;
 #ifdef DEBUG_CONF
                         newConflicts++;
                         confS.push_back( pair<int,int>(cidx1,cidx2+nCols) );
@@ -260,6 +302,7 @@ CGraph *osi_build_cgraph( void *_lp )
                     if (pos2>newThisRhs+0.001) /* cidx1 = 0 and cidx2 = 1 */
                     {
                         cvec.push_back( pair<int,int>(cidx1+nCols,cidx2) );
+                        mixedPairwise++;
 #ifdef DEBUG_CONF
                         newConflicts++;
                         confS.push_back( pair<int,int>(cidx1+nCols,cidx2) );
@@ -269,12 +312,12 @@ CGraph *osi_build_cgraph( void *_lp )
                     if (newThisRhs<-EPS) /* cidx1 = 0 and cidx2 = 0 */
                     {
                         cvec.push_back( pair<int,int>(cidx1+nCols,cidx2+nCols) );
+                        inactivePairwise++;
 #ifdef DEBUG_CONF
                         newConflicts++;
                         confS.push_back( pair<int,int>(cidx1+nCols,cidx2+nCols) );
 #endif
                     }
-#endif /* CONSIDER_BINARY_COMPLEMENT */
                 }
                 fetchConflicts( cvec, false, cgraph, neighs );
             }
@@ -293,14 +336,22 @@ CGraph *osi_build_cgraph( void *_lp )
         }
 #endif
 #undef FIXED_IN_ZERO
+        clock_t rowEnd = clock();
+        double rowTime = ((double) (rowEnd - rowStart)) / CLOCKS_PER_SEC;
+
+        if(rowTime > maxRowTime)
+        {
+            maxRowTime = rowTime;
+            maxRowTimeIdx = idxRow;
+        }
     }
 
     fetchConflicts( cvec, true, cgraph, neighs );
 
-    clock_t end = clock();
+    end = clock();
 
-    double ftime = ((double(end-start))/((double)CLOCKS_PER_SEC));
-    printf("osi_cgraph took %.3f seconds.\n", ftime);
+    //double ftime = ((double(end-start))/((double)CLOCKS_PER_SEC));
+    //printf("osi_cgraph took %.3f seconds.\n", ftime);
 
     return cgraph;
 }
@@ -319,11 +370,7 @@ void processClique( const int n, const int *idx, CGraph *cgraph, vector< pair<in
     else
     {
         int i1, i2, nm1 = n-1;
-        int nCols = cgraph_size(cgraph);
-
-#ifdef CONSIDER_BINARY_COMPLEMENT
-        nCols = nCols / 2;
-#endif /* CONSIDER_BINARY_COMPLEMENT */
+        int nCols = cgraph_size(cgraph) / 2; //divide by 2 to eliminate the complement of the variables
 
         for ( i1=0 ; (i1<nm1) ; ++i1 )
         {
