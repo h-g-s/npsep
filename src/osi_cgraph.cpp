@@ -37,8 +37,8 @@ const double LARGE_CONST = std::min( DBL_MAX/10.0, 1e20 );
 
 double maxRowTime = 0.0;
 int maxRowTimeIdx = -1;
-int activePairwise = 0, activeReadyToUse = 0, inactivePairwise = 0,
-    inactiveReadyToUse = 0, mixedPairwise = 0;
+unsigned long int activePairwise = 0L, activeReadyToUse = 0L, inactivePairwise = 0L,
+    inactiveReadyToUse = 0L, mixedPairwise = 0L;
 int success = 1;
 
 struct sort_sec_pair

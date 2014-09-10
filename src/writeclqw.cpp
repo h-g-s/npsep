@@ -82,7 +82,7 @@ int main( int argc, char **argv )
     end = clock();
     cpuTime = ((double(end - start))/((double)CLOCKS_PER_SEC));
 
-    printf("%s %d %d %d %d %d\n",fileName, activePairwise, activeReadyToUse
+    printf("%s %lu %lu %lu %lu %lu\n",fileName, activePairwise, activeReadyToUse
     							, inactivePairwise, inactiveReadyToUse, mixedPairwise);
 
 	printf("Total time: %.3f seconds\n", cpuTime);
