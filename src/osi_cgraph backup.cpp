@@ -37,8 +37,8 @@ const double LARGE_CONST = std::min( DBL_MAX/10.0, 1e20 );
 
 double maxRowTime = 0.0;
 int maxRowTimeIdx = -1;
-unsigned long int activePairwise = 0L, activeReadyToUse = 0L, inactivePairwise = 0L,
-    inactiveReadyToUse = 0L, mixedPairwise = 0L;
+int activePairwise = 0, activeReadyToUse = 0, inactivePairwise = 0,
+    inactiveReadyToUse = 0, mixedPairwise = 0;
 int success = 1;
 
 struct sort_sec_pair
@@ -78,9 +78,11 @@ CGraph *osi_build_cgraph( void *_lp )
     if (lp->getNumIntegers()<2)
         return 0;
 
-    int cgraphSize = lp->getNumCols() * 2; //considering binary complement
-    									  //using extra memory to facilitate indexing
-
+    int cgraphSize = lp->getNumCols();
+#ifdef CONSIDER_BINARY_COMPLEMENT
+    cgraphSize *= 2;
+    //printf("cgraph: considering binary complement.\n");
+#endif
     CGraph *cgraph = cgraph_create( cgraphSize );
     const char *ctype = lp->getColType();
     const CoinPackedMatrix *M = lp->getMatrixByRow();
@@ -112,7 +114,6 @@ CGraph *osi_build_cgraph( void *_lp )
         double minCoef = numeric_limits<double>::max();
         double maxCoef = -1.0 * numeric_limits<double>::max();
         int nInts = 0; // number of integer variables
-        int nBools = 0; // number of binary variables
         int nPos  = 0; // variables which may assume only zero or some positive value
         int nNeg  = 0; // variables which may assume negative values
 
@@ -139,18 +140,18 @@ CGraph *osi_build_cgraph( void *_lp )
         confS.clear();
 #endif /* DEBUG_CONF */
 
+#ifdef CONSIDER_BINARY_COMPLEMENT
         /* inserting trivial conflicts: variable-complement */
         for(j = 0; j < row.getNumElements(); j++)
         {
             const int cidx = idx[j];
-            if(ctype[cidx] != 1) //consider only binary variables
-            	continue;
             cvec.push_back( pair<int, int>(cidx, cidx + nCols) );
 #ifdef DEBUG_CONF
             newConflicts++;
             confS.push_back( pair<int,int>(cidx, cidx + nCols) );
 #endif /* DEBUG_CONF */
         }
+#endif /* CONSIDER_BINARY_COMPLEMENT */
 
         /* checking number of integers and limits for variables */
         double mult = 1.0;
@@ -167,11 +168,7 @@ CGraph *osi_build_cgraph( void *_lp )
                 continue;
 
             if (ctype[cidx])
-            {
                 nInts++;
-                if(ctype[cidx] == 1)
-                	nBools++;
-            }
 
             /* variable which only accepts positive (or zero) value */
             if ( colLb[cidx] >= -EPS )
@@ -215,7 +212,7 @@ CGraph *osi_build_cgraph( void *_lp )
         		&& ((DBL_EQUAL( maxCoef, 1.0 ) && (sense[idxRow]=='E')) || 
         		   (DBL_EQUAL( maxCoef, -1.0 ) && (sense[idxRow]=='G')))
     			&& DBL_EQUAL( rhs[idxRow], ((double)(row.getNumElements()-1)) )
-            	&& (nBools==row.getNumElements()) )
+            	&& (nInts==row.getNumElements()) && (nPos==row.getNumElements()) )
         {
         	int compIdxs[row.getNumElements()];
         	for(int i = 0; i < row.getNumElements(); i++)
@@ -286,9 +283,7 @@ CGraph *osi_build_cgraph( void *_lp )
 #endif
                     }
 
-                    if(ctype[cidx1] != 1 || ctype[cidx2] != 1)
-                    	continue;
-
+#ifdef CONSIDER_BINARY_COMPLEMENT
                     if (pos1>newThisRhs+0.001) /* cidx1 = 1 and cidx2 = 0 */
                     {
                         cvec.push_back( pair<int,int>(cidx1,cidx2+nCols) );
@@ -318,6 +313,7 @@ CGraph *osi_build_cgraph( void *_lp )
                         confS.push_back( pair<int,int>(cidx1+nCols,cidx2+nCols) );
 #endif
                     }
+#endif /* CONSIDER_BINARY_COMPLEMENT */
                 }
                 fetchConflicts( cvec, false, cgraph, neighs );
             }
@@ -370,7 +366,11 @@ void processClique( const int n, const int *idx, CGraph *cgraph, vector< pair<in
     else
     {
         int i1, i2, nm1 = n-1;
-        int nCols = cgraph_size(cgraph) / 2; //divide by 2 to eliminate the complement of the variables
+        int nCols = cgraph_size(cgraph);
+
+#ifdef CONSIDER_BINARY_COMPLEMENT
+        nCols = nCols / 2;
+#endif /* CONSIDER_BINARY_COMPLEMENT */
 
         for ( i1=0 ; (i1<nm1) ; ++i1 )
         {

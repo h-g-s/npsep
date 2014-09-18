@@ -31,207 +31,77 @@ using namespace std;
 
 void readLP( const char *fileName, OsiSolverInterface *solver );
 
-double fracPart( const double x );
-
-
 int main( int argc, char **argv )
 {
-   OsiSolverInterface *solver = NULL;
+	clock_t start = clock(), end, test;
+	double osiTime, recompTime, writeTime, totalTime, cpuTime;
 
-   OsiClpSolverInterface *realSolver = new OsiClpSolverInterface();
+    OsiSolverInterface *solver = NULL;
 
-   solver = (OsiSolverInterface*) realSolver;
+    OsiClpSolverInterface *realSolver = new OsiClpSolverInterface();
 
-   readLP( argv[1], solver );
+    solver = (OsiSolverInterface*) realSolver;
 
-   printf("writeclqw\n\n");
-   char problemName[ 256 ];
-   getFileName( problemName, argv[1] );
-   printf("loaded %s \n", problemName );
-   printf("\t%d variables (%d integer) %d rows %d nz\n\n", solver->getNumCols(), solver->getNumIntegers(), solver->getNumRows(), solver->getNumElements() );
+    readLP( argv[1], solver );
 
-   clock_t startOG = clock();
-   CGraph *cgraph = osi_build_cgraph( solver );
-   clock_t endOG = clock();
-   const double timeOG = ((double)(endOG-startOG)) / ((double)CLOCKS_PER_SEC);
-   
-   cgraph_recompute_degree( cgraph );
+    //printf("writeclqw\n\n");
+    char problemName[ 256 ];
+    getFileName( problemName, argv[1] );
+    /*printf("loaded %s \n", problemName );
+    printf("\t%d variables (%d integer) %d rows %d nz\n\n", solver->getNumCols(), solver->getNumIntegers(), solver->getNumRows(), solver->getNumElements() );*/
 
-   unsigned long int m = 0;
-   {
-      int i;
-      for ( i=0 ; (i<cgraph_size(cgraph)) ; ++i )
-         m+=cgraph_degree(cgraph,i);
-   }
+    CGraph *cgraph = osi_build_cgraph( solver );
+    osiTime = ((double(clock() - start))/((double)CLOCKS_PER_SEC));
+    printf("osi_cgraph took %.3f seconds.\n", osiTime);
 
-   /*
-   printf("original cgraph dimensions: n: %d m: %lu t: %.3f\n", cgraph_size(cgraph), m, timeOG );
+    printf("Recomputing degree...");
+    test = clock();
+    cgraph_recompute_degree( cgraph );
+    recompTime = ((double(clock() - test))/((double)CLOCKS_PER_SEC));
+    printf("Done in %.3f seconds\n", recompTime);
+    
+	//cgraph_print_summary( cgraph, "Conflict graph" );
 
-   {
-      char oname[256];
-      sprintf( oname, "%s_o.clwq", problemName );
+    if ( cgraph_size( cgraph ) == 0 )
+    {
+        printf("EMPTY conflict graph. exiting...\n");
+        exit(0);
+    }
 
-      cgraph_save( cgraph, oname );
-   }*/
-#ifdef DEBUG
-   // check new way to iterate through nodes
-   {
-      int i;
-      int nNodesInCliques = 0;
-      int *neighs = (int*) xmalloc( cgraph_size(cgraph)*1000 );
-      int *costs = (int*) xmalloc( cgraph_size(cgraph)*sizeof(int) );
-      for ( i=cgraph_size(cgraph)-1 ; (i>=0) ; --i )
-         costs[i] = cgraph_size(cgraph) - i + 5;
-      int nneighs = 0;
-      NeighIterator *nit = nit_create();
-      printf("checking...\n"); fflush(stdout);
-      for ( i=0 ; (i<cgraph_size(cgraph)) ; ++i )
-      {
-         printf("node %d degree %d \n" , i, cgraph_degree(cgraph, i)); fflush( stdout );  fflush( stderr );
-         nneighs = cgraph_get_all_conflicting( cgraph, i, neighs, cgraph_size(cgraph)*1000 );
-         nit_start( nit, cgraph, i, costs );
-         int *p = neighs+nneighs-1;
-         int n;
-         int nel = 0;
-         int j=0;
+    printf("Writing conflict graph...");
+    test = clock();
+    char fileName[256];
+    getFileName( fileName, argv[1] );
+    //printf("\nFile name: %s\n", fileName );
+    char outName[256];
+    sprintf( outName, "%s.clqw", fileName );
+    cgraph_save( cgraph, outName );
+    writeTime = ((double(clock() - test))/((double)CLOCKS_PER_SEC));
+    printf("Done in %.3f seconds\n", writeTime);
 
-         /*
-         printf("\n\n");
-         fflush(stdout); fflush(stderr);
-         printf("NEIGHS:");
-         for ( j=0 ; (j<nneighs ) ; ++j )
-            printf(" %d", neighs[j]);
-         fflush( stdout );  fflush( stderr );
-         printf("\n\nNEIG Its:");
- */
+    end = clock();
+    cpuTime = ((double(end - start))/((double)CLOCKS_PER_SEC));
 
-         p = neighs+nneighs-1;
-         while ( (n=nit_next(nit))!=INT_MAX )
-         {
-            //printf(" %d", n);
-   //         fflush( stdout );  fflush( stderr );
-            //printf("[%d %d %d %d ]\n", j, nneighs-j, *p, n ); fflush(stdout); fflush(stderr);
-            ++j;
-            assert(  (p>=neighs)  );
-            assert( p<neighs+nneighs );
-            assert( *p == n );
-            ++nel;
+    printf("%s %lu %lu %lu %lu %lu\n",fileName, activePairwise, activeReadyToUse
+    							, inactivePairwise, inactiveReadyToUse, mixedPairwise);
 
-            --p;
-            fflush( stdout );  fflush( stderr );
-         }
-         assert( nel == nneighs );
-         //printf(" nneighs %d nel %d \n", nneighs, nel );  fflush(stdout);
-      }
+	printf("Total time: %.3f seconds\n", cpuTime);
+	printf("Row: %s \t time: %.3f seconds\n", solver->getRowName(maxRowTimeIdx).c_str(), maxRowTime);
 
-      nit_free( &nit );
-      free( neighs );
-      free( costs );
-   }
-#endif
+    if(!success) printf("Time limit exceeded!\n");
 
-   CliqueSeparation *clqSep = NULL;
+    cgraph_free( &cgraph );
+    delete realSolver;
 
-   printf("solving relaxation ... ");
-   clock_t start = clock();
-   solver->initialSolve();
-   printf("Initial dual bound %g\n", solver->getObjValue() );
-   clock_t end = clock();
-   printf("solved in %.3f\n", ((double)(end-start)) / ((double)CLOCKS_PER_SEC) );
-   clock_t startSep, endSep;
-   double timeSep;
-
-   cgraph_print_summary( cgraph, "original conflict graph" );
-
-   clock_t tend = clock();
-   double totalTime = ((double)(tend-start)) / ((double)CLOCKS_PER_SEC);
-   printf("\nEnd of root node relaxation. Dual limit: %g time: %.3f ", solver->getObjValue(), totalTime );
-
-   {
-       int i, idx = 0;
-       const double *x = solver->getColSolution();
-
-       int *iv = new int[ solver->getNumCols() ];
-       for ( i=0 ; i<solver->getNumCols() ; ++i )
-           iv[i] = -1;
-
-       for ( i=0 ; (i<cgraph_size(cgraph)) ; ++i )
-           if ((cgraph_degree(cgraph, i)<2)||(fracPart(x[i])<MIN_FRAC))
-               continue;
-           else
-               iv[i] = idx++;
-
-       CGraph *newGraph = cgraph_create_induced_subgraph( cgraph, iv );
-
-       int nRemoved = 0;
-       for ( i=0 ; (i<cgraph_size(newGraph)) ; ++i )
-       {
-           if (cgraph_degree(newGraph, i)<2)
-           {
-               iv[cgraph_get_original_node_index(newGraph,i)] = -1;
-               ++nRemoved;
-           }
-       }
-       if (nRemoved)
-       {
-           /* updating iv */
-           idx = 0;
-           for ( i=0 ; (i<cgraph_size(cgraph)); ++i )
-               if (iv[i] != -1 )
-                   iv[i] = idx++;
-
-           cgraph_free( &newGraph );
-           newGraph = cgraph_create_induced_subgraph( cgraph, iv );
-       }
-
-       /* removing from this graph all nodes with degree <= 1 */
-
-
-       for ( i=0 ; (i<cgraph_size(newGraph)) ; ++i )
-           cgraph_set_node_weight( newGraph, i, cgraph_weight(x[cgraph_get_original_node_index(newGraph,i)]) );
-       cgraph_free( &cgraph );
-       cgraph = newGraph;
-
-       delete[] iv;
-   }
-
-   printf("\n");
-   cgraph_print_summary( cgraph, "pre-processed conflict graph" );
-
-   if ( cgraph_size( cgraph ) == 0 )
-   {
-      printf("EMPTY conflict graph. exiting...\n");
-      exit(0);
-   }
-
-   char fileName[256];
-   getFileName( fileName, argv[1] );
-   printf("\nFile name: %s\n", fileName );
-   char outName[256];
-   sprintf( outName, "%s.clqw", fileName );
-
-   cgraph_save( cgraph, outName );
-
-   cgraph_free( &cgraph );
-
-   delete realSolver;
-
-   return EXIT_SUCCESS;
+    return EXIT_SUCCESS;
 }
 
 void readLP( const char *fileName, OsiSolverInterface *solver )
 {
-   solver->setIntParam(OsiNameDiscipline, 2);
-   solver->readMps( fileName );
-   solver->setIntParam(OsiNameDiscipline, 2);
-   solver->messageHandler()->setLogLevel(1);
-   solver->setHintParam(OsiDoReducePrint,true,OsiHintTry);
-}
-
-double fracPart( const double x )
-{
-   double nextInteger = ceil( x );
-   double previousInteger = floor( x );
-
-   return MIN( nextInteger-x, x-previousInteger );
+    solver->setIntParam(OsiNameDiscipline, 2);
+    solver->readMps( fileName );
+    //solver->readLp( fileName );
+    solver->setIntParam(OsiNameDiscipline, 2);
+    solver->messageHandler()->setLogLevel(1);
+    solver->setHintParam(OsiDoReducePrint,true,OsiHintTry);
 }
