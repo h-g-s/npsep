@@ -1,0 +1,463 @@
+#LyX 2.1 created this file. For more info see http://www.lyx.org/
+\lyxformat 474
+\begin_document
+\begin_header
+\textclass article
+\use_default_options true
+\maintain_unincluded_children false
+\language english
+\language_package default
+\inputencoding auto
+\fontencoding global
+\font_roman default
+\font_sans default
+\font_typewriter default
+\font_math auto
+\font_default_family default
+\use_non_tex_fonts false
+\font_sc false
+\font_osf false
+\font_sf_scale 100
+\font_tt_scale 100
+\graphics default
+\default_output_format default
+\output_sync 0
+\bibtex_command default
+\index_command default
+\paperfontsize default
+\use_hyperref false
+\papersize default
+\use_geometry false
+\use_package amsmath 1
+\use_package amssymb 1
+\use_package cancel 1
+\use_package esint 1
+\use_package mathdots 1
+\use_package mathtools 1
+\use_package mhchem 1
+\use_package stackrel 1
+\use_package stmaryrd 1
+\use_package undertilde 1
+\cite_engine basic
+\cite_engine_type default
+\biblio_style plain
+\use_bibtopic false
+\use_indices false
+\paperorientation portrait
+\suppress_date false
+\justification true
+\use_refstyle 1
+\index Index
+\shortcut idx
+\color #008000
+\end_index
+\secnumdepth 3
+\tocdepth 3
+\paragraph_separation indent
+\paragraph_indentation default
+\quotes_language english
+\papercolumns 1
+\papersides 1
+\paperpagestyle default
+\tracking_changes false
+\output_changes false
+\html_math_output 0
+\html_css_as_file 0
+\html_be_strict false
+\end_header
+
+\begin_body
+
+\begin_layout Section*
+Given
+\end_layout
+
+\begin_layout Description
+\begin_inset Formula $n$
+\end_inset
+
+ columns
+\end_layout
+
+\begin_layout Description
+\begin_inset Formula $m$
+\end_inset
+
+ rows
+\end_layout
+
+\begin_layout Description
+\begin_inset Formula $b_{i}$
+\end_inset
+
+ right hand side of constraint 
+\begin_inset Formula $i$
+\end_inset
+
+
+\end_layout
+
+\begin_layout Description
+\begin_inset Formula $x_{j}$
+\end_inset
+
+ binary variable
+\end_layout
+
+\begin_layout Description
+\begin_inset Formula $a_{ij}$
+\end_inset
+
+ coefficient for variable 
+\begin_inset Formula $x_{j}$
+\end_inset
+
+ at constraint 
+\begin_inset Formula $i$
+\end_inset
+
+
+\end_layout
+
+\begin_layout Description
+\begin_inset Formula $\underline{a}_{i}$
+\end_inset
+
+ 
+\begin_inset Formula $min\{a_{ij}\,:\, j\in1,\ldots,n\}$
+\end_inset
+
+
+\end_layout
+
+\begin_layout Description
+\begin_inset Formula $\overline{a}_{i}$
+\end_inset
+
+ 
+\begin_inset Formula $max\{a_{ij}\,:\, j\in1,\ldots,n\}$
+\end_inset
+
+
+\end_layout
+
+\begin_layout Subsection*
+Clique detection C1
+\end_layout
+
+\begin_layout Standard
+Consider constraints with the following format:
+\end_layout
+
+\begin_layout Standard
+\begin_inset Formula $\sum a_{ij}\, x_{j}\{=,\leq\}b_{i}$
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+There is a clique involving all variables in constraint 
+\begin_inset Formula $i$
+\end_inset
+
+ if:
+\end_layout
+
+\begin_layout Standard
+\begin_inset Formula $\underline{a}_{i}>\frac{b_{i}}{2}+\epsilon$
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+where 
+\begin_inset Formula $\epsilon$
+\end_inset
+
+ is a small constant.
+ Considering that there are at most 
+\begin_inset Formula $n$
+\end_inset
+
+ coefficients in a row, C1 can be computed in linear time.
+\end_layout
+
+\begin_layout Subsubsection*
+Clique detection C1'
+\end_layout
+
+\begin_layout Standard
+C1 does not detect rows which correspond to cliques in the case where only
+ one coefficient is smaller than 
+\begin_inset Formula $\frac{b_{i}}{2}+\epsilon$
+\end_inset
+
+ but the remaining ones guarantee all pairwise conflicts in row 
+\begin_inset Formula $i$
+\end_inset
+
+.
+ This would be the case, for instance, in 
+\begin_inset Formula $x_{1}+4x_{2}+4x_{3}\leq4$
+\end_inset
+
+.
+ Thus, considering that 
+\begin_inset Formula $s_{ik}$
+\end_inset
+
+ indicates the 
+\begin_inset Formula $k$
+\end_inset
+
+-th smallest coefficient in row 
+\begin_inset Formula $i$
+\end_inset
+
+, row 
+\begin_inset Formula $i$
+\end_inset
+
+ has a clique if: 
+\end_layout
+
+\begin_layout Standard
+\begin_inset Formula $s_{ik}+s_{ik+1}>b_{i}+\epsilon$
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+The clique involves all variables in the interval where the above equation
+ is true.
+ Therefore, if 
+\begin_inset Formula $k=1$
+\end_inset
+
+ there is a clique involving all variables in the current constraint.
+ Considering that there are at most 
+\begin_inset Formula $n$
+\end_inset
+
+ coefficients in a row, C1' can be computed in 
+\begin_inset Formula $O(n\, log\, n)$
+\end_inset
+
+.
+\end_layout
+
+\begin_layout Subsection*
+Clique detection CC
+\end_layout
+
+\begin_layout Standard
+Consider constraints with the following format:
+\end_layout
+
+\begin_layout Standard
+\begin_inset Formula $\sum a_{ij}\, x_{j}\{=,\geq\}b_{i}:\;(a_{ij}=1)$
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+There is a clique involving all complement of binary variables in 
+\begin_inset Formula $i$
+\end_inset
+
+ if:
+\end_layout
+
+\begin_layout Standard
+
+\family roman
+\series medium
+\shape up
+\size normal
+\emph off
+\bar no
+\strikeout off
+\uuline off
+\uwave off
+\noun off
+\color none
+\begin_inset Formula $\sum a_{ij}=bi+1$
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+In this type of constraint at most one variable can be disabled or the constrain
+t becomes infeasible.
+\end_layout
+
+\begin_layout Standard
+Considering that there are at most 
+\begin_inset Formula $n$
+\end_inset
+
+ coefficients in a row, CC can be computed in linear time.
+\end_layout
+
+\begin_layout Subsection*
+Pairwise conflict detection
+\end_layout
+
+\begin_layout Standard
+When the constraint do not satisfy the previously formats the algorithm
+ uses a pairwise conflict detection mechanism.
+ The method checks for pairs of variables in this constraint whose activation
+ (or deactivation) cannot occur at the same time without violating it.
+ Thus, for a constraint, pairwise conflicts detection can be computed in
+ 
+\begin_inset Formula $O(n^{2})$
+\end_inset
+
+.
+\end_layout
+
+\begin_layout Standard
+For each pair of variables, for each combination of these variable values,
+ we compute a new RHS, called 
+\begin_inset Formula $B$
+\end_inset
+
+, using the old RHS (
+\begin_inset Formula $b_{i}$
+\end_inset
+
+) plus the sum of the most negative (or positive, in case of 
+\begin_inset Formula $\geq$
+\end_inset
+
+ constraints) value of the other variables.
+ Let 
+\begin_inset Formula $x_{k}$
+\end_inset
+
+ and 
+\begin_inset Formula $x_{l}$
+\end_inset
+
+ the variables to be analyzed.
+ The new right-hand side is calculated as follows:
+\end_layout
+
+\begin_layout Standard
+\begin_inset Formula $B=b_{i}-\sum_{j\in\{1..n\}\setminus\{k,\, l\}}min(0,\, aij)$
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+\begin_inset Formula $B$
+\end_inset
+
+ is the upper bound for the current constraint considering 
+\begin_inset Formula $x_{k}$
+\end_inset
+
+ and 
+\begin_inset Formula $x_{l}$
+\end_inset
+
+ fixed.
+ So, there are four possibilities to detect conflicts:
+\end_layout
+
+\begin_layout Enumerate
+if 
+\begin_inset Formula $a_{ik}+a_{il}>B$
+\end_inset
+
+: there is a conflict between 
+\begin_inset Formula $x_{k}$
+\end_inset
+
+ and 
+\begin_inset Formula $x_{l}$
+\end_inset
+
+;
+\end_layout
+
+\begin_layout Enumerate
+if 
+\begin_inset Formula $a_{ik}>B$
+\end_inset
+
+: there is a conflict between 
+\begin_inset Formula $x_{k}$
+\end_inset
+
+ and the binary complement of
+\begin_inset Formula $x_{l}$
+\end_inset
+
+;
+\end_layout
+
+\begin_layout Enumerate
+if 
+\begin_inset Formula $a_{il}>B$
+\end_inset
+
+: there is a conflict between the binary complement of 
+\begin_inset Formula $x_{k}$
+\end_inset
+
+ and 
+\begin_inset Formula $x_{l}$
+\end_inset
+
+;
+\end_layout
+
+\begin_layout Enumerate
+if 
+\family roman
+\series medium
+\shape up
+\size normal
+\emph off
+\bar no
+\strikeout off
+\uuline off
+\uwave off
+\noun off
+\color none
+
+\begin_inset Formula $B<0$
+\end_inset
+
+
+\family default
+\series default
+\shape default
+\size default
+\emph default
+\bar default
+\strikeout default
+\uuline default
+\uwave default
+\noun default
+\color inherit
+: there is a conflict between the binary complement of 
+\begin_inset Formula $x_{k}$
+\end_inset
+
+ and the binary complement of 
+\begin_inset Formula $x_{l}$
+\end_inset
+
+;
+\end_layout
+
+\end_body
+\end_document
