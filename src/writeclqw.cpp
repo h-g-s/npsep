@@ -34,7 +34,7 @@ void readLP( const char *fileName, OsiSolverInterface *solver );
 int main( int argc, char **argv )
 {
 	clock_t start = clock(), end, test;
-	double osiTime, recompTime, writeTime, totalTime, cpuTime;
+	double osiTime, recompTime, writeTime, totalTime, cpuTime, readTime;
 
     OsiSolverInterface *solver = NULL;
 
@@ -43,19 +43,22 @@ int main( int argc, char **argv )
     solver = (OsiSolverInterface*) realSolver;
 
     readLP( argv[1], solver );
+    readTime = ((double(clock() - start))/((double)CLOCKS_PER_SEC));
+    printf("readLP took %.3f seconds.\n", readTime);
 
-    //printf("writeclqw\n\n");
+    /*printf("writeclqw\n\n");
     char problemName[ 256 ];
     getFileName( problemName, argv[1] );
-    /*printf("loaded %s \n", problemName );
+    printf("loaded %s \n", problemName );
     printf("\t%d variables (%d integer) %d rows %d nz\n\n", solver->getNumCols(), solver->getNumIntegers(), solver->getNumRows(), solver->getNumElements() );*/
 
+    test = clock();
     CGraph *cgraph = osi_build_cgraph( solver );
-    osiTime = ((double(clock() - start))/((double)CLOCKS_PER_SEC));
+    osiTime = ((double(clock() - test))/((double)CLOCKS_PER_SEC));
     printf("osi_cgraph took %.3f seconds.\n", osiTime);
 
-    printf("Recomputing degree...");
     test = clock();
+    printf("Recomputing degree...");
     cgraph_recompute_degree( cgraph );
     recompTime = ((double(clock() - test))/((double)CLOCKS_PER_SEC));
     printf("Done in %.3f seconds\n", recompTime);
@@ -68,8 +71,8 @@ int main( int argc, char **argv )
         exit(0);
     }
 
-    printf("Writing conflict graph...");
     test = clock();
+    printf("Writing conflict graph...");
     char fileName[256];
     getFileName( fileName, argv[1] );
     //printf("\nFile name: %s\n", fileName );
@@ -82,6 +85,9 @@ int main( int argc, char **argv )
     end = clock();
     cpuTime = ((double(end - start))/((double)CLOCKS_PER_SEC));
 
+
+    printf("%lu %lu %lu %lu %lu %lu %lu\n", completeClique, incompleteClique, completeCliqueComplement, incompleteCliqueComplement,
+                                            activePairwise, inactivePairwise, mixedPairwise);
 	printf("Total time: %.3f seconds\n", cpuTime);
 	printf("Row: %s \t time: %.3f seconds\n", solver->getRowName(maxRowTimeIdx).c_str(), maxRowTime);
 

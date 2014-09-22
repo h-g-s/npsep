@@ -36,10 +36,10 @@ using namespace std;
 const double LARGE_CONST = std::min( DBL_MAX/10.0, 1e20 );
 
 double maxRowTime = 0.0;
-int maxRowTimeIdx = -1;
+int maxRowTimeIdx = 0;
 int success = 1;
-
-unsigned long int active = 0L, inactive = 0L;
+unsigned long int completeClique = 0L, incompleteClique = 0L, completeCliqueComplement = 0L, incompleteCliqueComplement = 0L,
+					activePairwise = 0L, inactivePairwise = 0L, mixedPairwise = 0L;
 
 struct sort_sec_pair
 {
@@ -253,6 +253,9 @@ CGraph *osi_build_cgraph( void *_lp )
 	        	for(int i = C1, j = 0; i < nElements; i++)
 	        		idxs[j++] = columns[i].first;
 	        	processClique( n, (const int *)idxs, cgraph, cvec, colLb, colUb );	
+	        	if(C1 == 0)
+	        		completeClique++;
+	        	else incompleteClique++;
 	        }
 	        /* another special case: ready to use cliques (complement of binary variables) */
 	        if(CC != -1 && nBools == nElements)
@@ -262,6 +265,9 @@ CGraph *osi_build_cgraph( void *_lp )
 	        	for(int i = CC, j = 0; i < nElements; i++)
 	        		idxs[j++] = columns[i].first + nCols;//binary complement
 	        	processClique( n, (const int *)idxs, cgraph, cvec, colLb, colUb );
+	        	if(CC == 0)
+	        		completeCliqueComplement++;
+	        	else incompleteCliqueComplement++;
 	        }
     	}
         else
@@ -318,6 +324,7 @@ CGraph *osi_build_cgraph( void *_lp )
 
                     if (pos1+pos2>newThisRhs+0.001)
                     {
+                    	activePairwise++;
                         cvec.push_back( pair<int,int>(cidx1,cidx2) );
 #ifdef DEBUG_CONF
                         newConflicts++;
@@ -330,6 +337,7 @@ CGraph *osi_build_cgraph( void *_lp )
 
                     if (pos1>newThisRhs+0.001) /* cidx1 = 1 and cidx2 = 0 */
                     {
+                    	mixedPairwise++;
                         cvec.push_back( pair<int,int>(cidx1,cidx2+nCols) );
 #ifdef DEBUG_CONF
                         newConflicts++;
@@ -339,6 +347,7 @@ CGraph *osi_build_cgraph( void *_lp )
 
                     if (pos2>newThisRhs+0.001) /* cidx1 = 0 and cidx2 = 1 */
                     {
+                    	mixedPairwise++;
                         cvec.push_back( pair<int,int>(cidx1+nCols,cidx2) );
 #ifdef DEBUG_CONF
                         newConflicts++;
@@ -348,6 +357,7 @@ CGraph *osi_build_cgraph( void *_lp )
 
                     if (newThisRhs<-EPS) /* cidx1 = 0 and cidx2 = 0 */
                     {
+                    	inactivePairwise++;
                         cvec.push_back( pair<int,int>(cidx1+nCols,cidx2+nCols) );
 #ifdef DEBUG_CONF
                         newConflicts++;
