@@ -221,7 +221,7 @@ CGraph *osi_build_cgraph( void *_lp )
 
         if(nInts == nElements && nPos == nElements && posCoefs == nElements)
         {
-	        int C1 = -1, CC = -1; //k1: index where the formula Sk + Sk+1 > bi is satisfied (named C1' in document)
+	        int C1 = -1, CC = -1; //k1: index where the formula Sk + Sk+1 > bi is satisfied (named C1 in document)
 	        					  //k2: index where the formula SA - Sk - Sk+1 < bi is satisfied (named CC in document)
 
 	        if( (rhs[idxRow] == 'E' || rhs[idxRow] == 'L') && (columns[nElements-1].second+columns[nElements].second <= rhs[idxRow]) )
