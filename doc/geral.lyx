@@ -106,7 +106,11 @@ Let
 \end_layout
 
 \begin_layout Standard
-\begin_inset Formula $a_{ij}\leq a_{ij+1},\forall j\in\{1..n-1\}$
+\begin_inset Formula 
+\[
+a_{ij}\leq a_{ij+1},\forall j\in\{1..n-1\}
+\]
+
 \end_inset
 
 
@@ -125,7 +129,11 @@ Given a constraint
 \end_layout
 
 \begin_layout Standard
-\begin_inset Formula $\sum_{j\in\{1..n\}}a_{ij}\, x_{j}\{=,\leq\}b_{i}$
+\begin_inset Formula 
+\[
+\sum_{j\in\{1..n\}}a_{ij}\, x_{j}\{=,\leq\}b_{i}
+\]
+
 \end_inset
 
 
@@ -169,7 +177,11 @@ Suppose we are analysing two particular variables
 \uwave off
 \noun off
 \color none
-\begin_inset Formula $L_{x_{\hat{j}}=u_{\hat{j}},x_{\hat{j}+1}=u_{\hat{j}+1}}^{i}=\sum_{j\in\{1..n\}\setminus\{\hat{j},\hat{j}+1\}}min(0,a_{ij})u_{j}+a_{i\hat{j}}u_{\hat{j}}+a_{i\hat{j}+1}u_{\hat{j}+1}$
+\begin_inset Formula 
+\[
+L_{x_{\hat{j}}=u_{\hat{j}},x_{\hat{j}+1}=u_{\hat{j}+1}}^{i}=\sum_{j\in\{1..n\}\setminus\{\hat{j},\hat{j}+1\}}min(0,a_{ij})u_{j}+a_{i\hat{j}}u_{\hat{j}}+a_{i\hat{j}+1}u_{\hat{j}+1}
+\]
+
 \end_inset
 
  
@@ -289,7 +301,11 @@ Given a constraint
 \end_layout
 
 \begin_layout Standard
-\begin_inset Formula $\sum_{j\in\{1..n\}}a_{ij}\, x_{j}\{=,\geq\}b_{i}$
+\begin_inset Formula 
+\[
+\sum_{j\in\{1..n\}}a_{ij}\, x_{j}\{=,\geq\}b_{i}
+\]
+
 \end_inset
 
 
@@ -333,7 +349,11 @@ Suppose we are analysing two particular variables
 \uwave off
 \noun off
 \color none
-\begin_inset Formula $U_{x_{\hat{j}}=l_{\hat{j}},x_{\hat{j}+1}=l_{\hat{j}+1}}^{i}=\sum_{j\in\{1..n\}\setminus\{\hat{j},\hat{j}+1\}}max(0,a_{ij})u_{j}+a_{i\hat{j}}l_{\hat{j}}+a_{i\hat{j}+1}l_{\hat{j}+1}$
+\begin_inset Formula 
+\[
+U_{x_{\hat{j}}=l_{\hat{j}},x_{\hat{j}+1}=l_{\hat{j}+1}}^{i}=\sum_{j\in\{1..n\}\setminus\{\hat{j},\hat{j}+1\}}max(0,a_{ij})u_{j}+a_{i\hat{j}}l_{\hat{j}}+a_{i\hat{j}+1}l_{\hat{j}+1}
+\]
+
 \end_inset
 
  
@@ -485,14 +505,26 @@ For each pair of variables, for each combination of these variable values,
 \end_layout
 
 \begin_layout Standard
-\begin_inset Formula $B=b_{i}-\sum_{j\in\{1..n\}\setminus\{k,l\}}min(0,aij)u_{j}$
+\begin_inset Formula 
+\[
+B=b_{i}-\sum_{j\in\{1..n\}\setminus\{k,l\}}min(0,aij)u_{j}
+\]
+
 \end_inset
 
- (
-\begin_inset Formula $B=b_{i}-\sum_{j\in\{1..n\}\setminus\{k,l\}}max(0,aij)u_{j}$
+
+\end_layout
+
+\begin_layout Standard
+or 
+\begin_inset Formula 
+\[
+B=b_{i}-\sum_{j\in\{1..n\}\setminus\{k,l\}}max(0,aij)u_{j}
+\]
+
 \end_inset
 
-)
+
 \end_layout
 
 \begin_layout Standard
