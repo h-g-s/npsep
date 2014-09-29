@@ -33,6 +33,8 @@ using namespace std;
 
 #define MAX_NEGATIVE_COEFS 200
 
+#define MAX_DIFFERENT_COEFS 100
+
 const double LARGE_CONST = std::min( DBL_MAX/10.0, 1e20 );
 
 double maxRowTime = 0.0;
@@ -58,15 +60,10 @@ void processClique( const int n, const int *idx, CGraph *cgraph, vector< pair<in
 void fetchConflicts( vector< pair<int,int> > &cvec, const bool lastTime, CGraph *cgraph, vector<int> &neighs );
 
 /* returns how much a variable can negatively contribute */
-double mostNegativeContribution( const double coef, const char c, const double colLb, const double colUb );
+double mostNegativeContribution( const double coef, const char s, const double colLb, const double colUb );
 
 /* returns how much a variable can positively contribute */
-inline double unitaryContribution( const double coef, const char c, const double colLb, const double colUb );
-
-/* skip rows with large values to avoid overflows */
-bool canYeldLargeValue( const double coef, const double colLb, const double colUb );
-
-int compute_row_priority( OsiSolverInterface *lp, const int r );
+double unitaryContribution( const double coef, const char s, const double colLb, const double colUb );
 
 CGraph *osi_build_cgraph( void *_lp )
 {
@@ -109,17 +106,16 @@ CGraph *osi_build_cgraph( void *_lp )
         const int *idx = row.getIndices();
         const double *coefs = row.getElements();
         pair<int, double> columns[nElements];
+        vector<vector<int> > coefsGroup; //coefficients with same value will be grouped
+        vector<double> diffCoefs; //different coefficients in the current row
 
         double minCoef = numeric_limits<double>::max();
         double maxCoef = -1.0 * numeric_limits<double>::max();
-        int nInts = 0; // number of integer variables
         int nBools = 0; // number of binary variables
-        int nPos  = 0; // variables which may assume only zero or some positive value
-        int nNeg  = 0; // variables which may assume negative values
-        int posCoefs = 0;//positive coefficients
-        int negCoefs = 0;//negative coefficients
-        double sumPosCoefs = 0.0;//sum of all positive coefficients
-        double sumNegCoefs = 0.0;//sum of all negative coefficients
+        int posCoefs = 0; //number of positive coefficients
+        int negCoefs = 0; //number of negative coefficients
+        double sumPosCoefs = 0.0; //sum of all positive coefficients
+        double sumNegCoefs = 0.0; //sum of all negative coefficients
         
         if ( (nElements<2) || (fabs(rhs[idxRow])>=LARGE_CONST) )
             continue;
@@ -144,39 +140,22 @@ CGraph *osi_build_cgraph( void *_lp )
         confS.clear();
 #endif /* DEBUG_CONF */
 
-        /* checking number of integers and limits for variables */
-        double mult = 1.0;
-        if ( sense[idxRow] == 'G' )
-            mult = -1.0;
-        double thisRhs = rhs[idxRow] * mult;
-
-        int i;
-        for(i = 0; i < nElements; i++)
+		double mult = 1.0;
+      	if ( sense[idxRow] == 'G' )
+        	mult = -1.0;
+      	double thisRhs = rhs[idxRow] * mult;
+        for(int i = 0; i < nElements; i++)
         {
         	const int cidx = idx[i];
 
         	columns[i].first = idx[i];
         	columns[i].second = coefs[i];
 
+        	if(ctype[cidx] == 1)
+            	nBools++;
+
             if (FIXED_IN_ZERO(cidx))
                 continue;
-
-            if (ctype[cidx])
-            {
-                nInts++;
-                if(ctype[cidx] == 1)
-                	nBools++;
-            }
-
-            /* variable which only accepts positive (or zero) value */
-            if ( colLb[cidx] >= -EPS )
-                ++nPos;
-
-            if ( colLb[cidx] <= -EPS )
-                ++nNeg;
-
-            if ( (nNeg>MAX_NEGATIVE_COEFS) || (canYeldLargeValue(coefs[i],colLb[cidx],colUb[cidx])) )
-                break;
 
             const double neg = mostNegativeContribution( coefs[i], sense[idxRow], colLb[cidx], colUb[cidx] );
 
@@ -185,15 +164,14 @@ CGraph *osi_build_cgraph( void *_lp )
             	posCoefs++;
             	sumPosCoefs += coefs[i];
             }
-
-            if(coefs[i] <= -EPS)
+            else if(coefs[i] <= -EPS)
             {
             	negCoefs++;
             	sumNegCoefs += coefs[i];
             }
 
-            minCoef = min( minCoef, coefs[i]*mult );
-            maxCoef = max( maxCoef, coefs[i]*mult );
+            minCoef = min( minCoef, coefs[i] );
+            maxCoef = max( maxCoef, coefs[i] );
 
             thisRhs -= neg;
 
@@ -207,10 +185,9 @@ CGraph *osi_build_cgraph( void *_lp )
 #endif /* DEBUG_CONF */
         }
 
-        /* if there are not enough integers or if some condition
-         * triggered premature skip for this row*/
-        if ( (i<nElements) || (nInts<=1) )
-            continue;
+        /* considering just constraints which have only binary variables */
+        if(nBools < nElements)
+        	continue;
 
         /* special case (to ignore), when all variables are fixed to zero */
         if ( (fabs(thisRhs)<=EPS) && DBL_EQUAL(maxCoef,minCoef)
@@ -219,33 +196,38 @@ CGraph *osi_build_cgraph( void *_lp )
 
         sort(columns, columns + nElements, sort_sec_pair());
 
-        if(nInts == nElements && nPos == nElements && posCoefs == nElements)
+        int C1 = -1, CC = -1; //k1: index where the formula Sk + Sk+1 > bi is satisfied (named C1 in document)
+        					  //k2: index where the formula SA - Sk - Sk+1 < bi is satisfied (named CC in document)
+        double Sminus, Splus;
+        Sminus = sumNegCoefs - min(0.0, columns[nElements].second) - min(0.0, columns[nElements-1].second);
+        Splus = sumPosCoefs - max(0.0, columns[nElements].second) - max(0.0, columns[nElements-1].second);
+
+        if( (rhs[idxRow] == 'E' || rhs[idxRow] == 'L') && (Sminus + columns[nElements].second + columns[nElements-1].second <= rhs[idxRow]) )
+        	continue; //there are no conflicts in this row
+
+        if( (rhs[idxRow] == 'E' || rhs[idxRow] == 'G') && (Splus  >= rhs[idxRow]) )
+        	continue; //there are no conflicts in this row
+
+        for(int i = 0; i < nElements - 1; i++)
         {
-	        int C1 = -1, CC = -1; //k1: index where the formula Sk + Sk+1 > bi is satisfied (named C1 in document)
-	        					  //k2: index where the formula SA - Sk - Sk+1 < bi is satisfied (named CC in document)
+        	double sk1, sk2;
+        	sk1 = columns[i].second;
+        	sk2 = columns[i+1].second;
+        	Sminus = sumNegCoefs - min(0.0, sk1) - min(0.0, sk2);
+        	Splus = sumPosCoefs - max(0.0, sk1) - max(0.0, sk2);
+        	
+        	if(C1 != -1 && CC != -1)
+        		break;
 
-	        if( (rhs[idxRow] == 'E' || rhs[idxRow] == 'L') && (columns[nElements-1].second+columns[nElements].second <= rhs[idxRow]) )
-	        	continue; //there are no conflicts in this row
+        	if( (C1 == -1) && (sense[idxRow] ==  'E' || sense[idxRow] == 'L') && (Sminus + sk1 + sk2 > rhs[idxRow]) )
+        		C1 = i;
+        	if( (CC == -1) && (sense[idxRow] ==  'E' || sense[idxRow] == 'G') && (Splus < rhs[idxRow]) )
+        		CC = i;
+        }
 
-	        if( (rhs[idxRow] == 'E' || rhs[idxRow] == 'G') && (sumPosCoefs-columns[nElements-1].second-columns[nElements].second >= rhs[idxRow]) )
-	        	continue; //there are no conflicts in this row
-
-	        for(i = 0; i < nElements - 1; i++)
-	        {
-	        	double sk1, sk2;
-	        	sk1 = columns[i].second;
-	        	sk2 = columns[i+1].second; 
-	        	
-	        	if(C1 != -1 && CC != -1)
-	        		break;
-
-	        	if( (C1 == -1) && (sense[idxRow] ==  'E' || sense[idxRow] == 'L') && (sk1+sk2 > rhs[idxRow]) )
-	        		C1 = i;
-	        	if( (CC == -1) && (sense[idxRow] ==  'E' || sense[idxRow] == 'G') && (sumPosCoefs-sk1-sk2 < rhs[idxRow]) )
-	        		CC = i;
-	        }
-
-	        /* special case: ready to use cliques */
+        if(C1 != -1 || CC != -1)
+        {
+	        //special case: ready to use cliques
 	        if(C1 != -1)
 	        {
 	        	int n = nElements - C1;
@@ -257,19 +239,21 @@ CGraph *osi_build_cgraph( void *_lp )
 	        		completeClique++;
 	        	else incompleteClique++;
 	        }
-	        /* another special case: ready to use cliques (complement of binary variables) */
-	        if(CC != -1 && nBools == nElements)
+
+	        //another special case: ready to use cliques (complement of binary variables)
+	        if(CC != -1)
 	        {
 	        	int n = nElements - CC;
 	        	int idxs[n];
 	        	for(int i = CC, j = 0; i < nElements; i++)
-	        		idxs[j++] = columns[i].first + nCols;//binary complement
+	        		idxs[j++] = columns[i].first + nCols; //binary complement
 	        	processClique( n, (const int *)idxs, cgraph, cvec, colLb, colUb );
 	        	if(CC == 0)
 	        		completeCliqueComplement++;
 	        	else incompleteCliqueComplement++;
 	        }
-    	}
+	    }
+
         else
         {
             /* normal case, checking pairwise conflicts
@@ -279,7 +263,7 @@ CGraph *osi_build_cgraph( void *_lp )
             {
                 const int cidx1 = idx[j1];
 
-                if ((!ctype[cidx1])||(FIXED_IN_ZERO(cidx1)))
+                if (FIXED_IN_ZERO(cidx1))
                     continue;
 
                 const double pos1 = unitaryContribution( coefs[j1], sense[idxRow], colLb[cidx1], colUb[cidx1] );
@@ -301,7 +285,7 @@ CGraph *osi_build_cgraph( void *_lp )
                 {
                     const int cidx2 = idx[j2];
 
-                    if ((!ctype[cidx2]) || (FIXED_IN_ZERO(cidx2)))
+                    if (FIXED_IN_ZERO(cidx2))
                         continue;
 
                     const double pos2 = unitaryContribution( coefs[j2], sense[idxRow], colLb[cidx2], colUb[cidx2] );
@@ -332,9 +316,6 @@ CGraph *osi_build_cgraph( void *_lp )
 #endif
                     }
 
-                    if(ctype[cidx1] != 1 || ctype[cidx2] != 1)
-                    	continue;
-
                     if (pos1>newThisRhs+0.001) /* cidx1 = 1 and cidx2 = 0 */
                     {
                     	mixedPairwise++;
@@ -355,7 +336,7 @@ CGraph *osi_build_cgraph( void *_lp )
 #endif
                     }
 
-                    if (newThisRhs<-EPS) /* cidx1 = 0 and cidx2 = 0 */
+                    if (newThisRhs<=-EPS) /* cidx1 = 0 and cidx2 = 0 */
                     {
                     	inactivePairwise++;
                         cvec.push_back( pair<int,int>(cidx1+nCols,cidx2+nCols) );
@@ -393,11 +374,6 @@ CGraph *osi_build_cgraph( void *_lp )
     }
 
     fetchConflicts( cvec, true, cgraph, neighs );
-
-    end = clock();
-
-    //double ftime = ((double(end-start))/((double)CLOCKS_PER_SEC));
-    //printf("osi_cgraph took %.3f seconds.\n", ftime);
 
     return cgraph;
 }
@@ -518,116 +494,3 @@ double unitaryContribution( const double coef, const char s, const double colLb,
     // function does not have a return outside ifs
     return coef;
 }
-
-bool canYeldLargeValue( const double coef, const double colLb, const double colUb )
-{
-    if ( fabs( coef ) >= LARGE_CONST )
-        return true;
-
-    if ( fabs( colLb ) >= LARGE_CONST )
-        return true;
-
-    if ( fabs( colUb ) >= LARGE_CONST )
-        return true;
-
-    if ( fabs(colUb)*fabs(coef) >= LARGE_CONST )
-        return true;
-
-    if ( fabs(colLb)*fabs(coef) >= LARGE_CONST )
-        return true;
-
-    return false;
-}
-
-int compute_row_priority( OsiSolverInterface *lp, const int r )
-{
-    int nInteger = 0;
-    int nContinuous = 0;
-
-    const CoinPackedMatrix *M = lp->getMatrixByRow();
-    const CoinShallowPackedVector &row = M->getVector(r);
-    const int *idx = row.getIndices();
-    const double *coefs = row.getElements();
-    int nPositive = 0;
-    int nNegative = 0;
-    const char sense = lp->getRowSense()[r];
-    const double rhs = lp->getRightHandSide()[r];
-    double minCoef = DBL_MAX;
-    double maxCoef = -DBL_MAX;
-
-    const int n = row.getNumElements();
-    bool allSameSense;
-    int result = 0, i;
-
-    if ( n == 1 )
-    {
-        result = 10000;
-        goto END;
-    }
-
-    for ( i = 0; (i<n) ; i++)
-    {
-        if (lp->isInteger(idx[i]))
-            nInteger++;
-        else
-            nContinuous++;
-
-        if (coefs[i]>EPS)
-            nPositive++;
-        else
-            nNegative++;
-
-        minCoef = std::min( minCoef, coefs[i] );
-        maxCoef = std::max( maxCoef, coefs[i] );
-    }
-
-    allSameSense = ((!nPositive)||(!nNegative));
-
-    /* checking if this is a "perfect" set packing constraint  */
-    if ((
-                ( (sense=='L')||(sense=='E') ) &&
-                ( nInteger==n ) &&
-                ( allSameSense ) &&
-                ( nPositive ) &&
-                ( DBL_EQUAL( minCoef, maxCoef) ) &&
-                ( DBL_EQUAL( rhs, maxCoef) )
-            ))
-        result += std::max( (1000 - n), 10 );
-    else
-        result += 5000;
-
-    /* definitely a constraint were conflicts cannot be extracted */
-    if ( (!nNegative) && (sense=='G') )
-        result += 6000;
-
-    if (nContinuous)
-    {
-        if (nContinuous < 10)
-            result += 100*nContinuous;
-        else
-        {
-            result = oo;
-            goto END;
-        }
-    }
-
-    if (!allSameSense)
-    {
-        result += 100;
-
-        /* probably a flow conservation constraint if
-           there are many coefficients with both signs */
-        if ( (nPositive > 1) and (nNegative > 1) )
-            result += min( nPositive, nNegative ) * 1000;   // if both are high values, penalizing
-
-        if ( (nPositive>5) && (nNegative>5) )
-        {
-            result = oo/2;
-            goto END;
-        }
-    }
-
-END:
-    return result;
-}
-
