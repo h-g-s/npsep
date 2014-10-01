@@ -54,6 +54,17 @@ struct sort_sec_pair
     }
 };
 
+struct sort_columns
+{
+    bool operator()(const std::pair<int, double> &left, const std::pair<int,double> &right)
+    {
+        if ( fabs(left.second - right.second) > EPS )
+            return ( (left.second - right.second) < EPS );
+
+        return left.first < right.first;
+    }
+};
+
 void processClique( const int n, const int *idx, CGraph *cgraph, vector< pair<int, int> > &cvec, const double *colLb, const double *colUb );
 
 /* if size is large enough fech conflicts */
@@ -192,8 +203,7 @@ CGraph *osi_build_cgraph( void *_lp )
                 && DBL_EQUAL(maxCoef,1.0) )
             continue;
 
-        sort(columns, columns + nElements, sort_sec_pair());
-
+        sort(columns, columns + nElements, sort_columns());
         int C1 = -1, CC = -1; //k1: index where the formula Sk + Sk+1 > bi is satisfied (named C1 in document)
         					  //k2: index where the formula SA - Sk - Sk+1 < bi is satisfied (named CC in document)
         double Sminus, Splus;
@@ -272,8 +282,6 @@ CGraph *osi_build_cgraph( void *_lp )
 	        	}
 	        	else coefsGroup.rbegin()->push_back(columns[i].first);
 	    	}
-
-	    	assert(diffCoefs.size() == coefsGroup.size());
 
 	    	if( ((int)(diffCoefs.size())) < MAX_DIFFERENT_COEFS )
 	    	{

@@ -102,8 +102,8 @@ int main( int argc, char **argv )
 void readLP( const char *fileName, OsiSolverInterface *solver )
 {
     solver->setIntParam(OsiNameDiscipline, 2);
-    solver->readMps( fileName );
-    //solver->readLp( fileName );
+    //solver->readMps( fileName );
+    solver->readLp( fileName );
     solver->setIntParam(OsiNameDiscipline, 2);
     solver->messageHandler()->setLogLevel(1);
     solver->setHintParam(OsiDoReducePrint,true,OsiHintTry);
