@@ -303,14 +303,14 @@ void cgraph_add_node_conflicts_no_sim( CGraph *cgraph, const int node, const int
 
    cgraph_check_node_size( cgraph, lastNode );
 
-   cgraph->degree[node] += size;
-   /*
-      {
-      int i;
-      for ( i=0 ; (i<size) ; ++i )
+   /* computes the correct degree */
+   int i;
+   for ( i=0 ; (i<size) ; ++i )
       if (!cgraph_conflicting_nodes( cgraph, node, conflicts[i] ))
-      cgraph->degree[node]++;
-      }*/
+         cgraph->degree[node]++;
+
+   /* computes a estimated degree */
+   //cgraph->degree[node] += size;
 
    if (size>0)
       vint_set_add_opt( cgraph->nodeConflicts+node, conflicts, size );
@@ -332,25 +332,24 @@ void cgraph_add_clique( CGraph *cgraph, int clique[], const int size )
    if (!(clq_set_add( cgraph->clqSet, size, clique, 0 )))
       return;
 
-   /* updating degrees if necessary
-      const int sizeM1 = size - 1;
-      for ( int i=0 ; (i<sizeM1) ; ++i )
+   /* computes the correct degree */
+   const int sizeM1 = size - 1;
+   int i, j;
+   for ( i=0 ; (i<sizeM1) ; ++i )
+      for ( j=i+1 ; (j<size) ; ++j )
       {
-      for ( int j=i+1 ; (j<size) ; ++j )
-      {
-      if (!cgraph_conflicting_nodes( cgraph, clique[i], clique[j] ) )
-      cgraph->degree[clique[i]]++;
-      if (!cgraph_conflicting_nodes( cgraph, clique[j], clique[i] ) )
-      cgraph->degree[clique[j]]++;
+         if (!cgraph_conflicting_nodes( cgraph, clique[i], clique[j] ) )
+            cgraph->degree[clique[i]]++;
+         if (!cgraph_conflicting_nodes( cgraph, clique[j], clique[i] ) )
+            cgraph->degree[clique[j]]++;
       }
-      } */
 
-   /* aproximated degree */
-   {
+   /* computes a estimated degree */
+   /*{
       int i;
       for ( i=0 ; (i<size) ; ++i )
          cgraph->degree[ clique[i] ] += size-1;
-   }
+   }*/
 
    /* this clique will be related to all nodes inside it */
    {

@@ -34,7 +34,7 @@ void readLP( const char *fileName, OsiSolverInterface *solver );
 int main( int argc, char **argv )
 {
 	clock_t start = clock(), end, test;
-	double osiTime, recompTime, writeTime, totalTime, cpuTime, readTime;
+	double osiTime, writeTime, cpuTime, readTime;
 
     OsiSolverInterface *solver = NULL;
 
@@ -56,12 +56,6 @@ int main( int argc, char **argv )
     CGraph *cgraph = osi_build_cgraph( solver );
     osiTime = ((double(clock() - test))/((double)CLOCKS_PER_SEC));
     printf("osi_cgraph took %.3f seconds.\n", osiTime);
-
-    test = clock();
-    printf("Recomputing degree...");
-    cgraph_recompute_degree( cgraph );
-    recompTime = ((double(clock() - test))/((double)CLOCKS_PER_SEC));
-    printf("Done in %.3f seconds\n", recompTime);
     
 	//cgraph_print_summary( cgraph, "Conflict graph" );
 

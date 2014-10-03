@@ -161,7 +161,6 @@ CGraph *osi_build_cgraph( void *_lp )
 
         	if(ctype[cidx] == 1)
             	nBools++;
-            else break;
 
             if (FIXED_IN_ZERO(cidx))
                 continue;
@@ -567,6 +566,7 @@ CGraph *osi_build_cgraph( void *_lp )
     }
 
     fetchConflicts( cvec, true, cgraph, neighs );
+    cgraph_update_min_max_degree( cgraph );
 
     return cgraph;
 }
@@ -594,7 +594,7 @@ void processClique( const int n, const int *idx, CGraph *cgraph, vector< pair<in
             for ( i2=i1+1 ; (i2<n) ; ++i2 )
             {
             	if ( fabs( colUb[idx[i2]%nCols] <= EPS ) && fabs( colLb[idx[i2]%nCols] <= EPS ) )
-                continue;
+                    continue;
                 cvec.push_back( pair<int,int>(idx[i1],idx[i2]) );
             }
         }
