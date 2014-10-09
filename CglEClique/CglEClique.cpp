@@ -40,6 +40,29 @@ CglCutGenerator* CglEClique::clone() const
    return static_cast<CglCutGenerator*>(cglec);
 }
 
+void fillColSolution(const OsiSolverInterface &si, double colSol[])
+{
+   const int numCols = si.getNumCols();
+   const double* origColSol = si.getColSolution();
+
+   for(int i = 0; i < numCols; i++)
+   {
+      colSol[i] = origColSol[i];
+      colSol[i+numCols] = 1 - origColSol[i];
+   }
+}
+
+void fillReducedCost(const OsiSolverInterface &si, double rCost[])
+{
+   const int numCols = si.getNumCols();
+   const double* origRCost = si.getReducedCost();
+
+   for(int i = 0; i < numCols; i++)
+   {
+      rCost[i] = origRCost[i];
+      rCost[i+numCols] = 0.0;
+   }
+}
 
 void CglEClique::generateCuts( const OsiSolverInterface &si, OsiCuts &cs, const CglTreeInfo info )
 {
@@ -47,6 +70,7 @@ void CglEClique::generateCuts( const OsiSolverInterface &si, OsiCuts &cs, const 
    //clock_t start = clock();
 
    const CGraph *cgraph;
+   const int numCols = si.getNumCols(), numRows = si.getNumRows();
 
    if (_cgraph)
       cgraph = _cgraph;
@@ -59,49 +83,105 @@ void CglEClique::generateCuts( const OsiSolverInterface &si, OsiCuts &cs, const 
       clq_sep_set_params_parse_cmd_line( sep, argc, (const char **)argv );
 
    //clq_sep_set_verbose( sep, 0 );
-   clq_sep_set_rc( sep, si.getReducedCost() );
-   clq_sep_separate( sep, si.getColSolution() );
+
+   double colSol[numCols*2], rCost[numCols*2];
+   fillColSolution(si, colSol);
+   fillReducedCost(si, rCost);
+   clq_sep_set_rc( sep, rCost );
+   clq_sep_separate( sep, colSol );
 
    const CliqueSet *clqSet = clq_sep_get_cliques( sep );
 
-   double *ones = (double*) xmalloc( sizeof(double)*si.getNumCols() );
-   fill( ones, ones+si.getNumCols(), 1.0);
-
    /* adding cuts */
    int i;
+   int varCount[numCols];               //counting how many times a variable(and its complement)
+   fill(varCount, varCount+numCols, 0); //appears in the current clique
    for ( i=0 ; (i<clq_set_number_of_cliques(clqSet)) ; ++i )
    {
       const int size = clq_set_clique_size( clqSet, i );
       const int *el = clq_set_clique_elements( clqSet, i );
-
+      double coefs[size];
+      int maxFrequency = 0;
+      int idxs[size];
       OsiRowCut osrc;
 
       if ( clq_sep_get_verbose( sep ) >= 2 )
       {
-         double lhs = 0.0;
+         double lhs = 0.0, rhs = 1.0;
          printf("cut:\n");
-         for (int i=0 ; (i<size) ; i++)
+         for (int j=0 ; (j<size) ; j++)
          {
-           printf("(%d %s %g) ", el[i], si.getColName(i).c_str(), ones[i]);
-           lhs += si.getColSolution()[el[i]];
+            if(el[j] < numCols)
+            {
+               printf("(%d %s %g) ", el[j], (*colNames)[el[j]].c_str(), 1.0);
+               lhs += colSol[el[j]];
+            }
+            else
+            {
+               printf("(%d %s %g) ", el[j], (*colNames)[el[j]].c_str(), -1.0);
+               lhs -= colSol[el[j]-numCols];  
+               rhs -= 1.0;
+            }
          }
-         printf("\nlhs: %.6f minViol: %.6f\n\n", lhs, clq_sep_get_min_viol(sep) );
+         printf("\nlhs: %.6f rhs: %.6f minViol: %.6f\n\n", lhs, rhs, clq_sep_get_min_viol(sep) );
       }
 
+      double lhs = 0.0, rhs = 1.0;
       /* checking violation */
       {
-         double lhs = 0.0;
-         for (int i=0 ; (i<size) ; i++)
-           lhs += si.getColSolution()[el[i]];
-         if ((lhs-1.0)<clq_sep_get_min_viol(sep))
+         for (int j=0 ; (j<size) ; j++)
+         {
+            if(el[j] < numCols)
+            {
+               coefs[j] = 1.0;
+               lhs += colSol[el[j]];
+               idxs[j] = el[j];
+               maxFrequency = max(maxFrequency, ++varCount[el[j]]);
+            }
+            else
+            {
+               coefs[j] = -1.0;
+               lhs -= colSol[el[j]-numCols];
+               rhs -= 1.0;
+               idxs[j] = el[j]-numCols;
+               maxFrequency = max(maxFrequency, ++varCount[el[j]-numCols]);
+            }
+         }
+
+         assert(maxFrequency >= 0 && maxFrequency <= 2);
+
+         if(maxFrequency == 2)
+         {
+            for (int j=0 ; (j<size) ; j++)
+            {
+               assert(varCount[idxs[j]] >= 0 && varCount[idxs[j]] <= 2);
+               if(varCount[idxs[j]] == 1)
+               {
+                  int varIdx[] = {idxs[j]};
+                  double varCoef[] = {coefs[j]};
+                  osrc.setRow( 1, varIdx, &(varCoef[0]) );
+                  //osrc.setLb( -si.getInfinity() );
+                  osrc.setUb( 0.0 ); 
+                  osrc.setGloballyValid();
+                  CoinAbsFltEq equal(1.0e-12);
+                  cs.insertIfNotDuplicate(osrc,equal);
+               }
+               varCount[idxs[j]] = 0;
+            }
+            continue;
+         }
+
+         for (int j=0 ; (j<size) ; j++)
+            varCount[idxs[j]] = 0;
+
+         if ((lhs-rhs)<clq_sep_get_min_viol(sep))
             continue;
       }
 
-      osrc.setRow( size, el, &(ones[0]) );
+      osrc.setRow( size, idxs, &(coefs[0]) );
       //osrc.setLb( -si.getInfinity() );
-      osrc.setUb( 1.0 );
+      osrc.setUb( rhs ); 
       osrc.setGloballyValid();
-
       CoinAbsFltEq equal(1.0e-12);
       cs.insertIfNotDuplicate(osrc,equal);
    }
@@ -109,22 +189,25 @@ void CglEClique::generateCuts( const OsiSolverInterface &si, OsiCuts &cs, const 
    /* searching for odd holes */
    if (genOddHoles)
    {
+      double *ones = (double*) xmalloc( sizeof(double)*numCols*2 );
+      fill( ones, ones+(numCols*2), 1.0);
+
       OddHoleSep *oddhs = oddhs_create();
       oddhs_search_odd_holes( oddhs, si.getNumCols(), si.getColSolution(), si.getReducedCost(), cgraph );
 
       /* adding odd holes */
-      for ( int i=0 ; (i<oddhs_get_odd_hole_count(oddhs)) ; ++i )
+      for ( int j=0 ; (j<oddhs_get_odd_hole_count(oddhs)) ; ++j )
       {
-         const int *oddEl = oddhs_get_odd_hole( oddhs, i );
-         const int oddSize = oddhs_get_odd_hole( oddhs, i+1 ) - oddEl;
+         const int *oddEl = oddhs_get_odd_hole( oddhs, j );
+         const int oddSize = oddhs_get_odd_hole( oddhs, j+1 ) - oddEl;
          double viol = oddhs_viol( oddSize, oddEl, si.getColSolution() );
          if ( viol < MIN_VIOL )
             continue;
 
          //printf("\nODD HOLE.\n");
 
-         const int centerSize = oddhs_get_nwc_doh( oddhs, i );
-         const int *centerIdx = oddhs_get_wc_doh( oddhs, i );
+         const int centerSize = oddhs_get_nwc_doh( oddhs, j );
+         const int *centerIdx = oddhs_get_wc_doh( oddhs, j );
 
          const int cutSize = oddSize+centerSize;
          vector< int > idx; idx.reserve( cutSize );
@@ -146,11 +229,11 @@ void CglEClique::generateCuts( const OsiSolverInterface &si, OsiCuts &cs, const 
 /*
          if (colNames)
          {
-            for ( int i=0 ; (i<coef.size()) ; ++i )
-               printf("%g %s   ", coef[i], (*colNames)[idx[i]].c_str() );
+            for ( int j=0 ; (j<coef.size()) ; ++j )
+               printf("%g %s   ", coef[j], (*colNames)[idx[j]].c_str() );
             printf("\n");
-            for ( int i=0 ; (i<coef.size()) ; ++i )
-               printf("%g  ", si.getColSolution()[idx[i]] );
+            for ( int j=0 ; (j<coef.size()) ; ++j )
+               printf("%g  ", si.getColSolution()[idx[j]] );
 
             printf("\n");
          } */
@@ -163,9 +246,9 @@ void CglEClique::generateCuts( const OsiSolverInterface &si, OsiCuts &cs, const 
       }
 
       oddhs_free( &oddhs );
+      free( ones );
    }
 
-   free( ones );
    clq_sep_free( &sep );
 
    //clock_t end = clock();
