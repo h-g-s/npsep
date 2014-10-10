@@ -198,7 +198,6 @@ int main( int argc, char **argv )
                cliqueGen.setCGraph( cgraph );
                cliqueGen.setGenOddHoles( false );
                cliqueGen.colNames = &varNames;
-
                cliqueGen.generateCuts( *solver, cuts, info );
                newCuts = cuts.sizeCuts();
 
@@ -345,7 +344,7 @@ int main( int argc, char **argv )
    /*clq_sep_free( &clqSep );*/
    cgraph_free( &cgraph );
 
-   solver->writeLp("saida");
+   solver->writeLp(problemName);
 
    delete realSolver;
 

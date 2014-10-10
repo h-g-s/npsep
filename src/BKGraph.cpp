@@ -117,9 +117,9 @@ BKGraph::BKGraph(const CGraph* cgraph)
 
         aux.setWeight(pesos[i]);
 
-        int neighs[cgraph_degree(cgraph, i)];
+        int neighs[10 * cgraph_degree(cgraph, i)];
 
-        int realDegree = cgraph_get_all_conflicting( cgraph, i, neighs, 2 * nVertices );
+        int realDegree = cgraph_get_all_conflicting( cgraph, i, neighs, 10 * nVertices );
 
         aux.setDegree(realDegree);
 
