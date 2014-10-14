@@ -1,6 +1,6 @@
 #include <cstdio>
 #include <cstdlib>
-#include <OsiClpSolverInterface.hpp>
+#include <OsiCbcSolverInterface.hpp>
 #include <vector>
 
 using namespace std;
@@ -46,7 +46,7 @@ int main( int argc, char **argv )
 	}
 
 	OsiSolverInterface *solver = NULL;
-	OsiClpSolverInterface *realSolver = new OsiClpSolverInterface();
+	OsiCbcSolverInterface *realSolver = new OsiCbcSolverInterface();
 	solver = (OsiSolverInterface*) realSolver;
 	solver->setIntParam(OsiNameDiscipline, 2);
    	solver->readLp(argv[1]);
