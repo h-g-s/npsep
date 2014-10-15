@@ -81,14 +81,17 @@ int main( int argc, char **argv )
 	obj = readSolution(argv[2], idxs, sol, names);
 	assert(idxs.size() == sol.size() && idxs.size() == names.size());
 
+	for(int i = 0; i < numCols; i++)
+	{
+		solver->setColLower(i, .0);
+		solver->setColUpper(i, .0);
+	}
+
 	for(int i = 0; i < (int)names.size(); i++) //fixing variables with values that appear in the solution file
 	{
-      int idx = idxs[i];
+      	int idx = idxs[i];
 		double value = sol[i];
 		string name = names[i];
-
-      /*if(fabs(value) < EPS || !solver->isInteger(idx))
-         continue;*/
 
 		solver->setColLower(idx, value);
 		solver->setColUpper(idx, value);
