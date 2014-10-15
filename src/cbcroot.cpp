@@ -344,7 +344,8 @@ int main( int argc, char **argv )
    /*clq_sep_free( &clqSep );*/
    cgraph_free( &cgraph );
 
-   solver->writeLp(problemName);
+   strcat(problemName, "CUT");
+   solver->writeMps(problemName);
 
    delete realSolver;
 

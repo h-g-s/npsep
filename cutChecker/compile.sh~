@@ -1,3 +1,0 @@
-#!/bin/bash
-
-g++ -O2 cutchecker.cpp -lCbc`pkg-config --cflags cbc` `pkg-config --libs cbc` -o cutChecker
