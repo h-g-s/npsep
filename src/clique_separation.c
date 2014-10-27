@@ -228,7 +228,6 @@ void clq_sep_separate( CliqueSeparation *sep, const double x[] )
    if ( (!enumerationComplete) && (cgraph_size(ppcg)>=2) )
    {
       sep->bk = bk_create( ppcg );
-
       clock_t startBK = clock();
       int stillWorkToDo = bk_run( sep->bk, minW, sep->maxTimeBK );
       clock_t endBK = clock();

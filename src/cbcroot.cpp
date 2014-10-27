@@ -35,8 +35,6 @@ double fracPart( const double x );
 
 /* CBC stuff */
 
-vector< int > fvi; /* fractional variables of interest */
-
 void readLP( const char *fileName );
 
 void printGraphSummary( CGraph *cgraph, const char *graphName );
@@ -72,6 +70,9 @@ int addOddHoles( OsiSolverInterface *solver, OddHoleSep *oddhs );
 
 OsiClpSolverInterface *realSolver = new OsiClpSolverInterface();
 
+/* Fills a vector with the variable names, including the binary complements */
+vector<string> getVarNames(const vector<string> &colNames, int numCols);
+
 void decideLpMethod();
 
 int main( int argc, char **argv )
@@ -88,6 +89,7 @@ int main( int argc, char **argv )
    parseParameters( argc, argv );
 
    readLP( argv[1] );
+   const int numCols = solver->getNumCols(), numRows = solver->getNumRows();
 
    //decideLpMethod();
 
@@ -95,11 +97,9 @@ int main( int argc, char **argv )
    char problemName[ 256 ];
    getFileName( problemName, argv[1] );
    printf("loaded %s \n", problemName );
-   printf("\t%d variables (%d integer) %d rows\n\n", solver->getNumCols(), solver->getNumIntegers(), solver->getNumRows() );
+   printf("\t%d variables (%d integer) %d rows\n\n", numCols, solver->getNumIntegers(), numRows );
 
    CGraph *cgraph = osi_build_cgraph( solver );
-
-   fvi.resize( solver->getNumCols() );
 
    {
       CliqueSeparation *clqSep = clq_sep_create( cgraph );
@@ -113,7 +113,7 @@ int main( int argc, char **argv )
 
    int pass = 0;
    int newCuts = 0, totalCuts = 0;
-   vector<double> ones( solver->getNumCols(), 1.0 );
+   vector<double> ones( numCols, 1.0 );
    const CliqueSet *clqSet = NULL;
 
    printf(">>> solving relaxation ... ");
@@ -192,12 +192,12 @@ int main( int argc, char **argv )
                CglTreeInfo info;
                info.level = 0;
                info.pass = 1;
+               vector<string> varNames = getVarNames(solver->getColNames(), numCols);
 
                cliqueGen.parseParameters( argc, (const char**)argv );
                cliqueGen.setCGraph( cgraph );
                cliqueGen.setGenOddHoles( false );
-               cliqueGen.colNames = &(solver->getColNames());
-
+               cliqueGen.colNames = &varNames;
                cliqueGen.generateCuts( *solver, cuts, info );
                newCuts = cuts.sizeCuts();
 
@@ -344,6 +344,9 @@ int main( int argc, char **argv )
    /*clq_sep_free( &clqSep );*/
    cgraph_free( &cgraph );
 
+   strcat(problemName, "CUT");
+   solver->writeMps(problemName);
+
    delete realSolver;
 
    return EXIT_SUCCESS;
@@ -353,6 +356,7 @@ void readLP( const char *fileName )
 {
    solver->setIntParam(OsiNameDiscipline, 2);
    solver->readMps( fileName );
+   //solver->readLp( fileName );
    solver->setIntParam(OsiNameDiscipline, 2);
    solver->messageHandler()->setLogLevel(1);
    solver->setHintParam(OsiDoReducePrint,true,OsiHintTry);
@@ -370,11 +374,11 @@ void printGraphSummary( CGraph *cgraph, const char *graphName )
    double minF = DBL_MAX;
    double maxF = -1;
    double mostF = 0.0;
-
+   const int numCol = solver->getNumCols();
    int nEdges = 0;
    for ( int i=0 ; (i<cgraph_size(cgraph)) ; ++i )
    {
-      int nConf = cgraph_get_all_conflicting( cgraph, i, &(neighs[0]), solver->getNumCols()*100 );
+      int nConf = cgraph_get_all_conflicting( cgraph, i, &(neighs[0]), numCol*100 );
       nEdges += nConf;
 
       if ( nConf > maxD )
@@ -458,7 +462,8 @@ void parseParameters( int argc, char **argv )
 int addOddHoles( OsiSolverInterface *solver, OddHoleSep *oddhs )
 {
    int r = 0;
-   vector< double > row( solver->getNumCols(), 1.0);
+   const int numCol = solver->getNumCols();
+   vector< double > row( numCol, 1.0);
    OsiCuts oc;
    for ( int i=0; (i<oddhs_get_odd_hole_count(oddhs)) ; i++ )
    {
@@ -514,3 +519,15 @@ void decideLpMethod()
    }
 }
 
+vector<string> getVarNames(const vector<string> &colNames, int numCols)
+{
+   vector<string> varNames(numCols * 2);
+
+   for(int i = 0; i < numCols; i++)
+   {
+      varNames[i] = colNames[i];
+      varNames[i+numCols] = "¬" + colNames[i];
+   }
+
+   return varNames;
+}
