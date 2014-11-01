@@ -34,7 +34,7 @@
 \RequirePackage{latexsym}
 % \RequirePackage{ifpdf}
 % \ifpdf\RequirePackage[raiselinks=false,colorlinks=true,citecolor=blue,urlcolor=blue,linkcolor=blue,bookmarksopen=true,pdftex]{hyperref}\else
-\RequirePackage[raiselinks=false,colorlinks=true,citecolor=blue,urlcolor=blue,linkcolor=blue,bookmarksopen=true,dvips]{hyperref}
+\RequirePackage[raiselinks=false,colorlinks=true,citecolor=blue,urlcolor=blue,linkcolor=blue,bookmarksopen=true]{hyperref}
 \input{leqno.clo}
 \DeclareOption{12pt}{}
 \DeclareOption{11pt}{}
