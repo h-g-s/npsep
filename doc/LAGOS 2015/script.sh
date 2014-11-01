@@ -1,9 +1,0 @@
-latex lagos.tex
-bibtex lagos.aux
-latex lagos.tex
-latex lagos.tex
-latex lagos.tex
-latex lagos.tex
-latex lagos.tex
-dvips lagos.dvi
-ps2pdf lagos.ps
