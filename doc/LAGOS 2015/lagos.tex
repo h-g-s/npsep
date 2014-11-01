@@ -97,6 +97,8 @@ L_{i}^{x_{\hat{j}} = u,\, x_{\hat{k}} = v}=\sum_{j\in N_{i}^{-},\, j\neq\hat{j},
 
 Performing these steps for each combination of values of two binary variables, considering each pair of variables in each constraint, leads to the creation of a conflict graph for any IP problem in $O(m \times n^2)$. However, for problems with many variables and constraints this technique can be computationally prohibitive. Nevertheless, for some constraint types a large number of conflicts can be quickly discovered, e.g. in set partition/packing constraints where cliques are found in O(1). These cliques are automatically detected in the pre-processing phase of most solvers. On the next subsection we show simple procedures which also detect cliques in less structured constraints in $O( n \log n )$.
 
+\subsection{Fast detection of cliques in less structured constraints}
+
 By sorting the coefficients of a constraint in non-decreasing order we can found conflicts that forms a clique, avoiding making some pairwise analysis. These cliques are stored in a data structure used by the conflict graph. Let $x_{\hat{j}}$ and $x_{\hat{j}+1}$ two consecutive binary variables in constraint $i$. If $L_{i}^{x_{\hat{j}}=1,\, x_{\hat{j}+1}=1}>b_{i}$, there is a clique involving the activation of all variables starting from $x_{\hat{j}}$ until the last coefficient of $i$ according to the non-decreasing order. 
 
 Similarly, we look for cliques between the complement of some variables by sorting the coefficients in non-increasing order. If $L_{i}^{x_{\hat{j}} = 0,\, x_{\hat{j}+1} = 0} > b_i$ there is a clique involving the complement of all variables starting from $x_{\hat{j}}$ until the last coefficient of $i$ according to the non-increasing order.
