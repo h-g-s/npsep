@@ -86,29 +86,34 @@ Given a Binary Integer Programming (IP), a conflict graph can be constructed usi
 
 \[\sum_{j \in N} a_{ij}x_{j} \leq b_{i}\]
 
-\noindent where $N$ is the index set of binary variables $x$, $a_{ij}$ is the coefficient for variable $x_{j}$ at constraint $i$ and $b_{i}$ is the right-hand side of constraint $i$. Suppose we are analysing two particular variables $x_{\hat{j}}$ and $x_{\hat{k}}$ with respect to constraint $i$. Consider that these variables are assigned with values $u$ and $v$, respectively. Let:
+\noindent where $N$ is the index set of binary variables $x$, $a_{ij}$ is the coefficient for variable $x_{j}$ at constraint $i$ and $b_{i}$ is the right-hand side of constraint $i$. Suppose we are analyzing two particular variables $x_{\hat{j}}$ and $x_{\hat{k}}$ with respect to constraint $i$. Consider that these variables are assigned with values $u$ and $v$, respectively. Let:
 
 \[ L_{i}^{x_{\hat{j}} = u,\, x_{\hat{k}} = v}=\sum_{j\in N_{i}^{-},\, j\neq\hat{j},\, j\neq\hat{k}}a_{ij}+a_{i\hat{j}}u+a_{i\hat{k}}v \]
 
 \noindent where $N_{i}^{-} = \{j \in N : aij < 0\}$. In this case, $L_{i}^{x_{\hat{j}} = u,\, x_{\hat{k}} = v}$ is the minimum value of the left-hand side (i.e. lower bound) of the constraint $i$, considering the assignments $x_{\hat{j}} = u$ and $x_{\hat{k}} = v$. If $L_{i}^{x_{\hat{j}} = u,\, x_{\hat{k}} = v} > b_{i}$, there is a conflict between the assignments of $x_{\hat{j}}$ and $x_{\hat{k}}$. For example, if $u = 1$ and $v = 1$ there is a conflict between the activation of these variables. Consequently, the logical relation $x_{\hat{j}} = 1 \ \Rightarrow \ x_{\hat{k}} = 0$ was found.
 
-Performing these steps for each combination of values ​​of two binary variables, considering each pair of variables in each constraint, leads to the creation of a conflict graph for any IP problem. However, for problems with many variables and constraints this technique can be computationally prohibitive. By sorting the coefficients of a constraint in non-decreasing order we can found conflicts that forms a clique, avoiding making some pairwise analysis. Let $x_{\hat{j}}$ and $x_{\hat{j}+1}$ two consecutive binary variables in constraint $i$. If $L_{i}^{x_{\hat{j}}=1,\, x_{\hat{j}+1}=1}>b_{i}$, there is a clique involving the activation of all variables in the interval $[\hat{j},\, n]$, where $n$ is the last coefficient of $i$ according to the non-decreasing order. This approach can be used to avoid analysing constraints which have no cliques. Let $k$ the index of the highest coefficient in $i$. Thus, if $L_{i}^{x_{k}=1,\, x_{k+1}=1}\leq b_{i}$, there are no conflicts involving the activation of variables in this constraint.
+Performing these steps for each combination of values ​​of two binary variables, considering each pair of variables in each constraint, leads to the creation of a conflict graph for any IP problem. However, for problems with many variables and constraints this technique can be computationally prohibitive.
 
-Similarly, we look for cliques between the complement of some variables taking advantage of the ordering of coefficients. Let:
+By sorting the coefficients of a constraint in non-decreasing order we can found conflicts that forms a clique, avoiding making some pairwise analysis. These cliques are stored in a data structure used by the conflict graph. Let $x_{\hat{j}}$ and $x_{\hat{j}+1}$ two consecutive binary variables in constraint $i$. If $L_{i}^{x_{\hat{j}}=1,\, x_{\hat{j}+1}=1}>b_{i}$, there is a clique involving the activation of all variables starting from $x_{\hat{j}}$ until the last coefficient of $i$ according to the non-decreasing order. Moreover, this approach can be used to avoid analyzing constraints that do not have such types of clique. Let $k$ the index of the highest coefficient, namely the last one, in $i$. Thus, if $L_{i}^{x_{k-1}=1,\, x_{k}=1}\leq b_{i}$, there are no cliques involving the activation of variables in this constraint.
 
-\[ U_{i}^{x_{\hat{j}} = 0,\, x_{\hat{j}+1} = 0} = \sum_{j \in N_i^+, j\neq\hat{j},\, j\neq\hat{j}+1} \]
+Similarly, we look for cliques between the complement of some variables by sorting the coefficients in non-increasing order. If $L_{i}^{x_{\hat{j}} = 0,\, x_{\hat{j}+1} = 0} > b_i$ there is a clique involving the complement of all variables starting from $x_{\hat{j}}$ until the last coefficient of $i$ according to the non-increasing order. This can also used to avoid fruitless analysis. Let $k$ the index of the smallest coefficient in $i$. Thus, if $L_{i}^{x_{k-1}=1,\, x_{k}=1}\leq b_{i}$, there are no cliques involving the complement of variables in this constraint.
 
-\noindent In this case, $U_{i}^{x_{\hat{j}} = 0,\, x_{\hat{j}+1} = 0}$ is the maximum value of the left-hand side (i.e. upper bound) of the constraint $i$, considering the deactivation of $x_{\hat{j}}$ and $x_{\hat{j}+1}$. If $U_{i}^{x_{\hat{j}} = 0,\, x_{\hat{j}+1} = 0} < b_i$ there is a clique involving the complement of all variables in the interval $[\hat{j},\, n]$, where $n$ is the last coefficient of $i$ according to the non-decreasing order. This approach can be used to avoid analysing constraints which have no cliques. Let $k$ the index of the highest coefficient in $i$. Thus, if $U_{i}^{x_{k}=0,x_{k+1}=0}\geq b_{i}$, there are no conflicts involving the deactivation of variables in this constraint.
+When the absence of cliques can not be detected and no clique was found we use the pairwise analysis. Nevertheless, in our experiments we observe a large number of constraints that have cliques, speeding up the creation of conflict graphs.
 
+\begin{example}
 
+%\begin{alignat}{2}
+%min.:\nonumber \\
+% & 10x_{1}+12x_{2}+4x_{3}+7x_{4}+5x_{5}\nonumber \\
+%s.t.:\nonumber \\
+% & x_1 + x_2        & \leq 1\label{eq:1}\\
+% & x_1 + x_3 + x_5  & =1\label{eq:2}\\
+% & x_2 +  x_4  & \geq 1\label{eq:4} \\
+% & x_2 + x_4 + x_5  & \leq 1\label{eq:5} \\
+% & x_1,x_{2},x_{3},x_{4},x_{5} & \in\{0,1\}\nonumber 
+%\end{alignat}
 
-
-
-
-
-
-
-
+\end{example}
 
 
 
