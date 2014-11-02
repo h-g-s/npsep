@@ -102,19 +102,19 @@ Performing these steps for each combination of values of two binary variables, c
 
 We can found conflicts which form cliques quickly by sorting the coefficients of a constraint. Clique conflicts are useful to avoid the pairwise analysis of variables, spending a linear time for each constraint ($O(n_i)$). These cliques are stored in a data structure used by the conflict graph.
 
-To detect cliques that involve the activaction of some variables we start computing the lower bound of the left-hand side (LHS) for each two consecutive variables, starting the analysis from the smallest coefficent ($k=1$) to the highest one ($k=n_i$). Let
+To detect cliques that involve the activaction of some variables we start computing the lower bound of the left-hand side (LHS) for each two consecutive variables, starting the analysis from the smallest coefficent ($k=1$) to the highest one ($k=n_i$). The first step is compute the sum of negative coefficients excluding the two analyzed variables:
 
 \begin{equation}
-D_{i}^{x_{\acute{a}_{ik}}, x_{\acute{a}_{ik+1}}} = S_i^- + min(0, \tilde{a}_{ik}) + min(0, \tilde{a}_{ik+1})
+D_{i}^{x_{\acute{a}_{ik}}, x_{\acute{a}_{ik+1}}} = S_i^- - min(0, \tilde{a}_{ik}) - min(0, \tilde{a}_{ik+1})
 \end{equation}
 
-\noindent the sum of negative coefficients excluding the two analyzed variables. The LHS is computed in the same way of equation \ref{li}:
+\noindent Performing this computation, we do not need to traverse the constraint for each pair of variables, allowing compute the LHS in $O(1)$. The LHS is computed in the same way of equation \ref{li}:
 
 \begin{equation}
 LHS_{i}^{x_{\acute{a}_{ik}} = 1, x_{\acute{a}_{ik+1}} = 1} = D_{i}^{x_{\acute{a}_{ik}}, x_{\acute{a}_{ik+1}}} + \tilde{a}_{ik} + \tilde{a}_{ik+1}
 \end{equation}
 
-So, if $LHS_{i}^{x_{\acute{a}_{ik}} = 1, x_{\acute{a}_{ik+1}} = 1} > b_{i}$, there is a clique involving the activation of all variables starting from $x_{\acute{a}_{ik}}$ until $x_{\acute{a}_{in_i}}$. Moreover, we can avoid finding cliques involving activated variables by calculating the LHS for the two highest coefficients. If this LHS is less or equal than $b_i$ this constraint has no such cliques.
+So, if $LHS_{i}^{x_{\acute{a}_{ik}} = 1, x_{\acute{a}_{ik+1}} = 1} > b_{i}$, there is a clique involving the activation of all variables starting from $x_{\acute{a}_{ik}}$ until $x_{\acute{a}_{in_i}}$. When we detect the first conflict we stop analyzing the constraint, beacause all other variables not analyzed belong to the clique found. Moreover, we can avoid finding cliques involving activated variables by calculating the LHS for the two highest coefficients ($LHS_{i}^{x_{\acute{a}_{in_i-1}} = 1, x_{\acute{a}_{in_i}} = 1}$). If this LHS is less or equal than $b_i$ this constraint has no such cliques.
 
 When no clique is found we use the pairwise analysis. Nevertheless, in our experiments we observe a large number of constraints that have cliques, speeding up the creation of conflict graphs.
 
