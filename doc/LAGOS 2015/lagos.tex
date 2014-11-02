@@ -89,20 +89,32 @@ Given a Binary Integer Programming (IP), a conflict graph can be constructed usi
 
 \noindent where $N$ is the index set of binary variables $x$, $a_{ij}$ is the coefficient for variable $x_{j}$ at constraint $i$ and $b_{i}$ is the right-hand side of constraint $i$. Suppose we are analyzing two particular variables $x_{\hat{j}}$ and $x_{\hat{k}}$ with respect to constraint $i$. Consider that these variables are assigned with values $u$ and $v$, respectively. Let:
 
-\begin{equation}
+\begin{equation}\label{li}
 L_{i}^{x_{\hat{j}} = u,\, x_{\hat{k}} = v}=\sum_{j\in N_{i}^{-},\, j\neq\hat{j},\, j\neq\hat{k}}a_{ij}+a_{i\hat{j}}u+a_{i\hat{k}}v 
 \end{equation}
 
 \noindent where $N_{i}^{-} = \{j \in N : a_{ij} < 0\}$. In this case, $L_{i}^{x_{\hat{j}} = u,\, x_{\hat{k}} = v}$ is a lower bound for the value on the left-hand side  of the constraint $i$, considering the assignments $x_{\hat{j}} = u$ and $x_{\hat{k}} = v$. If $L_{i}^{x_{\hat{j}} = u,\, x_{\hat{k}} = v} > b_{i}$, there is a conflict between the assignments of $x_{\hat{j}}$ and $x_{\hat{k}}$. For example, if $u = 1$ and $v = 1$ there is a conflict between the activation of these variables. Consequently, the logical relation $x_{\hat{j}} = 1 \ \Rightarrow \ x_{\hat{k}} = 0$ was found.
 
-Performing these steps for each combination of values of two binary variables, considering each pair of variables in each constraint, leads to the creation of a conflict graph for any IP problem in $O(m \times n^2)$. For problems with many variables and constraints this technique may be too expensive computationally. Nevertheless, for some constraint types a large number of conflicts can be quickly discovered. This is the case of the Generalized Upper Bound constraints ($\sum_{j\in N}x_j \leq 1$). As discussed in \cite{atamturk}, even handling explicitly conflict graphs induced by these constraints requires special data structures such that in the previous decade most solvers could not use all information which could be inferred just from GUB constraints. The following subsection will describe additional cases where cliques in constraints can be quickly detected (i.e., faster than $O(n^2)$). The following notation will be used: $\tilde{a}_{ik}$ is the $k$-th largest coefficient in constraint $i$ and $\acute{a}_{ik}$ indicates its index. In GUB constraints $\tilde{a}_{ik}=b_i=1 \forall k$. In the next subsection fast clique detection will be discussed for less structured constraints. 
+Performing these steps for each combination of values of two binary variables, considering each pair of variables in each constraint, leads to the creation of a conflict graph for any IP problem in $O(m \times n^2)$. For problems with many variables and constraints this technique may be too expensive computationally. Nevertheless, for some constraint types a large number of conflicts can be quickly discovered. This is the case of the Generalized Upper Bound constraints ($\sum_{j\in N}x_j \leq 1$). As discussed in \cite{atamturk}, even handling explicitly conflict graphs induced by these constraints requires special data structures such that in the previous decade most solvers could not use all information which could be inferred just from GUB constraints. The following subsection will describe additional cases where cliques in constraints can be quickly detected (i.e., faster than $O(n^2)$). The following notation will be used: $\tilde{a}_{ik}$ is the $k$-th smallest coefficient in constraint $i$ and $\acute{a}_{ik}$ indicates its index. The constants $n_i$ and $S_i^-$ will represent the number of variables and the sum of all negative coefficients of constraint $i$, respectively. In GUB constraints $\tilde{a}_{ik}=b_i=1 \ \forall \ k$. In the next subsection fast clique detection will be discussed for less structured constraints.
 
 
 \subsection{Fast detection of cliques in less structured constraints}
 
-By sorting the coefficients of a constraint in non-decreasing order we can found conflicts that forms a clique, avoiding making some pairwise analysis. These cliques are stored in a data structure used by the conflict graph. Let $x_{\hat{j}}$ and $x_{\hat{j}+1}$ two consecutive binary variables in constraint $i$. If $L_{i}^{x_{\hat{j}}=1,\, x_{\hat{j}+1}=1}>b_{i}$, there is a clique involving the activation of all variables starting from $x_{\hat{j}}$ until the last coefficient of $i$ according to the non-decreasing order. 
+We can found conflicts which form cliques quickly by sorting the coefficients of a constraint. Clique conflicts are useful to avoid the pairwise analysis of variables, spending a linear time for each constraint ($O(n_i)$). These cliques are stored in a data structure used by the conflict graph.
 
-Similarly, we look for cliques between the complement of some variables by sorting the coefficients in non-increasing order. If $L_{i}^{x_{\hat{j}} = 0,\, x_{\hat{j}+1} = 0} > b_i$ there is a clique involving the complement of all variables starting from $x_{\hat{j}}$ until the last coefficient of $i$ according to the non-increasing order.
+To detect cliques that involve the activaction of some variables we start computing the lower bound of the left-hand side (LHS) for each two consecutive variables, starting the analysis from the smallest coefficent ($k=1$) to the highest one ($k=n_i$). Let
+
+\begin{equation}
+D_{i}^{x_{\acute{a}_{ik}}, x_{\acute{a}_{ik+1}}} = S_i^- + min(0, \tilde{a}_{ik}) + min(0, \tilde{a}_{ik+1})
+\end{equation}
+
+\noindent the sum of negative coefficients excluding the two analyzed variables. The LHS is computed in the same way of equation \ref{li}:
+
+\begin{equation}
+LHS_{i}^{x_{\acute{a}_{ik}} = 1, x_{\acute{a}_{ik+1}} = 1} = D_{i}^{x_{\acute{a}_{ik}}, x_{\acute{a}_{ik+1}}} + \tilde{a}_{ik} + \tilde{a}_{ik+1}
+\end{equation}
+
+So, if $LHS_{i}^{x_{\acute{a}_{ik}} = 1, x_{\acute{a}_{ik+1}} = 1} > b_{i}$, there is a clique involving the activation of all variables starting from $x_{\acute{a}_{ik}}$ until $x_{\acute{a}_{in_i}}$. Moreover, we can avoid finding cliques involving activated variables by calculating the LHS for the two highest coefficients. If this LHS is less or equal than $b_i$ this constraint has no such cliques.
 
 When no clique is found we use the pairwise analysis. Nevertheless, in our experiments we observe a large number of constraints that have cliques, speeding up the creation of conflict graphs.
 
