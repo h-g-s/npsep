@@ -100,21 +100,29 @@ Performing these steps for each combination of values of two binary variables, c
 
 \subsection{Fast detection of cliques in less structured constraints}
 
-We describe two simple cases where large cliques of  conflicting variables can be detected just by traversing constraints with  coefficients of variables sorted. Thus, conflicts in these constraints are discovered in $O( n \log n)$.
+We describe two simple cases where large cliques of conflicting variables can be detected just by traversing constraints with  coefficients of variables sorted in non-decreasing order. Thus, conflicts in these constraints are discovered in $O( n \log n)$.
 
-To detect cliques that involve the activation of some variables we start computing the lower bound of the left-hand side (LHS) for each two consecutive variables, starting the analysis from the smallest coefficent ($k=1$) to the highest one ($k=n_i$). The first step is compute the sum of negative coefficients excluding the two analyzed variables:
+To detect cliques that involve the activation of some variables we start computing the lower bound of the left-hand side (LHS) for each two consecutive variables, starting the analysis from the smallest coefficient ($k=1$) to the highest one ($k=n_i$). The first step is compute the sum of negative coefficients excluding the two analyzed variables:
 
-\begin{equation}
+\begin{equation}\label{di}
 D_{i}^{x_{\acute{a}_{ik}}, x_{\acute{a}_{ik+1}}} = S_i^- - min(0, \tilde{a}_{ik}) - min(0, \tilde{a}_{ik+1})
 \end{equation}
 
-\noindent Thus, the lower bound for the LHS of constraint $i$ when variables with $k$ and $k+1$ smallest coefficients are fixed at one is:  
+\noindent Thus, the lower bound for the LHS of constraint $i$ when variables with $k$ and $k+1$ smallest coefficients are fixed at one is:
 
 \begin{equation}
 LHS_{i}^{x_{\acute{a}_{ik}} = 1, x_{\acute{a}_{ik+1}} = 1} = D_{i}^{x_{\acute{a}_{ik}}, x_{\acute{a}_{ik+1}}} + \tilde{a}_{ik} + \tilde{a}_{ik+1}
 \end{equation}
 
-Since $LHS_{i}^{x_{\acute{a}_{ik}} = 1, x_{\acute{a}_{ik+1}} = 1}$ is monotonically non-decreasing as $k$ increases then if $LHS_{i}^{x_{\acute{a}_{ik}} = 1, x_{\acute{a}_{ik+1}} = 1} > b_{i}$, there is a clique involving the activation of all variables from position $k$ until position $n_i$. Moreover, we can discard the existence of such cliques by checking if $LHS_{i}^{x_{\acute{a}_{in_i-1}} = 1, x_{\acute{a}_{in_i}} = 1} \leq b_i$.
+Since $LHS_{i}^{x_{\acute{a}_{ik}} = 1, x_{\acute{a}_{ik+1}} = 1}$ is monotonically non-decreasing as $k$ increases, if $LHS_{i}^{x_{\acute{a}_{ik}} = 1, x_{\acute{a}_{ik+1}} = 1} > b_{i}$, then there is a clique involving the activation of all variables from position $k$ until position $n_i$. Moreover, we can discard the existence of such cliques by checking if $LHS_{i}^{x_{\acute{a}_{in_i-1}} = 1, x_{\acute{a}_{in_i}} = 1} \leq b_i$.
+
+The same idea can be used to detect cliques that involve the deactivation of some variables, computing the lower bound of the LHS for each two consecutive variables, starting from the highest coefficient ($k=n_i$) to the smallest one ($k=1$). The lower bound for the LHS of constraint $i$ when variables $x_{\acute{a}_{ik}}$ and $x_{\acute{a}_{ik-1}}$ are fixed at zero is equal to $D_{i}^{x_{\acute{a}_{ik}}, x_{\acute{a}_{ik-1}}}$, which is obtained by equation \ref{di}. Formally:
+
+\begin{equation}
+LHS_{i}^{x_{\acute{a}_{ik}} = 0, x_{\acute{a}_{ik-1}} = 0} = D_{i}^{x_{\acute{a}_{ik}}, x_{\acute{a}_{ik-1}}}
+\end{equation}
+
+In the same form, $LHS_{i}^{x_{\acute{a}_{ik}} = 0, x_{\acute{a}_{ik-1}} = 0}$ is monotonically non-decreasing as $k$ decreases. If $LHS_{i}^{x_{\acute{a}_{ik}} = 0, x_{\acute{a}_{ik-1}} = 0} > b_{i}$, then there is a clique involving the deactivation of all variables from position $k$ until the variable of first position ($k=1$). Moreover, we can discard the existence of such cliques by checking if $LHS_{i}^{x_{\acute{a}_{i2}} = 0, x_{\acute{a}_{i1}} = 0} \leq b_i$.
 
 When no clique is found we use the pairwise analysis. Nevertheless, in our experiments we observe a large number of constraints that have cliques, speeding up the creation of conflict graphs.
 
@@ -129,19 +137,21 @@ x_1 + x_2 + x_3  & \geq 2\label{eq:1}\\
 
 \begin{figure}[!ht]
   \begin{center}
-    \includegraphics[width=6cm]{graph.png}
+    \includegraphics[width=4cm]{graph.png}
   \end{center}
-  \caption{A conflict graph for constraints \ref{eq:1} and \ref{eq:2}.}
+  \caption{A conflict graph for constraints presented in equations \ref{eq:1} and \ref{eq:2}.}
   \label{graph}
 \end{figure}
 
-Figure \ref{graph} shows the conflict graph for this constraints, where $\neg xi$ represents the complement (or deactivation) of variable $xi$. Initially, we create a vertex for each variable and its complement. Since in a feasible solution we can either activate a variable or its complement, we insert a edge between them (double lines). For constraint \ref{eq:1}, we have to transform it in a $\leq$-constraint, multiplying by -1. So, we have:
+Figure \ref{graph} shows the conflict graph for this constraints, where $\neg xi$ represents the complement (or deactivation) of variable $xi$. Initially, we create a vertex for each variable and its complement. Since in a feasible solution we can either activate a variable or its complement, we insert a edge between them (double lines). For the constraint of equation \ref{eq:1}, we have to transform it in a $\leq$-constraint, multiplying by -1. So, we have:
 
-\[ - x_1 - x_2 - x_3 \leq - 2 \]
+\begin{equation}
+- x_1 - x_2 - x_3 \leq - 2
+\end{equation}
 
 How the coefficients of this constraints are ordered, we can start calculating $L_{\ref{eq:1}}^{x_{\hat{j}}=1,\, x_{\hat{j}+1}=1}$. For any pair of activated variables we are able to produce a solution that respects this constraint. For this reason we do not find a clique with active variables in this constraint. Calculating $L_{\ref{eq:1}}^{x_{\hat{j}}=0,\, x_{\hat{j}+1}=0}$ for the first pair of subsequent variables (i.e. $\hat{j}=1$) we find a conflict that implies in a clique involving all complement of the variables starting from $x_1$ until $x_3$ ($L_{\ref{eq:1}}^{x_1=0,\, x_2=0} = -1$). So, we insert this conflicts in the graph.
 
-We proceed analyzing constraint \ref{eq:2}. For any pair of deactivated variables we are able to produce a solution that respects this constraint. For this reason we do not find a clique with deactivated variables in this constraint. Calculating $L_{\ref{eq:2}}^{x_{\hat{j}}=1,\, x_{\hat{j}+1}=1}$ for the consecutive pairs of variables we can found a clique starting from $x_2$ until $x_4$ ($L_{\ref{eq:2}}^{x_{2}=1,\, x_{3}=1} = 5$). We finish inserting this conflicts in the graph.
+We proceed analyzing the constraint of equation \ref{eq:2}. For any pair of deactivated variables we are able to produce a solution that respects this constraint. For this reason we do not find a clique with deactivated variables in this constraint. Calculating $L_{\ref{eq:2}}^{x_{\hat{j}}=1,\, x_{\hat{j}+1}=1}$ for the consecutive pairs of variables we can found a clique starting from $x_2$ until $x_4$ ($L_{\ref{eq:2}}^{x_{2}=1,\, x_{3}=1} = 5$). We finish inserting this conflicts in the graph.
 
 \end{example}
 
