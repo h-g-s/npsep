@@ -17,7 +17,6 @@ extern "C"
 #include "conflict_discover.h"
 #include "clique_separation.h"
 }
-#include "osi_cgraph.h"
 
 using namespace std;
 
@@ -46,18 +45,18 @@ int main( int argc, char **argv )
     readTime = ((double(clock() - start))/((double)CLOCKS_PER_SEC));
     printf("readLP took %.3f seconds.\n", readTime);
 
-    /*printf("writeclqw\n\n");
+    printf("writeclqw\n\n");
     char problemName[ 256 ];
     getFileName( problemName, argv[1] );
     printf("loaded %s \n", problemName );
-    printf("\t%d variables (%d integer) %d rows %d nz\n\n", solver->getNumCols(), solver->getNumIntegers(), solver->getNumRows(), solver->getNumElements() );*/
+    printf("\t%d variables (%d integer) %d rows %d nz\n\n", solver->getNumCols(), solver->getNumIntegers(), solver->getNumRows(), solver->getNumElements() );
 
     test = clock();
     CGraph *cgraph = osi_build_cgraph( solver );
     osiTime = ((double(clock() - test))/((double)CLOCKS_PER_SEC));
     printf("osi_cgraph took %.3f seconds.\n", osiTime);
     
-	//cgraph_print_summary( cgraph, "Conflict graph" );
+	cgraph_print_summary( cgraph, "Conflict graph" );
 
     if ( cgraph_size( cgraph ) == 0 )
     {
@@ -69,7 +68,7 @@ int main( int argc, char **argv )
     printf("Writing conflict graph...");
     char fileName[256];
     getFileName( fileName, argv[1] );
-    //printf("\nFile name: %s\n", fileName );
+    printf("\nFile name: %s\n", fileName );
     char outName[256];
     sprintf( outName, "%s.clqw", fileName );
     cgraph_save( cgraph, outName );
@@ -79,9 +78,6 @@ int main( int argc, char **argv )
     end = clock();
     cpuTime = ((double(end - start))/((double)CLOCKS_PER_SEC));
 
-
-    printf("%lu %lu %lu %lu %lu %lu %lu\n", completeClique, incompleteClique, completeCliqueComplement, incompleteCliqueComplement,
-                                            activePairwise, inactivePairwise, mixedPairwise);
 	printf("Total time: %.3f seconds\n", cpuTime);
 	printf("Row: %s \t time: %.3f seconds\n", solver->getRowName(maxRowTimeIdx).c_str(), maxRowTime);
 
