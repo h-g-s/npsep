@@ -32,58 +32,48 @@ void readLP( const char *fileName, OsiSolverInterface *solver );
 
 int main( int argc, char **argv )
 {
-	clock_t start = clock(), end, test;
-	double osiTime, writeTime, cpuTime, readTime;
+    clock_t start;
+    double pairAnalysis, cliqueAnalysis;
 
     OsiSolverInterface *solver = NULL;
-
     OsiClpSolverInterface *realSolver = new OsiClpSolverInterface();
-
     solver = (OsiSolverInterface*) realSolver;
-
     readLP( argv[1], solver );
-    readTime = ((double(clock() - start))/((double)CLOCKS_PER_SEC));
-    printf("readLP took %.3f seconds.\n", readTime);
-
-    printf("writeclqw\n\n");
     char problemName[ 256 ];
     getFileName( problemName, argv[1] );
-    printf("loaded %s \n", problemName );
-    printf("\t%d variables (%d integer) %d rows %d nz\n\n", solver->getNumCols(), solver->getNumIntegers(), solver->getNumRows(), solver->getNumElements() );
 
-    test = clock();
-    CGraph *cgraph = osi_build_cgraph( solver );
-    osiTime = ((double(clock() - test))/((double)CLOCKS_PER_SEC));
-    printf("osi_cgraph took %.3f seconds.\n", osiTime);
-    
-	cgraph_print_summary( cgraph, "Conflict graph" );
-
-    if ( cgraph_size( cgraph ) == 0 )
+    start = clock();
+    CGraph *cgraphPair = osi_build_cgraph_pairwise( solver );
+    pairAnalysis = ((double(clock() - start))/((double)CLOCKS_PER_SEC));
+    if ( cgraph_size( cgraphPair ) == 0 )
     {
         printf("EMPTY conflict graph. exiting...\n");
         exit(0);
     }
+    double conflictsPair = 0.0;
+    for(int i = 0; i < cgraph_size( cgraphPair ); i++)
+        conflictsPair += (double)cgraph_degree(cgraphPair, i);
+    conflictsPair /= 2.0;
+    //cgraph_save(cgraphPair, "pair");
+    cgraph_free( &cgraphPair );
 
-    test = clock();
-    printf("Writing conflict graph...");
-    char fileName[256];
-    getFileName( fileName, argv[1] );
-    printf("\nFile name: %s\n", fileName );
-    char outName[256];
-    sprintf( outName, "%s.clqw", fileName );
-    cgraph_save( cgraph, outName );
-    writeTime = ((double(clock() - test))/((double)CLOCKS_PER_SEC));
-    printf("Done in %.3f seconds\n", writeTime);
+    start = clock();
+    CGraph *cgraphClique = osi_build_cgraph( solver );
+    cliqueAnalysis = ((double(clock() - start))/((double)CLOCKS_PER_SEC));
+    if ( cgraph_size( cgraphClique ) == 0 )
+    {
+        printf("EMPTY conflict graph. exiting...\n");
+        exit(0);
+    }
+    double conflictsClique = 0.0;
+    for(int i = 0; i < cgraph_size( cgraphClique ); i++)
+        conflictsClique += (double)cgraph_degree(cgraphClique, i);
+    conflictsClique /= 2.0;
+    //cgraph_save(cgraphClique, "clique");
+    cgraph_free( &cgraphClique );
 
-    end = clock();
-    cpuTime = ((double(end - start))/((double)CLOCKS_PER_SEC));
+    printf("%s %.1lf %.3lf %.1lf %.3lf\n", problemName, conflictsPair, pairAnalysis, conflictsClique, cliqueAnalysis);
 
-	printf("Total time: %.3f seconds\n", cpuTime);
-	printf("Row: %s \t time: %.3f seconds\n", solver->getRowName(maxRowTimeIdx).c_str(), maxRowTime);
-
-    if(!success) printf("Time limit exceeded!\n");
-
-    cgraph_free( &cgraph );
     delete realSolver;
 
     return EXIT_SUCCESS;
@@ -91,10 +81,10 @@ int main( int argc, char **argv )
 
 void readLP( const char *fileName, OsiSolverInterface *solver )
 {
+    solver->messageHandler()->setLogLevel(0);
     solver->setIntParam(OsiNameDiscipline, 2);
+    solver->setHintParam(OsiDoReducePrint,true,OsiHintTry);
     solver->readMps( fileName );
     //solver->readLp( fileName );
     solver->setIntParam(OsiNameDiscipline, 2);
-    solver->messageHandler()->setLogLevel(1);
-    solver->setHintParam(OsiDoReducePrint,true,OsiHintTry);
 }
