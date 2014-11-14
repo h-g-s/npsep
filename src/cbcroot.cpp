@@ -174,6 +174,9 @@ int main( int argc, char **argv )
    int passesGomory = 0;
    int passesTwoMir = 0;
 
+   OsiCuts allCuts; //to avoid inserting cuts already inserted in previous iterations
+   CoinAbsFltEq equal(1.0e-12);
+
    do
    {
       newCuts = 0;
@@ -187,21 +190,45 @@ int main( int argc, char **argv )
          case Default :
             /* updating reduced costs */
             {
-               CglEClique cliqueGen;
-               OsiCuts cuts;
-               CglTreeInfo info;
-               info.level = 0;
-               info.pass = 1;
-               vector<string> varNames = getVarNames(solver->getColNames(), numCols);
+                CglEClique cliqueGen;
+                OsiCuts cuts;
+                CglTreeInfo info;
+                info.level = 0;
+                info.pass = 1;
+                vector<string> varNames = getVarNames(solver->getColNames(), numCols);
 
-               cliqueGen.parseParameters( argc, (const char**)argv );
-               cliqueGen.setCGraph( cgraph );
-               cliqueGen.setGenOddHoles( false );
-               cliqueGen.colNames = &varNames;
-               cliqueGen.generateCuts( *solver, cuts, info );
-               newCuts = cuts.sizeCuts();
+                cliqueGen.parseParameters( argc, (const char**)argv );
+                cliqueGen.setCGraph( cgraph );
+                cliqueGen.setGenOddHoles( false );
+                cliqueGen.colNames = &varNames;
+                cliqueGen.generateCuts( *solver, cuts, info );
 
-               solver->applyCuts( cuts );
+                //removing duplicate cuts (inserted in previous iterations)
+                bool cutsToRemove[cuts.sizeRowCuts()];
+                fill(cutsToRemove, cutsToRemove + cuts.sizeRowCuts(), false);
+                for(int i = 0; i < cuts.sizeRowCuts(); i++)
+                {
+                    const OsiRowCut &newOrc = cuts.rowCut(i);
+                    for(int j = 0; j < allCuts.sizeRowCuts(); j++)
+                    {
+                        const OsiRowCut &orc = allCuts.rowCut(j);
+                        if(newOrc == orc)
+                        {
+                            printf("A duplicate cut has been detected!\n");
+                            cutsToRemove[i] = true;
+                            break;
+                        }
+                    }
+                }
+                for(int i = 0; i < cuts.sizeRowCuts(); i++)
+                {
+                    if(!cutsToRemove[i]) //if cut i was not inserted in allCuts we have to insert it
+                        allCuts.insertIfNotDuplicate(cuts.rowCut(i), equal);
+                    else cuts.eraseRowCut(i);
+                }
+
+                newCuts = cuts.sizeCuts();
+                solver->applyCuts( cuts );
             }
 
 
