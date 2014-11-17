@@ -764,9 +764,6 @@ bool cliqueDetection(CGraph* cgraph, const vector<pair<int, double> >& columns, 
             if(D > rhs + 0.001)
             {
                 cliqueCompStart = i;
-                //looking for the same coefficient
-                for(int j = i + 1; (j < nElements && columns[j].second == columns[i].second); j++)
-                    cliqueCompStart++;
                 break;
             }
         }
@@ -783,13 +780,17 @@ bool cliqueDetection(CGraph* cgraph, const vector<pair<int, double> >& columns, 
         {
             processClique( cliqueCompSize, (const int *)idxs, cgraph, colLb, colUb );
 
-            //looking for the same coefficient. For example: x + y + 2z + 2w <= 2
+            //looking for the same coefficient. For example: x + 2y + 2z + 3w >= 4 (- x - 2y - 2z - 3w <= -4)
             for(int j = cliqueCompStart + 1; j < nElements; j++)
             {
-                if(fabs(columns[j].second - columns[cliqueCompStart].second) <= EPS && !FIXED_IN_ZERO(columns[j].first))
+                if(fabs(columns[j].second - columns[cliqueCompStart].second) <= EPS)
                 {
-                    idxs[0] = columns[j].first;
-                    processClique( cliqueCompSize, (const int *)idxs, cgraph, colLb, colUb );
+                	if(!FIXED_IN_ZERO(columns[j].first))
+                	{
+	                    idxs[n-1] = columns[j].first;
+	                    processClique( cliqueCompSize, (const int *)idxs, cgraph, colLb, colUb );
+	                    cliqueCompStart++;
+	                }
                 }
                 else break;
             }
@@ -830,17 +831,16 @@ bool cliqueDetection(CGraph* cgraph, const vector<pair<int, double> >& columns, 
                 {
                     idxs[0] = columns[j].first;
                     processClique( cliqueSize, (const int *)idxs, cgraph, colLb, colUb );
+                    cliqueStart--;
                 }
                 else break;
             }
         }
     }
 
-    if(cliqueCompSize < 3 && cliqueSize < 3)
-        return false;
-
     //checking for conflicts between variables that didnt appear in any clique
     int last = max(cliqueCompStart, cliqueStart);
+    	last = max(last, 0); //just to handle the case when cliqueCompStart and cliqueStart are equal to -1
     for(int i = 0; i < last; i++)
     {
         if(FIXED_IN_ZERO(columns[i].first))
