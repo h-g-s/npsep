@@ -70,7 +70,7 @@ The rest of the paper is organized as follows. In Section \ref{seccgraph}, we fo
 
 \section{Conflict Graphs in Integer Programming}\label{seccgraph}
 
-A conflict graph represents logical relations between binary variables. For two binary variables, we may discover four possible logical relations:
+A conflict graph represents logical relations between binary variables. For two binary variables, we may discover four possible logical relations, using the notation of \cite{atamturk}:
 
 \begin{align}
 x = 1 \Rightarrow y = 1 & \quad \Longleftrightarrow \quad x + (1 - y) & \leq \ 1\\
@@ -79,7 +79,7 @@ x = 0 \Rightarrow y = 1 & \quad \Longleftrightarrow \quad (1 - x) + (1 - y) & \l
 x = 0 \Rightarrow y = 0 & \quad \Longleftrightarrow \quad (1 - x) + y & \leq \ 1
 \end{align}
 
-Given a Binary Integer Programming (IP), a conflict graph can be constructed using probing techniques based on feasibility considerations. The basic idea is to analyze the impact of activation or deactivation (i.e. activation of its complement) of two variables at time, for each pair of variables and each constraint. Each BP constraint $i \in \{1,\ldots,m\}$ can be written as:
+Given an Integer Programming (IP), a conflict graph can be constructed using probing techniques based on feasibility considerations. The basic idea is to analyze the impact of activation or deactivation (i.e. activation of its complement) of two variables at time, for each pair of variables and each constraint. Each constraint $i \in \{1,\ldots,m\}$ can be written as:
 
 \begin{equation}
  \sum_{j \in N} a_{ij}x_{j} \leq b_{i} 
@@ -88,12 +88,12 @@ Given a Binary Integer Programming (IP), a conflict graph can be constructed usi
 \noindent where $N$ is the index set of binary variables $x$, $a_{ij}$ is the coefficient for variable $x_{j}$ at constraint $i$ and $b_{i}$ is the right-hand side of constraint $i$. Suppose we are analyzing two particular variables $x_{\hat{j}}$ and $x_{\hat{k}}$ with respect to constraint $i$. Consider that these variables are assigned with values $u$ and $v$, respectively. Let:
 
 \begin{equation}\label{li}
-L_{i}^{x_{\hat{j}} = u,\, x_{\hat{k}} = v}=\sum_{j\in N_{i}^{-},\, j\neq\hat{j},\, j\neq\hat{k}}a_{ij}+a_{i\hat{j}}u+a_{i\hat{k}}v 
+L_{i}^{x_{\hat{j}} = u,\, x_{\hat{k}} = v}=\sum_{j\in N_{i}^{-} \setminus \{\hat{j}, \hat{k}\}}a_{ij}+a_{i\hat{j}}u+a_{i\hat{k}}v 
 \end{equation}
 
 \noindent where $N_{i}^{-} = \{j \in N : a_{ij} < 0\}$. In this case, $L_{i}^{x_{\hat{j}} = u,\, x_{\hat{k}} = v}$ is a lower bound for the value on the left-hand side  of the constraint $i$, considering the assignments $x_{\hat{j}} = u$ and $x_{\hat{k}} = v$. If $L_{i}^{x_{\hat{j}} = u,\, x_{\hat{k}} = v} > b_{i}$, there is a conflict between the assignments of $x_{\hat{j}}$ and $x_{\hat{k}}$. 
 
-Performing these steps for each combination of values of two binary variables, considering each pair of variables in each constraint, leads to the creation of a conflict graph for any IP problem in $O(m \times n^2)$. For problems with many variables and constraints this technique may be too expensive computationally (See Experiments section). Nevertheless, for some constraint types a large number of conflicts can be quickly discovered. This is the case of the Generalized Upper Bound constraints ($\sum_{j\in N}x_j \leq 1$). As discussed in \cite{atamturk}, even handling explicitly conflict graphs induced by these constraints requires special data structures such that in the previous decade most solvers could not use all information which could be inferred just from GUB constraints. The following subsection will describe additional cases where cliques in constraints can be quickly detected (i.e., faster than $O(n^2)$). The following notation will be used: $\tilde{a}_{ik}$ is the $k$-th smallest coefficient in constraint $i$ and $\acute{a}_{ik}$ indicates its index. Constants $n_i$ and $S_i^-$ denote the number of variables and the sum of all negative coefficients of constraint $i$, respectively. To illustrate one case, GUB constraints can be described as $\tilde{a}_{ik}=b_i=1 \ \forall \ k$. In the next subsection fast clique detection will be discussed for less structured constraints.
+Performing these steps for each combination of values of two binary variables, considering each pair of variables in each constraint, leads to the creation of a conflict graph for any IP problem in $O(m \times n^2)$. For problems with many variables and constraints this technique may be too expensive computationally (See Experiments section). Nevertheless, for some constraint types a large number of conflicts can be quickly discovered. This is the case of the Generalized Upper Bound constraints ($\sum_{j\in N}x_j \leq 1$). As discussed in \cite{atamturk}, even handling explicitly conflict graphs induced by these constraints requires special data structures such that in the previous decade most solvers could not use all information which could be inferred just from GUB constraints. The following subsection will describe additional cases where cliques in constraints can be quickly detected (i.e., faster than $O(n^2)$). The following notation will be used: $\tilde{a}_{ik}$ is the $k$-th smallest coefficient in constraint $i$ and $\acute{a}_{ik}$ indicates its index. Constants $n_i$ and $S_i^-$ denote the number of non-zero variables and the sum of all negative coefficients of constraint $i$, respectively. To illustrate one case, GUB constraints can be described as $\tilde{a}_{ik}=b_i=1 \ \forall \ k$. In the next subsection fast clique detection will be discussed for additional constraint structures.
 
 
 \subsection{Fast detection of cliques in less structured constraints}
@@ -114,11 +114,8 @@ LHS_{i}^{x_{\acute{a}_{ik}} = 1, x_{\acute{a}_{ik+1}} = 1} = D_{i}^{x_{\acute{a}
 
 Since $LHS_{i}^{x_{\acute{a}_{ik}} = 1, x_{\acute{a}_{ik+1}} = 1}$ is monotonically non-decreasing as $k$ increases, if $LHS_{i}^{x_{\acute{a}_{ik}} = 1, x_{\acute{a}_{ik+1}} = 1} > b_{i}$, then there is a clique involving the activation of all variables from position $k$ until position $n_i$. Moreover, we can discard the existence of such cliques by checking if $LHS_{i}^{x_{\acute{a}_{in_i-1}} = 1, x_{\acute{a}_{in_i}} = 1} \leq b_i$.
 
-The same idea can be used to detect cliques that involve the deactivation of some variables, computing the lower bound of the LHS for each two consecutive variables, starting from the highest coefficient ($k=n_i$) to the smallest one ($k=1$). The lower bound for the LHS of constraint $i$ when variables $x_{\acute{a}_{ik}}$ and $x_{\acute{a}_{ik-1}}$ are fixed at zero is equal to $D_{i}^{x_{\acute{a}_{ik}}, x_{\acute{a}_{ik-1}}}$, which is obtained by equation \ref{di}. Formally:
+The same idea can be used to detect cliques that involve the deactivation of some variables, computing the lower bound of the LHS for each two consecutive variables, starting from the highest coefficient ($k=n_i$) to the smallest one ($k=1$). The lower bound for the LHS of constraint $i$ when variables $x_{\acute{a}_{ik}}$ and $x_{\acute{a}_{ik-1}}$ are fixed at zero is equal to $D_{i}^{x_{\acute{a}_{ik}}, x_{\acute{a}_{ik-1}}}$, which is obtained by equation \ref{di}:  $LHS_{i}^{x_{\acute{a}_{ik}} = 0, x_{\acute{a}_{ik-1}} = 0} = D_{i}^{x_{\acute{a}_{ik}}, x_{\acute{a}_{ik-1}}} $
 
-\begin{equation}
-LHS_{i}^{x_{\acute{a}_{ik}} = 0, x_{\acute{a}_{ik-1}} = 0} = D_{i}^{x_{\acute{a}_{ik}}, x_{\acute{a}_{ik-1}}}
-\end{equation}
 
 In the same form, $LHS_{i}^{x_{\acute{a}_{ik}} = 0, x_{\acute{a}_{ik-1}} = 0}$ is monotonically non-decreasing as $k$ decreases. If $LHS_{i}^{x_{\acute{a}_{ik}} = 0, x_{\acute{a}_{ik-1}} = 0} > b_{i}$, then there is a clique involving the deactivation of all variables from position $k$ until the variable of first position ($k=1$). Moreover, we can discard the existence of such cliques by checking if $LHS_{i}^{x_{\acute{a}_{i2}} = 0, x_{\acute{a}_{i1}} = 0} \leq b_i$.
 
@@ -126,7 +123,7 @@ When no clique is found we use the pairwise analysis. Nevertheless, in our exper
 
 \begin{example}
 
-Consider the following constraints as a part of a IP problem, where all variables are binary:
+Consider the following constraints as a part of an IP problem, where all variables are binary:
 
 \begin{align}
 x_1 + x_2 + x_3  & \geq 2\label{eq:1}\\
@@ -141,7 +138,7 @@ x_1 + x_2 + x_3  & \geq 2\label{eq:1}\\
   \label{graph}
 \end{figure}
 
-Figure \ref{graph} shows the conflict graph for this constraints, where $\neg xi$ represents the complement (or deactivation) of variable $xi$. Initially, we create a vertex for each variable and its complement. Since in a feasible solution we can either activate a variable or its complement, we insert a edge between them (double lines). For the constraint of equation \ref{eq:1}, we have to transform it in a $\leq$-constraint, multiplying by -1. So, we have:
+Figure \ref{graph} shows the conflict graph for this constraints, where $\neg xi$ represents the complement (or deactivation) of variable $x_i$. Initially, we create a vertex for each variable and its complement. Since in a feasible solution we can either activate a variable or its complement, we insert a edge between them (double lines). For the constraint of equation \ref{eq:1}, we have to transform it in a $\leq$-constraint, multiplying by -1. So, we have:
 
 \begin{equation}
 - x_1 - x_2 - x_3 \leq - 2
