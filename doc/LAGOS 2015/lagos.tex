@@ -2,6 +2,7 @@
 \usepackage{endmmacro}
 \usepackage{graphicx}
 \usepackage{amsmath}
+\usepackage{caption}
 
 % The following is enclosed to allow easy detection of differences in
 % ascii coding.
@@ -125,26 +126,25 @@ When no clique is found we use the pairwise analysis. Nevertheless, in our exper
 
 Consider the following constraints as a part of an IP problem, where all variables are binary:
 
-\begin{align}
-x_1 + x_2 + x_3  & \geq 2\label{eq:1}\\
-- 2x_1 + 3x_2 + 4x_3 + 5x_4 & \leq 4\label{eq:2}
-\end{align}
-
-\begin{figure}[!ht]
-  \begin{center}
-    \includegraphics[width=4cm]{graph.png}
-  \end{center}
-  \caption{A conflict graph for constraints presented in equations \ref{eq:1} and \ref{eq:2}.}
-  \label{graph}
+\begin{figure}[h]
+\begin{minipage}[b]{.5\textwidth}
+	\begin{align}
+	+x_1 + x_2 + x_3  & \geq 2\label{eq:1}\\
+	- 2x_1 + 3x_2 + 4x_3 + 5x_4 & \leq 4\label{eq:2}
+	\end{align}
+\end{minipage}
+\begin{minipage}{.5\textwidth}
+	\centering
+	\includegraphics[width=4cm]{gconf.pdf}
+\end{minipage}
+\caption{Conflict graph for equations \ref{eq:1} and \ref{eq:2} }\label{graph}
 \end{figure}
 
-Figure \ref{graph} shows the conflict graph for this constraints, where $\neg xi$ represents the complement (or deactivation) of variable $x_i$. Initially, we create a vertex for each variable and its complement. Since in a feasible solution we can either activate a variable or its complement, we insert a edge between them (double lines). For the constraint of equation \ref{eq:1}, we have to transform it in a $\leq$-constraint, multiplying by -1. So, we have:
 
-\begin{equation}
-- x_1 - x_2 - x_3 \leq - 2
-\end{equation}
 
-How the coefficients of this constraints are ordered, we can start calculating $L_{\ref{eq:1}}^{x_{\hat{j}}=1,\, x_{\hat{j}+1}=1}$. For any pair of activated variables we are able to produce a solution that respects this constraint. For this reason we do not find a clique with active variables in this constraint. Calculating $L_{\ref{eq:1}}^{x_{\hat{j}}=0,\, x_{\hat{j}+1}=0}$ for the first pair of subsequent variables (i.e. $\hat{j}=1$) we find a conflict that implies in a clique involving all complement of the variables starting from $x_1$ until $x_3$ ($L_{\ref{eq:1}}^{x_1=0,\, x_2=0} = -1$). So, we insert this conflicts in the graph.
+
+
+Figure \ref{graph} shows the conflict graph for this constraints, where $\neg x_i$ represents the complement (or deactivation) of variable $x_i$. Edges represent conflicts between variables or complimentary variables (double edges). For the constraint of equation \ref{eq:1}, we have to transform it in a $\leq$-constraint, multiplying by -1. So, we have: $- x_1 - x_2 - x_3 \leq - 2$. How the coefficients of this constraints are ordered, we can start calculating $L_{\ref{eq:1}}^{x_{\hat{j}}=1,\, x_{\hat{j}+1}=1}$. For any pair of activated variables we are able to produce a solution that respects this constraint. For this reason we do not find a clique with active variables in this constraint. Calculating $L_{\ref{eq:1}}^{x_{\hat{j}}=0,\, x_{\hat{j}+1}=0}$ for the first pair of subsequent variables (i.e. $\hat{j}=1$) we find a conflict that implies in a clique involving all complement of the variables starting from $x_1$ until $x_3$ ($L_{\ref{eq:1}}^{x_1=0,\, x_2=0} = -1$). So, we insert this conflicts in the graph.
 
 We proceed analyzing the constraint of equation \ref{eq:2}. For any pair of deactivated variables we are able to produce a solution that respects this constraint. For this reason we do not find a clique with deactivated variables in this constraint. Calculating $L_{\ref{eq:2}}^{x_{\hat{j}}=1,\, x_{\hat{j}+1}=1}$ for the consecutive pairs of variables we can found a clique starting from $x_2$ until $x_4$ ($L_{\ref{eq:2}}^{x_{2}=1,\, x_{3}=1} = 5$). We finish inserting this conflicts in the graph.
 
