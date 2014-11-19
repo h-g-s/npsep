@@ -199,7 +199,7 @@ int main( int argc, char **argv )
 
                 cliqueGen.parseParameters( argc, (const char**)argv );
                 cliqueGen.setCGraph( cgraph );
-                cliqueGen.setGenOddHoles( false );
+                cliqueGen.setGenOddHoles( true ); //allow inserting odd hole cuts
                 cliqueGen.colNames = &varNames;
                 cliqueGen.generateCuts( *solver, cuts, info );
 

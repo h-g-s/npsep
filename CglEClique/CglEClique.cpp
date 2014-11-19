@@ -49,6 +49,7 @@ void fillColSolution(const OsiSolverInterface &si, double colSol[])
    {
       colSol[i] = origColSol[i];
       colSol[i+numCols] = 1 - origColSol[i];
+      //colSol[i+numCols] = origColSol[i];
    }
 }
 
@@ -94,8 +95,6 @@ void CglEClique::generateCuts( const OsiSolverInterface &si, OsiCuts &cs, const 
 
    /* adding cuts */
    int i;
-   int varCount[numCols];               //counting how many times a variable(and its complement)
-   fill(varCount, varCount+numCols, 0); //appears in the current clique
    for ( i=0 ; (i<clq_set_number_of_cliques(clqSet)) ; ++i )
    {
       const int size = clq_set_clique_size( clqSet, i );
@@ -104,6 +103,8 @@ void CglEClique::generateCuts( const OsiSolverInterface &si, OsiCuts &cs, const 
       int maxFrequency = 0;
       int idxs[size];
       OsiRowCut osrc;
+      int varCount[numCols];               //counting how many times a variable(and its complement)
+      fill(varCount, varCount+numCols, 0); //appears in the current clique
 
       if ( clq_sep_get_verbose( sep ) >= 2 )
       {
@@ -158,28 +159,27 @@ void CglEClique::generateCuts( const OsiSolverInterface &si, OsiCuts &cs, const 
                if(varCount[idxs[j]] == 1)
                {
                   int varIdx[] = {idxs[j]};
-                  double varCoef[] = {coefs[j]};
-                  osrc.setRow( 1, varIdx, &(varCoef[0]) );
-                  //osrc.setLb( -si.getInfinity() );
-                  osrc.setUb( 0.0 ); 
+                  double varCoef[] = {1.0};
+
+                  osrc.setRow( 1, varIdx, varCoef );
+
+                  if(coefs[j] == 1.0)
+                     osrc.setUb( 0.0 );
+                  else osrc.setLb( 1.0 );
+
                   osrc.setGloballyValid();
                   CoinAbsFltEq equal(1.0e-12);
                   cs.insertIfNotDuplicate(osrc,equal);
                }
-               varCount[idxs[j]] = 0;
             }
             continue;
          }
-
-         for (int j=0 ; (j<size) ; j++)
-            varCount[idxs[j]] = 0;
 
          if ((lhs-rhs)<clq_sep_get_min_viol(sep))
             continue;
       }
 
-      osrc.setRow( size, idxs, &(coefs[0]) );
-      //osrc.setLb( -si.getInfinity() );
+      osrc.setRow( size, idxs, coefs );
       osrc.setUb( rhs ); 
       osrc.setGloballyValid();
       CoinAbsFltEq equal(1.0e-12);
@@ -189,45 +189,96 @@ void CglEClique::generateCuts( const OsiSolverInterface &si, OsiCuts &cs, const 
    /* searching for odd holes */
    if (genOddHoles)
    {
-      double *ones = (double*) xmalloc( sizeof(double)*numCols*2 );
-      fill( ones, ones+(numCols*2), 1.0);
-
       OddHoleSep *oddhs = oddhs_create();
-      oddhs_search_odd_holes( oddhs, si.getNumCols(), si.getColSolution(), si.getReducedCost(), cgraph );
+      oddhs_search_odd_holes( oddhs, numCols*2, colSol, rCost, cgraph );
 
       /* adding odd holes */
       for ( int j=0 ; (j<oddhs_get_odd_hole_count(oddhs)) ; ++j )
       {
          const int *oddEl = oddhs_get_odd_hole( oddhs, j );
          const int oddSize = oddhs_get_odd_hole( oddhs, j+1 ) - oddEl;
-         double viol = oddhs_viol( oddSize, oddEl, si.getColSolution() );
+         double viol = oddhs_viol( oddSize, oddEl, colSol );
+
          if ( viol < MIN_VIOL )
             continue;
-
-         //printf("\nODD HOLE.\n");
 
          const int centerSize = oddhs_get_nwc_doh( oddhs, j );
          const int *centerIdx = oddhs_get_wc_doh( oddhs, j );
 
          const int cutSize = oddSize+centerSize;
-         vector< int > idx; idx.reserve( cutSize );
-         vector< double > coef; coef.reserve( cutSize );
+         int idx[cutSize];
+         double coef[cutSize];
+         int idxMap[numCols];
+         double rhs = oddhs_rhs( oddSize );
+         int realSize = 0;
 
-         idx.insert( idx.end(), oddEl, oddEl+oddSize );
-         idx.insert( idx.end(), centerIdx, centerIdx+centerSize );
+         fill(coef, coef + cutSize, 0.0);
+         fill(idxMap, idxMap + numCols, -1);
 
-         coef.insert( coef.end(), ones, ones+oddSize );
-
-         const double rhs = oddhs_rhs( oddSize );
+         for(int k = 0; k < oddSize; k++)
+         {
+            if(oddEl[k] < numCols)
+            {
+               if(idxMap[oddEl[k]] == -1)
+               {
+                  idxMap[oddEl[k]] = realSize;
+                  idx[realSize] = oddEl[k];
+                  coef[realSize] = 1.0;
+                  realSize++;
+               }
+               else
+                  coef[idxMap[oddEl[k]]] += 1.0;
+            }
+            else
+            {
+               if(idxMap[oddEl[k]-numCols] == -1)
+               {
+                  idxMap[oddEl[k]-numCols] = realSize;
+                  idx[realSize] = oddEl[k] - numCols;
+                  coef[realSize] = -1.0;
+                  realSize++;
+               }
+               else
+                  coef[idxMap[oddEl[k]-numCols]] -= 1.0;
+               rhs = rhs - 1.0;
+            }
+         }
 
          if ( centerSize )
          {
-            vector< double > wcCoefs( centerSize, rhs );
-            coef.insert( coef.end(), wcCoefs.begin(), wcCoefs.end() );
+            const double oldRhs = rhs;
+            for(int k = 0; k < centerSize; k++)
+            {
+               if(centerIdx[k] < numCols)
+               {
+                  if(idxMap[centerIdx[k]] == -1)
+                  {
+                     idxMap[centerIdx[k]] = realSize;
+                     idx[realSize] = centerIdx[k];
+                     coef[realSize] = oldRhs;
+                     realSize++;
+                  }
+                  else
+                     coef[idxMap[centerIdx[k]]] += oldRhs;
+               }
+               else
+               {
+                  rhs = rhs - oldRhs;
+
+                  if(idxMap[centerIdx[k]-numCols] == -1)
+                  {
+                     idxMap[centerIdx[k]-numCols] = realSize;
+                     idx[realSize] = centerIdx[k] - numCols;
+                     coef[realSize] = -1.0 * oldRhs;
+                     realSize++;
+                  }
+                  else
+                     coef[idxMap[centerIdx[k]-numCols]] -= oldRhs;
+               }
+            }
          }
 
-/*
-         if (colNames)
+         /*if (colNames)
          {
             for ( int j=0 ; (j<coef.size()) ; ++j )
                printf("%g %s   ", coef[j], (*colNames)[idx[j]].c_str() );
@@ -236,17 +287,16 @@ void CglEClique::generateCuts( const OsiSolverInterface &si, OsiCuts &cs, const 
                printf("%g  ", si.getColSolution()[idx[j]] );
 
             printf("\n");
-         } */
+         }*/
 
          OsiRowCut orc;
          orc.setUb( rhs );
          orc.setGloballyValid();
-         orc.setRow( cutSize, &(idx[0]), &(coef[0]) );
+         orc.setRow( realSize, idx, coef );
          cs.insertIfNotDuplicate(orc, CoinAbsFltEq (1.0e-12) );
       }
 
       oddhs_free( &oddhs );
-      free( ones );
    }
 
    clq_sep_free( &sep );
