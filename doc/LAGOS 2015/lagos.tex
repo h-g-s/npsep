@@ -151,7 +151,35 @@ We proceed analyzing the constraint of equation \ref{eq:2}. For any pair of deac
 \end{example}
 
 
-\section{Clique Cut Separation}\label{cut}
+\section{Cutting Planes}\label{cut}
+
+Linear programming relaxations can be significantly strengthened by the inclusion of inequalities derived from the set packing polytope (SPP) \cite {Padberg1973}. The most common classes of cuts for SPP are the clique cuts and the odd-hole cuts. A clique inequality for a set $C$ of conflicting variables has the form $\sum_{j\in C}x_{j} \leq 1$ and an odd-hole inequality with conflicting variables $C$ can be defined as: $\sum_{j\in C}x_{j} \leq \lfloor \frac{|C|}{2}\rfloor$. It is well known that in practice clique cuts are by far the most important ones \cite{Borndorfer1998}. The impact of these cuts has been explored for some hard timetabling problems \cite{Avella2005,Marecek2012}. Considering generic clique separation routines, the most common ones are the star clique and the row clique method \cite{Eso1999a,Hoffman1993,Borndorfer1998}. These are fast separation routines which are used in the current version of the COIN-OR Cut Generation Library.  
+
+Our algorithm proposal considers aggressive clique separation: instead of searching for \emph{the} most violated clique inequality we search for \emph{all} violated clique inequalities. Some previous results indicate that this is the best strategy. In \cite{Marecek2012}, for example, although authors used a branch-and-bound code to search for the most violated clique, computational results motivated the inclusion of non-optimally violated cuts found during the search. This result is consistent with reports of application of other cuts applied to different models, such as {C}hv\`{a}tal-Gomory cuts \cite{Fischetti2007}. The option for inserting a large number of violated inequalities at once is also responsible for reviving the gomory cuts importance \cite {Cornuejols2007}.
+
+Our proposed clique separation routine has two main components:  \begin{enumerate} \item a module to separate all violated cliques in the conflict subgraph induced by the fractional variables; \item a lifting module which extends generated cliques considering the original conflict graph. \end{enumerate}  The clique separation module was implemented using an improved version of the Bron-Kerbosch algorithm \cite{Bron1973}. This version implements an optimized pivoting rule \cite{Brito2011} to speed up the discovery of maximal cliques with large weight. This rule assigns the highest priority for visiting first nodes with large modified degree (summation of node degree and of its neighbors) and weight. Although this algorithm has an exponential worst case performance, the heuristic pivot rules  make the algorithm suitable not only for running in the enumeration context but also for executing with restricted times, since larger violated cliques tend to be discovered first. Nevertheless, our experiments showed that all violated inequalities for all instances can be enumerated in a fraction of a second using our implementation. It is also important to remark that even if a subset of cliques is inserted, the optimal solution would not be missed, branching would take care of the rest.  The importance of lifting clique inequalities can be explained with the conflict graph in Figure \ref{figClique}. Nodes inside the gray area indicate variables with non-zero values in the fractional solution. In this solution, only nodes $x_{2},\ldots,x_{4}$ could contribute to define a maximally violated clique inequality. Nevertheless, subsequent linear programming relaxations could include three different violated $k_{3}$\footnote{a clique with three nodes} cliques by alternating the inactive variable. If the $k_{4}$ clique inequality were inserted during the separation of the first fractional solution, additional re-optimizations of the linear program could be saved. Furthermore, a less dense constraint matrix may be obtained with the insertion of these dominant constraints first.
+
+\begin{figure}
+\begin{center}
+	\includegraphics[width=0.3\textwidth]{clique.pdf}
+	\caption{Example of a $k_{3}$ which could be lifted to a $k_{4}$ } \label{figClique}
+\end{center}
+\end{figure}
+
+It is well known that the separation of odd-holes contributes only marginally for lower bound improvement \cite{Borndorfer1998,Mendez-Diaz2008}. Nevertheless, its inclusion in the branch-and-cut procedure is cheap, since these inequalities can be separated in polynomial time using shortest path algorithms \cite{Grotschel1993}. Odd hole inequalities can be strengthened by the inclusion of a wheel center, such as variable $x_{6}$ in the conflict graph presented in Figure \ref{figOH}. In fact, for an odd hole with variables $C$ and $W$ being the set of candidates to be included as wheel centers of $C$, the following inequality is valid:
+
+\begin{equation}
+	\sum_{j \in W} \lfloor \frac{|C|}{2} \rfloor x_{j} + \sum_{j \in C} x_{j} \leq \lfloor \frac{|C|}{2} \rfloor
+\end{equation}
+
+\begin{figure}
+\begin{center}
+	\includegraphics[width=0.3\textwidth]{oddHole.pdf}
+	\caption{Example of an odd hole and its possible extension to a wheel} \label{figOH}
+\end{center}
+\end{figure}
+
+
 \section{Experimental Results}\label{experiments}
 \section{Conclusions and Future Work}\label{conclusions}
 

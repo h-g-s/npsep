@@ -4,46 +4,48 @@ The top-level auxiliary file: lagos.aux
 The style file: endm.bst
 Database file #1: references.bib
 Warning--empty school in Borndorfer1998
+Warning--empty booktitle in Brito2011
+Warning--empty pages in Brito2011
 Warning--empty pages in sandholm
-You've used 8 entries,
+You've used 18 entries,
             2561 wiz_defined-function locations,
-            601 strings with 5466 characters,
-and the built_in function-call counts, 3334 in all, are:
-= -- 294
-> -- 196
+            669 strings with 6873 characters,
+and the built_in function-call counts, 6853 in all, are:
+= -- 620
+> -- 342
 < -- 0
-+ -- 69
-- -- 60
-* -- 288
-:= -- 505
-add.period$ -- 9
-call.type$ -- 8
-change.case$ -- 54
++ -- 122
+- -- 102
+* -- 571
+:= -- 1017
+add.period$ -- 21
+call.type$ -- 18
+change.case$ -- 103
 chr.to.int$ -- 0
-cite$ -- 10
-duplicate$ -- 143
-empty$ -- 232
-format.name$ -- 65
-if$ -- 710
+cite$ -- 22
+duplicate$ -- 316
+empty$ -- 521
+format.name$ -- 115
+if$ -- 1477
 int.to.chr$ -- 0
-int.to.str$ -- 8
-missing$ -- 7
-newline$ -- 31
-num.names$ -- 16
-pop$ -- 43
+int.to.str$ -- 18
+missing$ -- 17
+newline$ -- 62
+num.names$ -- 36
+pop$ -- 87
 preamble$ -- 1
-purify$ -- 46
+purify$ -- 87
 quote$ -- 0
-skip$ -- 120
+skip$ -- 263
 stack$ -- 0
-substring$ -- 206
-swap$ -- 68
+substring$ -- 450
+swap$ -- 149
 text.length$ -- 0
 text.prefix$ -- 0
 top$ -- 0
-type$ -- 32
-warning$ -- 2
-while$ -- 31
-width$ -- 9
-write$ -- 71
-(There were 2 warnings)
+type$ -- 70
+warning$ -- 4
+while$ -- 71
+width$ -- 20
+write$ -- 151
+(There were 4 warnings)
