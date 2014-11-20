@@ -69,7 +69,7 @@ One important application for CGs is the generation of cutting planes derived fr
 
 On this work we propose techniques to speed up the creation of dense conflict graphs at the root node, so that large CGs can be available at the start of the search process for the generation of strong inequalities. For ease of understanding of our approach we consider only pure Binary Programs (PB). Despite this, it can be applied to any Integer Program containing binary variables. 
 
-The rest of the paper is organized as follows. In Section \ref{seccgraph}, we formally explain our approach to build conflict graphs as well our strategy to speedup the detection of logical implications. In Section \ref{cut}, we present the clique cut separation routine, including a clique extension step. In Section \ref{experiments}, the computational experiments with MIPLIB 2010 instances \cite{miplib} and instances of the International Nurse Rostering Competition \cite{haspeslagh} are presented and analyzed. Finally, in Section \ref{conclusions}, we conclude and give future directions about this work.
+The rest of the paper is organized as follows. In Section \ref{seccgraph}, we formally explain our approach to build conflict graphs as well our strategy to speedup the detection of logical implications. In Section \ref{cut}, we present the clique cut separation routine, including a clique extension step. In Section \ref{experiments}, the computational experiments with instances of MIPLIB 2010 \cite{miplib}, International Nurse Rostering Competition \cite{haspeslagh} and Telebus problem \cite{Borndorfer1998} are presented and analyzed. Finally, in Section \ref{conclusions}, we conclude and give future directions about this work.
 
 \section{Conflict Graphs in Integer Programming}\label{seccgraph}
 
@@ -186,6 +186,12 @@ It is well known that the separation of odd-holes contributes only marginally fo
 
 
 \section{Experimental Results}\label{experiments}
+
+Our code was written in C/C++ using the open source COIN-OR libraries. These libraries allowed us to integrate our routines with the COIN-OR MIP solvers \cite{Forrest2005,Linderoth2005,Ralphs2005} and also communicate with commercial solvers through the Open Solver Interface (OSI) \cite{Saltzman2004}. The code was compiled on GCC/G++ version 4.8.3. We ran all the experiments on Intel Core i7 3.60GHz computers with 32GB of RAM running Linux openSUSE 13.2 64 bits.
+
+The dataset used consists of problems with varying characteristics. The first set of instances is the benchmark set of MIPLIB 2010 \cite{miplib}, containing 87 instances. Since its introduction in 1992, the MIPLIB became a standard library of tests used to compare the performance of integer programming solvers. It contains a collection of real problems, most of them based on industrial applications. The second set of instances is the same used during the International Nurse Rostering Competition \cite{haspeslagh}, containing 69 instances. This competition aimed to encourage research in the field of scheduling and establish a benchmark problem that was widely accepted by the scheduling community. In addition, it allowed researchers could compare their results accurately and fairly. Finally, the last problem set is formed by instances of Telebus problem \cite{Borndorfer1998}, containing 56 instances. Telebus problem consists of a vehicle scheduling problem, whose objective is to choose the right fleet and appropriate vehicle rotations to service all orders. Such problems can be attacked with a set partitioning approach of combinatorial optimization.
+
+
 \section{Conclusions and Future Work}\label{conclusions}
 
 \bibliographystyle{endm}

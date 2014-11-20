@@ -1,51 +1,49 @@
-This is BibTeX, Version 0.99d (TeX Live 2013/TeX Live for SUSE Linux)
+This is BibTeX, Version 0.99d (TeX Live 2013/Debian)
 Capacity: max_strings=35307, hash_size=35307, hash_prime=30011
 The top-level auxiliary file: lagos.aux
 The style file: endm.bst
 Database file #1: references.bib
-Warning--empty school in Borndorfer1998
-Warning--empty booktitle in Brito2011
-Warning--empty pages in Brito2011
+Warning--empty pages in Saltzman2004
 Warning--empty pages in sandholm
-You've used 18 entries,
+You've used 22 entries,
             2561 wiz_defined-function locations,
-            668 strings with 6831 characters,
-and the built_in function-call counts, 6850 in all, are:
-= -- 620
-> -- 342
-< -- 0
-+ -- 122
-- -- 102
-* -- 569
-:= -- 1017
-add.period$ -- 21
-call.type$ -- 18
-change.case$ -- 103
+            700 strings with 7780 characters,
+and the built_in function-call counts, 8714 in all, are:
+= -- 792
+> -- 414
+< -- 3
++ -- 149
+- -- 123
+* -- 726
+:= -- 1266
+add.period$ -- 25
+call.type$ -- 22
+change.case$ -- 124
 chr.to.int$ -- 0
-cite$ -- 22
-duplicate$ -- 316
-empty$ -- 521
-format.name$ -- 115
-if$ -- 1477
+cite$ -- 24
+duplicate$ -- 408
+empty$ -- 684
+format.name$ -- 141
+if$ -- 1900
 int.to.chr$ -- 0
-int.to.str$ -- 18
-missing$ -- 17
-newline$ -- 61
-num.names$ -- 36
-pop$ -- 87
+int.to.str$ -- 22
+missing$ -- 21
+newline$ -- 74
+num.names$ -- 46
+pop$ -- 110
 preamble$ -- 1
-purify$ -- 87
+purify$ -- 104
 quote$ -- 0
-skip$ -- 264
+skip$ -- 344
 stack$ -- 0
-substring$ -- 450
-swap$ -- 149
-text.length$ -- 0
+substring$ -- 596
+swap$ -- 201
+text.length$ -- 3
 text.prefix$ -- 0
 top$ -- 0
-type$ -- 70
-warning$ -- 4
-while$ -- 71
-width$ -- 20
-write$ -- 150
-(There were 4 warnings)
+type$ -- 86
+warning$ -- 2
+while$ -- 91
+width$ -- 24
+write$ -- 188
+(There were 2 warnings)
