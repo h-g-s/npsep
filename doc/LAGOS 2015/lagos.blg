@@ -9,14 +9,14 @@ Warning--empty pages in Brito2011
 Warning--empty pages in sandholm
 You've used 18 entries,
             2561 wiz_defined-function locations,
-            669 strings with 6873 characters,
-and the built_in function-call counts, 6853 in all, are:
+            668 strings with 6831 characters,
+and the built_in function-call counts, 6850 in all, are:
 = -- 620
 > -- 342
 < -- 0
 + -- 122
 - -- 102
-* -- 571
+* -- 569
 := -- 1017
 add.period$ -- 21
 call.type$ -- 18
@@ -30,13 +30,13 @@ if$ -- 1477
 int.to.chr$ -- 0
 int.to.str$ -- 18
 missing$ -- 17
-newline$ -- 62
+newline$ -- 61
 num.names$ -- 36
 pop$ -- 87
 preamble$ -- 1
 purify$ -- 87
 quote$ -- 0
-skip$ -- 263
+skip$ -- 264
 stack$ -- 0
 substring$ -- 450
 swap$ -- 149
@@ -47,5 +47,5 @@ type$ -- 70
 warning$ -- 4
 while$ -- 71
 width$ -- 20
-write$ -- 151
+write$ -- 150
 (There were 4 warnings)

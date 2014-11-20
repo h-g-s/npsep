@@ -3,6 +3,9 @@
 \usepackage{graphicx}
 \usepackage{amsmath}
 \usepackage{caption}
+\usepackage[english,brazilian]{babel}
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
 
 % The following is enclosed to allow easy detection of differences in
 % ascii coding.
@@ -35,14 +38,13 @@
 
 \title{On the Fast Creation of Conflict Graphs for Integer Programs: A Computational Study}
 
-\author{Samuel Souza Brito\thanksref{myemail} \and Haroldo Gambini Santos\thanksref{coemail}}
+\author{Samuel Souza Brito \and Haroldo Gambini Santos\thanksref{mailSamuelHaroldo}}
  
-\address{Computing Department\\ Universidade Federal de Ouro Preto - UFOP\\ Ouro Preto, Brazil}
-\thanks[myemail]{Email:
-   \href{mailto:samuelsouza@iceb.ufop.br} {\texttt{\normalshape
-   samuelsouza@iceb.ufop.br}}} \thanks[coemail]{Email:
-   \href{mailto:haroldo@iceb.ufop.br} {\texttt{\normalshape
-   haroldo@iceb.ufop.br}}}
+\address{Departamento de Computação\\ Universidade Federal de Ouro Preto - UFOP\\ Ouro Preto, Brazil}
+\author{Marcus V. S. Poggi de Aragão\thanksref{mailPoggi}}
+\address{Departamento de Informática\\ Pontifícia Universidade Católica do Rio de Janeiro - PUC-RIO\\ Rio de Janeiro, Brazil}
+\thanks[mailSamuelHaroldo]{Email: {\texttt{\normalshape {samuelsouza,haroldo}@iceb.ufop.br}}} 
+\thanks[mailPoggi]{Email: {\texttt{\normalshape poggi@inf.puc-rio.br}}}  
 
 \begin{abstract}
 Conflict graphs are employed in modern Integer Programming to store relationships between variables. This information is crucial for an effective pre-processing and cut generation. CGs can be dynamically built inside branch-and-bound algorithms while analyzing the impact of the last fixations performed, but the earlier the CG is populated the faster strong inequalities and implications can be generated. On this work we present techniques which allow the fast creation of densely populated CGs at the root node. The impact of the availability of these large GCs for cut generation is evaluated by the inclusion of these techniques in the state-of-the-art open source integer programming solver COIN-OR CBC and its use in a cutting plane algorithm.
@@ -73,6 +75,7 @@ The rest of the paper is organized as follows. In Section \ref{seccgraph}, we fo
 
 A conflict graph represents logical relations between binary variables. For two binary variables, we may discover four possible logical relations, using the notation of \cite{atamturk}:
 
+
 \begin{align}
 x = 1 \Rightarrow y = 1 & \quad \Longleftrightarrow \quad x + (1 - y) & \leq \ 1\\
 x = 1 \Rightarrow y = 0 & \quad \Longleftrightarrow \quad x + y & \leq \ 1 \\
@@ -80,7 +83,9 @@ x = 0 \Rightarrow y = 1 & \quad \Longleftrightarrow \quad (1 - x) + (1 - y) & \l
 x = 0 \Rightarrow y = 0 & \quad \Longleftrightarrow \quad (1 - x) + y & \leq \ 1
 \end{align}
 
-Given an Integer Programming (IP), a conflict graph can be constructed using probing techniques based on feasibility considerations. The basic idea is to analyze the impact of activation or deactivation (i.e. activation of its complement) of two variables at time, for each pair of variables and each constraint. Each constraint $i \in \{1,\ldots,m\}$ can be written as:
+
+
+Given an Integer Programming (IP), a conflict graph can be constructed using probing techniques based on feasibility considerations, checking the impact fo fixing pairs of variables to different combinations of values. First, consider that each constraint $i \in \{1,\ldots,m\}$ can be written as:
 
 \begin{equation}
  \sum_{j \in N} a_{ij}x_{j} \leq b_{i} 
@@ -94,7 +99,7 @@ L_{i}^{x_{\hat{j}} = u,\, x_{\hat{k}} = v}=\sum_{j\in N_{i}^{-} \setminus \{\hat
 
 \noindent where $N_{i}^{-} = \{j \in N : a_{ij} < 0\}$. In this case, $L_{i}^{x_{\hat{j}} = u,\, x_{\hat{k}} = v}$ is a lower bound for the value on the left-hand side  of the constraint $i$, considering the assignments $x_{\hat{j}} = u$ and $x_{\hat{k}} = v$. If $L_{i}^{x_{\hat{j}} = u,\, x_{\hat{k}} = v} > b_{i}$, there is a conflict between the assignments of $x_{\hat{j}}$ and $x_{\hat{k}}$. 
 
-Performing these steps for each combination of values of two binary variables, considering each pair of variables in each constraint, leads to the creation of a conflict graph for any IP problem in $O(m \times n^2)$. For problems with many variables and constraints this technique may be too expensive computationally (See Experiments section). Nevertheless, for some constraint types a large number of conflicts can be quickly discovered. This is the case of the Generalized Upper Bound constraints ($\sum_{j\in N}x_j \leq 1$). As discussed in \cite{atamturk}, even handling explicitly conflict graphs induced by these constraints requires special data structures such that in the previous decade most solvers could not use all information which could be inferred just from GUB constraints. The following subsection will describe additional cases where cliques in constraints can be quickly detected (i.e., faster than $O(n^2)$). The following notation will be used: $\tilde{a}_{ik}$ is the $k$-th smallest coefficient in constraint $i$ and $\acute{a}_{ik}$ indicates its index. Constants $n_i$ and $S_i^-$ denote the number of non-zero variables and the sum of all negative coefficients of constraint $i$, respectively. To illustrate one case, GUB constraints can be described as $\tilde{a}_{ik}=b_i=1 \ \forall \ k$. In the next subsection fast clique detection will be discussed for additional constraint structures.
+Performing these steps for each combination of values of two binary variables, considering each pair of variables in each constraint, leads to the creation of a conflict graph for any IP problem in $O(m \times n^2)$. For problems with many variables and constraints this technique may be expensive computationally (See Experiments section). Nevertheless, for some constraint types a large number of conflicts can be quickly discovered. This is the case of the Generalized Upper Bound constraints ($\sum_{j\in N}x_j \leq 1$). As discussed in \cite{atamturk}, even handling explicitly conflict graphs induced by these constraints requires special data structures such that in the previous decade most solvers could not use all information which could be inferred just from GUB constraints. The following subsection will describe additional cases where cliques in individual constraints can be quickly detected (i.e., faster than $O(n^2)$). The following notation will be used: $\tilde{a}_{ik}$ is the $k$-th smallest coefficient in constraint $i$ and $\acute{a}_{ik}$ indicates its index. Constants $n_i$ and $S_i^-$ denote the number of non-zero variables and the sum of all negative coefficients of constraint $i$, respectively. To illustrate one case, GUB constraints can be described as $\tilde{a}_{ik}=b_i=1 \ \forall \ k$. In the next subsection fast clique detection will be discussed for additional constraint structures.
 
 
 \subsection{Fast detection of cliques in less structured constraints}
