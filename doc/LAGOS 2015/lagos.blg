@@ -5,45 +5,45 @@ The style file: endm.bst
 Database file #1: references.bib
 Warning--empty pages in Saltzman2004
 Warning--empty pages in sandholm
-You've used 22 entries,
+You've used 21 entries,
             2561 wiz_defined-function locations,
-            700 strings with 7780 characters,
-and the built_in function-call counts, 8714 in all, are:
-= -- 792
-> -- 414
+            693 strings with 7615 characters,
+and the built_in function-call counts, 8314 in all, are:
+= -- 753
+> -- 400
 < -- 3
-+ -- 149
-- -- 123
-* -- 726
-:= -- 1266
-add.period$ -- 25
-call.type$ -- 22
-change.case$ -- 124
++ -- 144
+- -- 119
+* -- 694
+:= -- 1211
+add.period$ -- 24
+call.type$ -- 21
+change.case$ -- 119
 chr.to.int$ -- 0
-cite$ -- 24
-duplicate$ -- 408
-empty$ -- 684
-format.name$ -- 141
-if$ -- 1900
+cite$ -- 23
+duplicate$ -- 387
+empty$ -- 653
+format.name$ -- 136
+if$ -- 1809
 int.to.chr$ -- 0
-int.to.str$ -- 22
-missing$ -- 21
-newline$ -- 74
-num.names$ -- 46
-pop$ -- 110
+int.to.str$ -- 21
+missing$ -- 20
+newline$ -- 71
+num.names$ -- 44
+pop$ -- 107
 preamble$ -- 1
-purify$ -- 104
+purify$ -- 100
 quote$ -- 0
-skip$ -- 344
+skip$ -- 325
 stack$ -- 0
-substring$ -- 596
-swap$ -- 201
+substring$ -- 563
+swap$ -- 189
 text.length$ -- 3
 text.prefix$ -- 0
 top$ -- 0
-type$ -- 86
+type$ -- 82
 warning$ -- 2
-while$ -- 91
-width$ -- 24
-write$ -- 188
+while$ -- 87
+width$ -- 23
+write$ -- 180
 (There were 2 warnings)
