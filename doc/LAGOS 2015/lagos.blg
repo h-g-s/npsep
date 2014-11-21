@@ -1,4 +1,4 @@
-This is BibTeX, Version 0.99d (TeX Live 2013/Debian)
+This is BibTeX, Version 0.99d (TeX Live 2013/TeX Live for SUSE Linux)
 Capacity: max_strings=35307, hash_size=35307, hash_prime=30011
 The top-level auxiliary file: lagos.aux
 The style file: endm.bst
@@ -7,37 +7,37 @@ Warning--empty pages in Saltzman2004
 Warning--empty pages in sandholm
 You've used 21 entries,
             2561 wiz_defined-function locations,
-            693 strings with 7615 characters,
-and the built_in function-call counts, 8314 in all, are:
-= -- 753
-> -- 400
+            694 strings with 7680 characters,
+and the built_in function-call counts, 8233 in all, are:
+= -- 744
+> -- 394
 < -- 3
-+ -- 144
-- -- 119
-* -- 694
-:= -- 1211
++ -- 142
+- -- 117
+* -- 686
+:= -- 1202
 add.period$ -- 24
 call.type$ -- 21
-change.case$ -- 119
+change.case$ -- 118
 chr.to.int$ -- 0
 cite$ -- 23
-duplicate$ -- 387
-empty$ -- 653
-format.name$ -- 136
-if$ -- 1809
+duplicate$ -- 384
+empty$ -- 650
+format.name$ -- 133
+if$ -- 1791
 int.to.chr$ -- 0
 int.to.str$ -- 21
 missing$ -- 20
 newline$ -- 71
 num.names$ -- 44
-pop$ -- 107
+pop$ -- 105
 preamble$ -- 1
-purify$ -- 100
+purify$ -- 99
 quote$ -- 0
-skip$ -- 325
+skip$ -- 322
 stack$ -- 0
-substring$ -- 563
-swap$ -- 189
+substring$ -- 555
+swap$ -- 186
 text.length$ -- 3
 text.prefix$ -- 0
 top$ -- 0

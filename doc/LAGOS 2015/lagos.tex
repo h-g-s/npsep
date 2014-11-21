@@ -2,7 +2,6 @@
 \usepackage{endmmacro}
 \usepackage{graphicx}
 \usepackage{amsmath}
-\usepackage{cases}
 \usepackage{caption}
 \usepackage[brazilian,english]{babel}
 \usepackage[utf8]{inputenc}
@@ -143,7 +142,7 @@ As an illustrative example, Figure \ref{graph} shows the conflict graph for a bi
 
 \section{Cutting Planes}\label{cut}
 
-Linear programming relaxations can be significantly strengthened by the inclusion of inequalities derived from the set packing polytope (SPP) \cite {Padberg1973}. The most common classes of cuts for SPP are the clique cuts and the odd-hole cuts. A clique inequality for a set $C$ of conflicting variables has the form $\sum_{j\in C}x_{j} \leq 1$ and an odd-hole inequality with conflicting variables $C$ can be defined as: $\sum_{j\in C}x_{j} \leq \lfloor \frac{|C|}{2}\rfloor$. It is well known that in practice clique cuts are by far the most important ones \cite{Borndorfer1998}. The impact of these cuts has been explored for some hard timetabling problems \cite{Avella2005,Marecek2012}. Considering generic clique separation routines, the most common ones are the star clique and the row clique method \cite{Eso1999a,Hoffman1993,Borndorfer1998}. These are fast separation routines which are used in the current version of the COIN-OR Cut Generation Library.  
+Linear programming relaxations can be significantly strengthened by the inclusion of inequalities derived from the set packing polytope (SPP) \cite {Padberg1973}. The most common classes of cuts for SPP are the clique cuts and the odd-hole cuts. A clique inequality for a set $C$ of conflicting variables has the form $\sum_{j\in C}x_{j} \leq 1$ and an odd-hole inequality with conflicting variables $C$ can be defined as: $\sum_{j\in C}x_{j} \leq \lfloor \frac{|C|}{2}\rfloor$. It is well known that in practice clique cuts are by far the most important ones \cite{Borndorfer1998}. Considering generic clique separation routines, the most common ones are the star clique and the row clique method \cite{Eso1999a,Hoffman1993,Borndorfer1998}. These are fast separation routines which are used in the current version of the COIN-OR\cite{LougeeHeimer2003} Cut Generation Library.  
 
 Our algorithm proposal considers aggressive clique separation: instead of searching for \emph{the} most violated clique inequality we search for \emph{all} violated clique inequalities. Some previous results indicate that this is the best strategy. In \cite{Marecek2012}, for example, although authors used a branch-and-bound code to search for the most violated clique, computational results motivated the inclusion of non-optimally violated cuts found during the search. This result is consistent with reports of application of other cuts applied to different models, such as {C}hv\`{a}tal-Gomory cuts \cite{Fischetti2007}. The option for inserting a large number of violated inequalities at once is also responsible for reviving the gomory cuts importance \cite {Cornuejols2007}.
 
