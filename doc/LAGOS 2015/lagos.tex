@@ -161,16 +161,11 @@ Our algorithm proposal considers aggressive clique separation: instead of search
 \end{figure}
 
 
-Our proposed clique separation routine has two main components:  \begin{enumerate} \item a module to separate all violated cliques in the conflict subgraph induced by the fractional variables; \item a lifting module which extends generated cliques considering the original conflict graph. \end{enumerate}  The clique separation module was implemented using an improved version of the Bron-Kerbosch algorithm \cite{Bron1973}. This version implements an optimized pivoting rule \cite{Brito2011} to speed up the discovery of maximal cliques with large weight. This rule assigns the highest priority for visiting first nodes with large modified degree (summation of node degree and of its neighbors) and weight. Although this algorithm has an exponential worst case performance, the heuristic pivot rules  make the algorithm suitable not only for running in the enumeration context but also for executing with restricted times, since larger violated cliques tend to be discovered first. The importance of lifting clique inequalities can be explained considering conflict graphs in Figure \ref{figLiftings}. 
+Our proposed clique separation routine has two main components: (i) a module to separate all violated cliques in the conflict subgraph induced by the fractional variables and (ii) a lifting module which extends generated cliques considering the original conflict graph. The clique separation module was implemented using an improved version of the Bron-Kerbosch algorithm \cite{Bron1973}. This version implements an optimized pivoting rule \cite{Brito2011} to speed up the discovery of maximal cliques with large weight.  Although this algorithm has an exponential worst case performance, the heuristic pivot rules  make the algorithm suitable not only for running in the enumeration context but also for executing with restricted times, since larger violated cliques tend to be discovered first. 
 
-Nodes inside the gray area indicate variables with non-zero values in the fractional solution. In this solution, only nodes $x_{2},\ldots,x_{4}$ could contribute to define a maximally violated clique inequality. Nevertheless, subsequent linear programming relaxations could include three different violated $k_{3}$ cliques by alternating the inactive variable. If the $k_{4}$ clique inequality were inserted during the separation of the first fractional solution, additional re-optimizations of the linear program could be saved. Furthermore, a less dense constraint matrix may be obtained with the insertion of these dominant constraints first.
+The importance of lifting clique inequalities can be explained considering conflict graphs in Figure \ref{figLiftings}: nodes inside the gray area on the image on the left indicate variables with non-zero values in the fractional solution. In this solution, only nodes $x_{2},\ldots,x_{4}$ could contribute to define a maximally violated clique inequality. Nevertheless, subsequent linear programming relaxations could include three different violated $k_{3}$ cliques by alternating the inactive variable. If the $k_{4}$ clique inequality were inserted during the separation of the first fractional solution, additional re-optimizations of the linear program could be saved. 
 
-
-It is well known that the separation of odd-holes contributes only marginally for lower bound improvement \cite{Borndorfer1998,Mendez-Diaz2008}. Nevertheless, its inclusion in the branch-and-cut procedure is cheap, since these inequalities can be separated in polynomial time using shortest path algorithms \cite{Grotschel1993}. Odd hole inequalities can be strengthened by the inclusion of a wheel center, such as variable $x_{6}$ in the conflict graph presented in Figure \ref{figLiftings}. In fact, for an odd hole with variables $C$ and $W$ being the set of candidates to be included as wheel centers of $C$, the following inequality is valid:
-
-\begin{equation}
-	\sum_{j \in W} \lfloor \frac{|C|}{2} \rfloor x_{j} + \sum_{j \in C} x_{j} \leq \lfloor \frac{|C|}{2} \rfloor
-\end{equation}
+It is well known that the separation of odd-holes contributes only marginally for lower bound improvement \cite{Borndorfer1998,Mendez-Diaz2008}. Nevertheless, its inclusion in the branch-and-cut procedure is cheap, since these inequalities can be separated in polynomial time using shortest path algorithms \cite{Grotschel1993}. Odd hole inequalities can be strengthened by the inclusion of a wheel center, such as variable $x_{6}$ in the conflict graph presented in Figure \ref{figLiftings}. In fact, for an odd hole with variables $C$ and $W$ being the set of possible nodes to be included as wheel centers of $C$, the following inequality is valid: $\displaystyle \sum_{j \in W} \lfloor \frac{|C|}{2} \rfloor x_{j} + \sum_{j \in C} x_{j} \leq \lfloor \frac{|C|}{2} \rfloor$.
 
 \begin{figure}
 \begin{center}
@@ -191,14 +186,14 @@ The dataset used consists of problems with varying characteristics. The first se
 \begin{center}
 \begin{tabular}{|l|c|c|c|c|r|r|}
 \hline 
-\multirow{2}{0.8cm}{Instance Set} & \multicolumn{3}{c|}{{Problem Sizes ($\times10^{3}$)}} & {CG ($\times10^{6}$)} & \multicolumn{2}{c|}{{Running Time (s)}}\tabularnewline
+\multirow{2}{0.8cm}{Inst. Set} & \multicolumn{3}{c|}{{Problem Sizes ($\times10^{3}$)}} & {CG ($\times10^{6}$)} & \multicolumn{2}{c|}{{Time (s)}}\tabularnewline
 \cline{2-7} 
  & {$\underline{n}$/$\overline{n}$/$\tilde{n}$} & {$\underline{m}$/$\overline{m}$/$\tilde{m}$} & {$\underline{nz}$/$\overline{nz}$/$\tilde{nz}$} & {$|\underline{E}|$/$|\overline{E}|$/$\tilde{|E|}$} & \multicolumn{1}{c|}{PD} & \multicolumn{1}{c|}{FCG}\tabularnewline
 \hline 
 \hline 
 \texttt{MIPLIB} & {0.1/164.6/13.7} & {0.1/624.2/32.1} & {0.7/27678.7/515.9} & {0/11.4/0.4} & {198.8} & {17.5}\tabularnewline
 \hline 
-\texttt{INRC} & {9.8/63.6/29.7} & {3/29.2/11.7} & {201.1/1068.1/534.8} & {2.5/12.8/6.5} & {713} & {496.3}\tabularnewline
+\texttt{INRC} & {9.8/63.6/29.7} & {3/29.2/11.7} & {201.1/1068.1/534.8} & {2.5/12.8/6.5} & {713.0} & {496.3}\tabularnewline
 \hline 
 \texttt{Telebus} & {1.1/146.7/33.7} & {0.3/1.8/1} & {1.4/545.3/135.6} & {0.1/1935.5/80} & {14734.6} & {540.2}\tabularnewline
 \hline 
