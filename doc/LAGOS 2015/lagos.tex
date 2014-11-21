@@ -7,6 +7,7 @@
 \usepackage[brazilian,english]{babel}
 \usepackage[utf8]{inputenc}
 \usepackage[T1]{fontenc}
+\usepackage{multirow}
 
 % The following is enclosed to allow easy detection of differences in
 % ascii coding.
@@ -184,6 +185,28 @@ It is well known that the separation of odd-holes contributes only marginally fo
 Our code was written in C/C++ using the open source COIN-OR libraries. These libraries allowed us to integrate our routines with the COIN-OR MIP solvers \cite{Forrest2005,Linderoth2005,Ralphs2005} and also communicate with commercial solvers through the Open Solver Interface (OSI) \cite{Saltzman2004}. The code was compiled on GCC/G++ version 4.8.3. We ran all the experiments on Intel Core i7 3.60GHz computers with 32GB of RAM running Linux openSUSE 13.2 64 bits.
 
 The dataset used consists of problems with varying characteristics. The first set of instances is the benchmark set of MIPLIB 2010 \cite{miplib}, containing 87 instances. Since its introduction in 1992, the MIPLIB became a standard library of tests used to compare the performance of integer programming solvers. It contains a collection of real problems, most of them based on industrial applications. The second set of instances is the same used during the International Nurse Rostering Competition \cite{haspeslagh}, containing 69 instances. This competition aimed to encourage research in the field of scheduling and establish a benchmark problem that was widely accepted by the scheduling community. In addition, it allowed researchers could compare their results accurately and fairly. Finally, the last problem set is formed by instances of Telebus problem \cite{Borndorfer1998}, containing 56 instances. Telebus problem consists of a vehicle scheduling problem, whose objective is to choose the right fleet and appropriate vehicle rotations to service all orders. Such problems can be attacked with a set partitioning approach of combinatorial optimization.
+
+\begin{table}[h]
+\scriptsize
+\caption{Characteristics of instance sets and their conflict graphs.}\label{tab:inst}
+\begin{center}
+\begin{tabular}{|l|c|c|c|c|c|c|}
+\hline 
+\multirow{2}{*}{{Instance Set}} & \multicolumn{3}{c|}{{Problem Sizes ($\times10^{3}$)}} & {CG ($\times10^{6}$)} & \multicolumn{2}{c|}{{Running Time (s)}}\tabularnewline
+\cline{2-7} 
+ & {$\underline{n}$/$\overline{n}$/$\tilde{n}$} & {$\underline{m}$/$\overline{m}$/$\tilde{m}$} & {$\underline{nz}$/$\overline{nz}$/$\tilde{nz}$} & {$|\underline{E}|$/$|\overline{E}|$/$\tilde{|E|}$} & {PD} & {FCG}\tabularnewline
+\hline 
+\hline 
+\texttt{MIPLIB} & {0.1/164.6/13.7} & {0.1/624.2/32.1} & {0.7/27678.7/515.9} & {0/11.4/0.4} & {198.8} & {17.5}\tabularnewline
+\hline 
+\texttt{INRC} & {9.8/63.6/29.7} & {3/29.2/11.7} & {201.1/1068.1/534.8} & {2.5/12.8/6.5} & {713} & {496.3}\tabularnewline
+\hline 
+\texttt{Telebus} & {1.1/146.7/33.7} & {0.3/1.8/1} & {1.4/545.3/135.6} & {0.1/1935.5/80} & {14734.6} & {540.2}\tabularnewline
+\hline 
+\end{tabular}
+\end{center}
+\end{table}
+
 
 
 \section{Conclusions and Future Work}\label{conclusions}
