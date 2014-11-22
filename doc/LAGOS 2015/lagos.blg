@@ -3,47 +3,46 @@ Capacity: max_strings=35307, hash_size=35307, hash_prime=30011
 The top-level auxiliary file: lagos.aux
 The style file: endm.bst
 Database file #1: references.bib
-Warning--empty pages in Saltzman2004
 Warning--empty pages in sandholm
-You've used 21 entries,
+You've used 18 entries,
             2561 wiz_defined-function locations,
-            694 strings with 7680 characters,
-and the built_in function-call counts, 8233 in all, are:
-= -- 744
-> -- 394
-< -- 3
-+ -- 142
-- -- 117
-* -- 686
-:= -- 1202
-add.period$ -- 24
-call.type$ -- 21
-change.case$ -- 118
+            669 strings with 6995 characters,
+and the built_in function-call counts, 6890 in all, are:
+= -- 626
+> -- 348
+< -- 1
++ -- 124
+- -- 104
+* -- 567
+:= -- 1027
+add.period$ -- 21
+call.type$ -- 18
+change.case$ -- 104
 chr.to.int$ -- 0
-cite$ -- 23
-duplicate$ -- 384
-empty$ -- 650
-format.name$ -- 133
-if$ -- 1791
+cite$ -- 19
+duplicate$ -- 316
+empty$ -- 522
+format.name$ -- 116
+if$ -- 1486
 int.to.chr$ -- 0
-int.to.str$ -- 21
-missing$ -- 20
-newline$ -- 71
-num.names$ -- 44
-pop$ -- 105
+int.to.str$ -- 18
+missing$ -- 17
+newline$ -- 61
+num.names$ -- 36
+pop$ -- 86
 preamble$ -- 1
-purify$ -- 99
+purify$ -- 88
 quote$ -- 0
-skip$ -- 322
+skip$ -- 264
 stack$ -- 0
-substring$ -- 555
-swap$ -- 186
-text.length$ -- 3
+substring$ -- 454
+swap$ -- 149
+text.length$ -- 1
 text.prefix$ -- 0
 top$ -- 0
-type$ -- 82
-warning$ -- 2
-while$ -- 87
-width$ -- 23
-write$ -- 180
-(There were 2 warnings)
+type$ -- 70
+warning$ -- 1
+while$ -- 72
+width$ -- 20
+write$ -- 153
+(There was 1 warning)
