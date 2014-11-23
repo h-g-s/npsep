@@ -189,6 +189,8 @@ The dataset used consists of problems with varying characteristics. The first se
 \end{center}
 \end{table}
 
+We conducted another experiment to investigate the dual bound improvement in CBC by adding cuts at the root node relaxation. Thus, we ran several rounds of cut separation using our proposed clique separation procedure with and without lifting (lnpsep and npsep respectively) and the clique separation routine included in the CGL (cgl). Each approach was restricted by 300 seconds time limit. Only instances that have feasible solutions and at least one approach of clique separation found some cut was used. In this case, we used 30 instances of MIPLIB instance set, 59 instances of INRC and 56 instances of Telebus problem. To measure the improvements we computed for each instance and time instant the gap closed ($1 - gap$). The average gap closed is presented in Figure \ref{figExperiments} for each instance set. It can be observed that the inclusion of our lifted inequalities allows a faster increasing in the gap closed on the INRC instances. Furthermore, lnpsep cuts still make progress when npsep and cgl cuts cannot perform any significant change in the dual limit. For MIPLIB instances, npsep and lnpsep cuts obtained a little improvement on dual bounds in comparison with cgl, while in Telebus instances all approaches obtained similar results.
+
 \begin{figure}	
 	\begin{minipage}[h]{.5\textwidth}
 		\begin{center}
@@ -205,7 +207,7 @@ The dataset used consists of problems with varying characteristics. The first se
 			\includegraphics[width=1.\textwidth]{telebus.eps}
 		\end{center}
 	\end{minipage}
-	\caption{Dual bound improvement using COIN-OR Cut Generation Library (cgl) and the proposed cut separation procedure with and without lifting (lnpsep and npsep, respectively).}
+	\caption{Dual bound improvement using npsep, lnpsep and cgl cuts.}
 	\label{figExperiments}
 \end{figure}
 
