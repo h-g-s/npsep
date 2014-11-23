@@ -39,9 +39,9 @@
 
 \title{The Set Packing Polytope: A Computational Study of Conflict Graphs and Aggressive Cut Separation}
 \author{Samuel Souza Brito \and Haroldo Gambini Santos\thanksref{mailSamuelHaroldo}}
-\address{{\small Departamento de Computação, Universidade Federal de Ouro Preto - UFOP\\ Ouro Preto, Brazil}}
+\address{{\small Departamento de Computação, Universidade Federal de Ouro Preto - UFOP}}
 \author{Marcus V. S. Poggi de Aragão\thanksref{mailPoggi}}
-\address{{\small Dep. de Informática, Pontifícia Universidade Católica do Rio de Janeiro - PUC-RIO\\ Rio de Janeiro, Brazil}}
+\address{{\small Dep. de Informática, Pontifícia Universidade Católica do Rio de Janeiro}}
 \thanks[mailSamuelHaroldo]{Email: {\texttt{\normalshape \{samuelsouza,haroldo\}@iceb.ufop.br}}} 
 \thanks[mailPoggi]{Email: {\texttt{\normalshape poggi@inf.puc-rio.br}}}  
 
@@ -60,7 +60,7 @@ conflict graphs, integer programming, clique cuts, odd holes
 
 Conflict Graphs (CG) represents logical relations between binary variables: vertices represent variables and edges indicate that two variables cannot be set to specific values without violating one or more constraints. CGs are typically constructed using probing techniques\cite{Borndorfer1998} based on constraints analysis. On this work we propose techniques to speed up the creation of dense conflict graphs at the root node. An exact separation routine is employed to discover all violated cliques and odd holes, which are lifted in subsequent steps.
 
-The remaining of this paper is organized as follows: in Section \ref{seccgraph} we formally explain our approach to build conflict graphs as well our strategy to speedup the detection of logical implications; in Section \ref{cut} we present the cut separation and lifting routines; in Section \ref{experiments} computational experiments are presented and finally, in Section \ref{conclusions} we conclude and discuss future directions about this work.
+In Section \ref{seccgraph} we formally explain our approach to build conflict graphs as well our strategy to speedup the detection of logical implications; in Section \ref{cut} we present the cut separation and lifting routines; in Section \ref{experiments} computational experiments are presented and finally, in Section \ref{conclusions} we conclude and discuss the results of- this work.
 
 \section{Conflict Graphs in Integer Programming}\label{seccgraph}
 
@@ -69,11 +69,9 @@ A conflict graph represents logical relations between binary variables. For two 
 Given an Integer Program (IP), a conflict graph can be constructed using probing techniques based on feasibility considerations\cite{achterberg,atamturk}, checking the impact of fixing pairs of variables to different combinations of values. First, consider that each constraint $i \in \{1,\ldots,m\}$ can be written as $\displaystyle \sum_{j \in N} a_{ij}x_{j} \leq b_{i}$, where $N=\{1,\ldots,n\}$ is the index set of binary variables $x$, $a_{ij}$ is the coefficient for variable $x_{j}$ at constraint $i$ and $b_{i}$ is the right-hand side of constraint $i$. Suppose we are analyzing two particular variables $x_{\hat{j}}$ and $x_{\hat{k}}$ with respect to constraint $i$. Consider that these variables are assigned with values $u$ and $v$, respectively. Then, let $\displaystyle
 L_{i}^{x_{\hat{j}} = u,\, x_{\hat{k}} = v}=\sum_{j\in N_{i}^{-} \setminus \{\hat{j}, \hat{k}\}}a_{ij}+a_{i\hat{j}}u+a_{i\hat{k}}v $, where $N_{i}^{-} = \{j \in N : a_{ij} < 0\}$. In this case, $L_{i}^{x_{\hat{j}} = u,\, x_{\hat{k}} = v}$ is a lower bound for the value on the left-hand side  of the constraint $i$, considering the assignments $x_{\hat{j}} = u$ and $x_{\hat{k}} = v$. If $L_{i}^{x_{\hat{j}} = u,\, x_{\hat{k}} = v} > b_{i}$, there is a conflict between the assignments of $x_{\hat{j}}$ and $x_{\hat{k}}$. 
 
-Performing these steps considering each pair of variables in each constraint, leads to the creation of a conflict graph in $O(m \times n^2)$, which may be expensive for large IPs.  Nevertheless, for some constraint types a large number of conflicts can be quickly discovered. This is the case of the Generalized Upper Bound constraints ($\sum_{j\in N}x_j \leq 1$). The following subsection will describe additional cases where cliques in individual constraints can be quickly detected (i.e., faster than $O(n^2)$). The following notation will be used: $\tilde{a}_{ik}$ is the $k$-th smallest coefficient in constraint $i$ and $\acute{a}_{ik}$ indicates its index. Constants $n_i$ and $S_i^-$ denote the number of non-zero variables and the sum of all negative coefficients of constraint $i$, respectively. In the next subsection fast clique detection will be discussed for additional constraint structures. In the next paragraphs fast detection of cliques in less structured constraints will be discussed.
+Performing these steps considering each pair of variables in each constraint, leads to the creation of a conflict graph in $O(m \times n^2)$.  Nevertheless, for some constraint types a large number of conflicts can be quickly discovered. This is the case of the Generalized Upper Bound constraints ($\sum_{j\in N}x_j \leq 1$). The following subsection will describe additional cases where cliques in individual constraints can be quickly detected (i.e., faster than $O(n^2)$). The following notation will be used: $\tilde{a}_{ik}$ is the $k$-th smallest coefficient in constraint $i$ and $\acute{a}_{ik}$ indicates its index. Constants $n_i$ and $S_i^-$ denote the number of non-zero variables and the sum of all negative coefficients of constraint $i$, respectively. In the next subsection fast clique detection will be discussed for additional constraint structures. 
 
-We describe two simple cases where large cliques of conflicting variables can be detected just by traversing constraints with  coefficients of variables sorted in non-decreasing order. Thus, conflicts in these constraints are discovered in $O( n \log n)$. At first, consider that at a given position $k$ the summation of negative coefficients excluding the pair of variables at positions $k$ and $k+1$ is: $\displaystyle D_{i}^{x_{\acute{a}_{ik}}, x_{\acute{a}_{ik+1}}} = S_i^- - min(0, \tilde{a}_{ik}) - min(0, \tilde{a}_{ik+1})$.
-
-\noindent Thus, the lower bound for the LHS of constraint $i$ when variables with the $k-th$ and $(k+1)-the$ smallest coefficients are fixed at one is: $\displaystyle LHS_{i}^{x_{\acute{a}_{ik}} = 1, x_{\acute{a}_{ik+1}} = 1} = D_{i}^{x_{\acute{a}_{ik}}, x_{\acute{a}_{ik+1}}} + \tilde{a}_{ik} + \tilde{a}_{ik+1}$.
+We describe two simple cases where large cliques of conflicting variables can be detected just by traversing constraints with  coefficients of variables sorted in non-decreasing order. Thus, conflicts in these constraints are discovered in $O( n \log n)$. At first, consider that at a given position $k$ the summation of negative coefficients excluding the pair of variables at positions $k$ and $k+1$ is: $\displaystyle D_{i}^{x_{\acute{a}_{ik}}, x_{\acute{a}_{ik+1}}} = S_i^- - min(0, \tilde{a}_{ik}) - min(0, \tilde{a}_{ik+1})$.  Thus, the lower bound for the LHS of constraint $i$ when variables with the $k-th$ and $(k+1)-the$ smallest coefficients are fixed at one is: $\displaystyle LHS_{i}^{x_{\acute{a}_{ik}} = 1, x_{\acute{a}_{ik+1}} = 1} = D_{i}^{x_{\acute{a}_{ik}}, x_{\acute{a}_{ik+1}}} + \tilde{a}_{ik} + \tilde{a}_{ik+1}$.
 
 Since $LHS_{i}^{x_{\acute{a}_{ik}} = 1, x_{\acute{a}_{ik+1}} = 1}$ is monotonically non-decreasing as $k$ increases, if $LHS_{i}^{x_{\acute{a}_{ik}} = 1, x_{\acute{a}_{ik+1}} = 1} > b_{i}$, then there is a clique involving the activation of all variables from position $k$ until position $n_i$. Moreover, we can discard the existence of such cliques by checking if $LHS_{i}^{x_{\acute{a}_{in_i-1}} = 1, x_{\acute{a}_{in_i}} = 1} \leq b_i$. Analogously, cliques involving complimentary variables from positions $n_i$ until $k$ can be obtained or discarded checking if the limit incurred from positions $k$ and $k-1$  $LHS_{i}^{x_{\acute{a}_{ik}} = 0, x_{\acute{a}_{ik-1}} = 0} = D_{i}^{x_{\acute{a}_{ik}}, x_{\acute{a}_{ik-1}}} $ surpasses the upper bound $b_i$. For variables which are not involved in these easy to compute cliques a pairwise analysis is performed for each constraint. 
 
@@ -100,9 +98,7 @@ As an illustrative example, Figure \ref{graph} shows the conflict graph for a bi
 
 \section{Cutting Planes}\label{cut}
 
-Linear programming relaxations can be significantly strengthened by the inclusion of inequalities derived from the set packing polytope (SPP) \cite {Padberg1973}. The most common classes of cuts for SPP are the clique cuts and the odd-hole cuts. A clique inequality for a set $C$ of conflicting variables has the form $\sum_{j\in C}x_{j} \leq 1$ and an odd-hole inequality with conflicting variables $C$ can be defined as: $\sum_{j\in C}x_{j} \leq \lfloor \frac{|C|}{2}\rfloor$. Considering generic clique separation routines, the most common ones are the star clique and the row clique method \cite{Borndorfer1998}. These are fast separation routines which are used in the current version of the COIN-OR\cite{LougeeHeimer2003} Cut Generation Library (CGL).  
-
-Our algorithm proposal aggressive clique separation: instead of searching for \emph{the} most violated clique inequality we search for \emph{all} violated clique inequalities. Some previous results indicate that this is the best strategy. In \cite{Marecek2012}, for example, although authors used a branch-and-bound code to search for the most violated clique, computational results motivated the inclusion of non-optimally violated cuts found during the search. The option for inserting a large number of violated inequalities at once is also responsible for reviving the gomory cuts importance \cite {Cornuejols2007}.
+Linear programming relaxations can be significantly strengthened by the inclusion of inequalities derived from the set packing polytope (SPP) \cite {Padberg1973}. A clique inequality for a set $C$ of conflicting variables has the form $\sum_{j\in C}x_{j} \leq 1$ and an odd-hole inequality with conflicting variables $C$ can be defined as: $\sum_{j\in C}x_{j} \leq \lfloor \frac{|C|}{2}\rfloor$. Considering generic clique separation routines, the most common ones are the star clique and the row clique method \cite{Borndorfer1998}, which are used in the current version of the COIN-OR\cite{LougeeHeimer2003} Cut Generation Library (CGL).  
 
 \begin{figure}	
 	\begin{minipage}[h]{.5\textwidth}
@@ -118,8 +114,7 @@ Our algorithm proposal aggressive clique separation: instead of searching for \e
 	\caption{Example of a $k_{3}$ which could be lifted to a $k_{4}$    and an odd hole and its possible extension to a wheel} \label{figLiftings}
 \end{figure}
 
-
-Our proposed clique separation routine has two main components: (i) a module to separate all violated cliques in the conflict subgraph induced by the fractional variables and (ii) a lifting module which extends generated cliques considering the original conflict graph. The clique separation module was implemented using an improved version of the Bron-Kerbosch algorithm \cite{Bron1973}. This version implements an optimized pivoting rule \cite{Brito2011} to speed up the discovery of maximal cliques with large weight.  Although this algorithm has an exponential worst case performance, the heuristic pivot rules  make the algorithm suitable not only for running in the enumeration context but also for executing with restricted times, since larger violated cliques tend to be discovered first. We also lift all generated inequalities as presented in Figure \ref{figLiftings}, giving higher priority to inactive variables with the smallest reduced cost.  
+Our proposed clique separation routine has two main components: (i) a module to separate all violated cliques in the conflict subgraph induced by the fractional variables and (ii) a lifting module which extends generated cliques considering the original conflict graph. The clique separation module was implemented using an improved version of the Bron-Kerbosch algorithm \cite{Bron1973}. This version implements an optimized pivoting rule \cite{Brito2011} to speed up the discovery of maximal cliques with large weight.  We also lift all generated inequalities as presented in Figure \ref{figLiftings}, giving higher priority to inactive variables with the smallest reduced cost.  
 
 \begin{figure}
 \begin{center}
@@ -127,14 +122,11 @@ Our proposed clique separation routine has two main components: (i) a module to 
 \end{center}
 \end{figure}
 
-
 \section{Experimental Results}\label{experiments}
 
-Our code was written in C/C++ using the open source COIN-OR CLP libraries to solve linear programs. The CGL library was used as a reference implementation to compare with our cut generation routines. All experiments ran in one core of a computer with an Intel Core i7 3.6GHz processor and 32GB of RAM.
+Our code was written using the open source COIN-OR CLP libraries to solve linear programs and the CGL library was used to compare with our cut generation routines. All experiments ran in a computer with an Intel Core i7 3.6GHz processor and 32GB of RAM.
 
-The dataset used consists of problems with varying characteristics. The first set of instances is the benchmark set of from MIPLIB 2010\cite{miplib}. The second set of instances (INRC) comes from an IP formulation  used to solve the Nurse Rostering Problem  \cite{Santos2014} of the International Nurse Rostering Competition. Finally, the Telebus set consists in set partitioning problems from \cite{Borndorfer1998}. After removing infeasible instances and instances where neither our code or CGL found violated inequalities the remaining instances in each set was 30, 59 and 56, respectively.
-
-Characteristics of each problem set are presented in Table \ref{tab:inst}. Problem dimensions are presented: columns ($n$), rows ($m$) and non-zeros ($nz$). The number of edges in conflict graphs (CG) inferred from all pairwise, individual constraint based evaluation is also shown. The notation ($\underline{v}$,$\overline{v}$,$\tilde{v}$) indicates minimum, maximum and average values. Finally, the total processing time obtained with pairwise detection (PD) and with our improved algorithm (FCG). As it can be seen, speedups up to 30 times were obtained.
+The first set of instances is the benchmark set of from MIPLIB 2010\cite{miplib}. The second set of instances (INRC) comes from an IP formulation  used to solve the Nurse Rostering Problem  \cite{Santos2014} of the International Nurse Rostering Competition. Finally, the Telebus set consists in set partitioning problems from \cite{Borndorfer1998}. After removing infeasible instances and instances where neither our code or CGL found violated inequalities the remaining instances in each set was 30, 59 and 56, respectively. Characteristics of each problem set are presented in Table \ref{tab:inst}: columns ($n$), rows ($m$), non-zeros ($nz$) and the number of edges in conflict graphs (CG) inferred from all pairwise, individual constraint based evaluation is also shown. ($\underline{v}$,$\overline{v}$,$\tilde{v}$) indicates minimum, maximum and average values. Finally, the total processing time obtained with pairwise detection (PD) and with our improved algorithm (FCG). 
 
 \begin{table}[h]
 \scriptsize
@@ -157,7 +149,7 @@ Characteristics of each problem set are presented in Table \ref{tab:inst}. Probl
 \end{center}
 \end{table}
 
-Figure \ref{figExperiments} shows the average gap closed improvement for each instance set where cgl and our separation routines npsep and lnpsep are compared, where lnpsep indicates the strategy which also performs lifting.
+Figure \ref{figExperiments} shows the average gap closed improvement for each instance set where cgl and our separation routines npsep and lnpsep are compared, where lnpsep indicates the strategy which also performs lifting. We did not included the Telebus results because all strategies performed equally well on these instances.
 
 \begin{figure}	
 	\begin{minipage}[h]{.5\textwidth}
@@ -170,18 +162,14 @@ Figure \ref{figExperiments} shows the average gap closed improvement for each in
 			\includegraphics[width=0.8\textwidth]{nurse.eps}
 		\end{center}
 	\end{minipage}
-	\begin{minipage}[h]{.5\textwidth}
-		\begin{center}
-			\includegraphics[width=0.8\textwidth]{telebus.eps}
-		\end{center}
-	\end{minipage}
 	\caption{Dual bound improvement using npsep, lnpsep and cgl cuts.}
 	\label{figExperiments}
 \end{figure}
 
 \section{Conclusions and Future Work}\label{conclusions}
 
-This work presented a computational study of conflict graphs and agressive cut separation for Integer Programming problems with binary variables. We developed an approach for fast creation of densely CGs using the detection of cliques in less structured constraints. The detection of cliques are clearly effective, reaching a speedup up to 30 times. We also proposed and implemented a cut separation procedure. Experiments shown that our cut generator can produce better dual bounds than CGL in the early stages of the search. For future research we plan to process conflicts involving groups of constraints at the root node. 
+We developed an approach for fast creation of densely CGs using the detection of cliques in less structured constraints. A speedup of up to 30 times was obtained in the overall time to create an initial conflict graph. We also proposed and implemented a cut separation procedure. Experiments shown that our cut generator can produce significantly better dual bounds than CGL.
+
 \bibliographystyle{endm}
 \bibliography{references}
 
