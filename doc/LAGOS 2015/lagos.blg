@@ -3,44 +3,44 @@ Capacity: max_strings=35307, hash_size=35307, hash_prime=30011
 The top-level auxiliary file: lagos.aux
 The style file: endm.bst
 Database file #1: references.bib
-You've used 17 entries,
+You've used 11 entries,
             2561 wiz_defined-function locations,
-            663 strings with 6738 characters,
-and the built_in function-call counts, 6594 in all, are:
-= -- 606
-> -- 334
+            624 strings with 5673 characters,
+and the built_in function-call counts, 4094 in all, are:
+= -- 388
+> -- 160
 < -- 1
-+ -- 119
-- -- 100
-* -- 540
-:= -- 985
-add.period$ -- 20
-call.type$ -- 17
-change.case$ -- 98
++ -- 58
+- -- 46
+* -- 322
+:= -- 597
+add.period$ -- 12
+call.type$ -- 11
+change.case$ -- 55
 chr.to.int$ -- 0
-cite$ -- 17
-duplicate$ -- 301
-empty$ -- 487
-format.name$ -- 111
-if$ -- 1422
+cite$ -- 11
+duplicate$ -- 203
+empty$ -- 323
+format.name$ -- 52
+if$ -- 898
 int.to.chr$ -- 0
-int.to.str$ -- 17
-missing$ -- 16
-newline$ -- 58
-num.names$ -- 34
-pop$ -- 79
+int.to.str$ -- 11
+missing$ -- 10
+newline$ -- 40
+num.names$ -- 22
+pop$ -- 36
 preamble$ -- 1
-purify$ -- 84
+purify$ -- 45
 quote$ -- 0
-skip$ -- 254
+skip$ -- 177
 stack$ -- 0
-substring$ -- 447
-swap$ -- 146
+substring$ -- 312
+swap$ -- 103
 text.length$ -- 1
 text.prefix$ -- 0
 top$ -- 0
-type$ -- 66
+type$ -- 44
 warning$ -- 0
-while$ -- 70
-width$ -- 19
-write$ -- 144
+while$ -- 46
+width$ -- 13
+write$ -- 96
