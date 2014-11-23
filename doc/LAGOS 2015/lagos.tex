@@ -166,7 +166,7 @@ It is well known that the separation of odd-holes contributes only marginally fo
 
 Our code was written in C/C++ using the open source COIN-OR CLP libraries to solve linear programs. The CGL library was used as a reference implementation to compare with our cut generation routines. The code was compiled with GCC 4.8 and all the experiments ran in one core of a computer with an Intel Core i7 3.60GHz processor and 32GB of RAM running openSUSE Linux 13.2 64 bits.
 
-The dataset used consists of problems with varying characteristics. The first set of instances is the benchmark set of all 87 instances from MIPLIB 2010\cite{miplib}. The second set of instances (INRC) comes from an IP formulation  used to exactly solve \cite{Santos2014} most of the 60 instances from the International Nurse Rostering Competition\cite{haspeslagh}. Finally, the Telebus set consists in 56 set partitioning problems derived from vehicle scheduling problems from \cite{Borndorfer1998}. Characteristics of each problem set are presented in Table \ref{tab:inst}. Problem dimensions are presented: columns ($n$), rows ($m$) and non-zeros ($nz$). The number of edges in conflict graphs (CG) inferred from all pairwise, individual constraint based evaluation is also shown. The notation ($\underline{v}$,$\overline{v}$,$\tilde{v}$) indicates minimum,maximum and average values. Finally, the total processing time obtained with pairwise detection (PD) and with our improved algorithm (CCG). As it can be seen, speedups up to 30 times were obtained.
+The dataset used consists of problems with varying characteristics. The first set of instances is the benchmark set of all 87 instances from MIPLIB 2010\cite{miplib}. The second set of instances (INRC) comes from an IP formulation  used to exactly solve \cite{Santos2014} most of the 60 instances from the International Nurse Rostering Competition\cite{haspeslagh}. Finally, the Telebus set consists in 56 set partitioning problems derived from vehicle scheduling problems from \cite{Borndorfer1998}. Characteristics of each problem set are presented in Table \ref{tab:inst}. Problem dimensions are presented: columns ($n$), rows ($m$) and non-zeros ($nz$). The number of edges in conflict graphs (CG) inferred from all pairwise, individual constraint based evaluation is also shown. The notation ($\underline{v}$,$\overline{v}$,$\tilde{v}$) indicates minimum, maximum and average values. Finally, the total processing time obtained with pairwise detection (PD) and with our improved algorithm (FCG). As it can be seen, speedups up to 30 times were obtained.
 
 \begin{table}[h]
 \scriptsize
@@ -205,13 +205,13 @@ The dataset used consists of problems with varying characteristics. The first se
 			\includegraphics[width=1.\textwidth]{telebus.eps}
 		\end{center}
 	\end{minipage}
-	\caption{Upper bound improvement for COIN-OR built in cut generator (cgl) and the proposed cut separation procedure (npsep).}
+	\caption{Dual bound improvement using COIN-OR Cut Generation Library (cgl) and the proposed cut separation procedure with and without lifting (lnpsep and npsep, respectively).}
 	\label{figExperiments}
 \end{figure}
 
-
-
 \section{Conclusions and Future Work}\label{conclusions}
+
+This work presented a computational study of conflict graphs and agressive cut separation for Integer Programming problems with binary variables. We developed an approach for fast creation of densely CGs using the detection of cliques in less structured constraints. The detection of cliques are clearly effective, reaching a speedup up to 30 times. For large constraints, the pairwise analysis spent a lot of processing time looking for conflicts. On the other hand, clique detection approach allowed the fast analysis at each constraint and to jump constraints that had no conflicts. We also proposed and implemented a clique cut generator for CBC, showing that it is competitive with CGL. Experiments shown that our clique generator can produce dual bounds equal or better than CGL in the early stages of the search. For future research we plan to process conflicts involving groups of constraints at the root node. We also plan to use Constraint Programming techniques (e.g. nogood learning) to detect more relations between binary variables.
 
 \bibliographystyle{endm}
 \bibliography{references}
