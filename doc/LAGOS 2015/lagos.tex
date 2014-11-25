@@ -46,11 +46,11 @@
 \thanks[mailPoggi]{Email: {\texttt{\normalshape poggi@inf.puc-rio.br}}}  
 
 \begin{abstract}
-This work explores the fast creation of densely populated conflict graphs at the root node of the search tree for integer programs. We show that not only the Generalized Upper Bound (GUB) constraints are useful for the detection of cliques: cliques can also be quickly detected in less structured constrains in $O( n \log n )$. Routines for the aggressive separation and lifting of cliques and odd-holes are proposed. Improved bounds and a faster convergence to strong bounds were observed when comparing to the default separation routines found in the current version of the COmputation INfrastructure for Operations Research (COIN-OR) Branch and Cut solver.
+This work explores the fast creation of densely populated conflict graphs at the root node of the search tree for integer programs. We show that not only the Generalized Upper Bound (GUB) constraints are useful for the fast detection of cliques: these can also be quickly detected in less structured constrains in $O( n \log n )$. Routines for the aggressive separation and lifting of cliques and odd-holes are proposed. Improved bounds and a faster convergence to strong bounds were observed when comparing to the default separation routines found in the current version of the COmputation INfrastructure for Operations Research (COIN-OR) Branch and Cut solver.
 \end{abstract}
 
 \begin{keyword}
-conflict graphs, integer programming, clique cuts, odd holes
+conflict graphs, integer programming, cutting planes, cliques, odd holes
 \end{keyword}
 
 \end{frontmatter}
@@ -60,7 +60,7 @@ conflict graphs, integer programming, clique cuts, odd holes
 
 Conflict Graphs (CG) represent logical relations between binary variables: vertices represent variables and edges indicate that two variables cannot be set to specific values without violating one or more constraints. CGs are typically constructed using probing techniques\cite{Borndorfer1998} based on constraints analysis. On this work we propose techniques to speed up the creation of dense conflict graphs at the root node. Exact separation routines are employed to discover all violated cliques and odd holes, which are lifted in subsequent steps.
 
-In Section \ref{seccgraph} we formally explain our approach to build conflict graphs as well our strategy to speedup the detection of logical implications; in Section \ref{cut} we present the cut separation and lifting routines; in Section \ref{experiments} computational experiments are presented and finally, in Section \ref{conclusions} we conclude and discuss the results of this work.
+In Section \ref{seccgraph} we formally explain our approach to build conflict graphs as well as our strategy to speedup the detection of logical implications; in Section \ref{cut} we present the cut separation and lifting routines; in Section \ref{experiments} computational experiments are presented and finally, in Section \ref{conclusions} we conclude and discuss the results of this work.
 
 \section{Conflict Graphs in Integer Programming}\label{seccgraph}
 
@@ -89,7 +89,7 @@ x_{1},\ldots,x_{4}\in\{0,1\}
 \end{minipage}
 \begin{minipage}{.5\textwidth}
 	\centering
-	\includegraphics[width=3.2cm]{cGraph.pdf}
+	\includegraphics[width=3.0cm]{cGraph.pdf}
 \end{minipage}
 }
 \caption{A binary program and its conflict graph}\label{graph}
@@ -104,18 +104,18 @@ Linear programming relaxations can be significantly strengthened by the inclusio
 \begin{figure}	
 	\begin{minipage}[h]{.5\textwidth}
 		\begin{center}
-			\includegraphics[width=0.6\textwidth]{clique.pdf}
+			\includegraphics[width=0.5\textwidth]{clique.pdf}
 		\end{center}
 	\end{minipage}
 	\begin{minipage}[h]{.5\textwidth}
 		\begin{center}
-			\includegraphics[width=0.6\textwidth]{oddHole.pdf}
+			\includegraphics[width=0.5\textwidth]{oddHole.pdf}
 		\end{center}
 	\end{minipage}
 	\caption{Example of a $k_{3}$ which could be lifted to a $k_{4}$    and an odd hole and its possible extension to a wheel} \label{figLiftings}
 \end{figure}
 
-Our proposed clique separation routine has two main components: (i) a module to separate all violated cliques in the conflict subgraph induced by the fractional variables and (ii) a lifting module which extends generated cliques considering the original conflict graph. The clique separation module was implemented using an improved version of the Bron-Kerbosch algorithm \cite{Bron1973}. This version implements an optimized pivoting rule \cite{Brito2011} to speed up the discovery of maximal cliques with large weight.  We also lift all generated inequalities as presented in Figure \ref{figLiftings}, giving higher priority to inactive variables with the smallest reduced cost.  
+Our proposed clique separation routine has two main components: (i) a module to separate all violated cliques in the conflict subgraph induced by the fractional variables and (ii) a lifting module which extends generated cliques considering the original conflict graph. The clique separation module was implemented using an improved version of the Bron-Kerbosch algorithm \cite{Bron1973}. This version implements an optimized pivoting rule \cite{Brito2011} to speed up the discovery of maximal cliques with large weight.  We also lift all generated inequalities as presented in Figure \ref{figLiftings}, using greedy heuristics, giving higher priority to inactive variables with the smallest reduced cost. Lifted clique inequalities have the same structured: only ones in the left-hand side. A lifted Odd-hole for variables $C$ and a wheel center $W$ can be written as $\displaystyle 	\sum_{j \in W} \lfloor \frac{|C|}{2} \rfloor x_{j} + \sum_{j \in C} x_{j} \leq \lfloor \frac{|C|}{2} \rfloor$.
 
 \begin{figure}
 \begin{center}
@@ -150,7 +150,7 @@ The first set of instances is the benchmark set of from MIPLIB 3, 2003 and 2010 
 \end{center}
 \end{table}
 
-Figure \ref{figExperiments} shows the average gap closed improvement for each instance set where cgl and our separation routines npsep and lnpsep are compared. lnpsep indicates the strategy which also performs lifting. We did not included the Telebus results because all strategies performed equally well on these instances.
+Figure \ref{figExperiments} shows the average gap closed improvement for each instance set where cgl and our separation routines npsep and lnpsep (lifted) are compared. While remarkable improvements were obtained in the INRC instances, which have a large number of dense set partitioning and packing constraints, a modest improvement occurred in MIPLIB instances, the average lower bound improved from 51.06, obtained with CGL, to 53.39, obtained with lnpsep within the time limit imposed. We did not included the Telebus results because all strategies performed equally well on these instances.
 
 \begin{figure}	
 	\begin{minipage}[h]{.5\textwidth}
@@ -169,7 +169,7 @@ Figure \ref{figExperiments} shows the average gap closed improvement for each in
 
 \section{Conclusions}\label{conclusions}
 
-We developed an approach for fast creation of densely CGs using the detection of cliques in less structured constraints. A speedup of up to 30 times was obtained in the overall time to create an initial conflict graph. We also proposed and implemented an exact cut separation procedure. Experiments shown that our cut generator can produce significantly better dual bounds than CGL, specially in restricted execution times.
+We developed an approach for fast creation of densely CGs using the detection of cliques in less structured constraints. A speedup of up to 30 times was obtained in the overall time to create an initial conflict graph. We also proposed and implemented an exact cut separation procedure. Experiments show that our cut generator can produce significantly better dual bounds than CGL, specially in restricted execution times.
 
 \bibliographystyle{endm}
 \bibliography{references}
