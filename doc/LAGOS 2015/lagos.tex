@@ -39,7 +39,7 @@
 
 \title{The Set Packing Polytope: A Computational Study of Conflict Graphs and Aggressive Cut Separation}
 \author{Samuel Souza Brito \and Haroldo Gambini Santos\thanksref{mailSamuelHaroldo}}
-\address{{\small Departamento de Computação, Universidade Federal de Ouro Preto - UFOP}}
+\address{{\small Dep. de Computação, Universidade Federal de Ouro Preto - UFOP}}
 \author{Marcus Poggi\thanksref{mailPoggi}}
 \address{{\small Dep. de Informática, Pontifícia Universidade Católica do Rio de Janeiro}}
 \thanks[mailSamuelHaroldo]{Email: {\texttt{\normalshape \{samuelsouza,haroldo\}@iceb.ufop.br}}} 
@@ -115,7 +115,7 @@ Linear programming relaxations can be significantly strengthened by the inclusio
 	\caption{Example of a $k_{3}$ which could be lifted to a $k_{4}$    and an odd hole and its possible extension to a wheel} \label{figLiftings}
 \end{figure}
 
-Our proposed clique separation routine has two main components: (i) a module to separate all violated cliques in the conflict subgraph induced by the fractional variables and (ii) a lifting module which extends generated cliques considering the original conflict graph. The clique separation module was implemented using an improved version of the Bron-Kerbosch algorithm \cite{Bron1973}. This version implements an optimized pivoting rule \cite{Brito2011} to speed up the discovery of maximal cliques with large weight.  We also lift all generated inequalities as presented in Figure \ref{figLiftings}, using greedy heuristics, giving higher priority to inactive variables with the smallest reduced cost. Lifted clique inequalities have the same structured: only ones in the left-hand side. A lifted Odd-hole for variables $C$ and a wheel center $W$ can be written as $\displaystyle 	\sum_{j \in W} \lfloor \frac{|C|}{2} \rfloor x_{j} + \sum_{j \in C} x_{j} \leq \lfloor \frac{|C|}{2} \rfloor$.
+Our proposed clique separation routine has two main components: (i) a module to separate all violated cliques in the conflict subgraph induced by the fractional variables and (ii) a lifting module which extends generated cliques considering the original conflict graph. The clique separation module was implemented using an improved version of the Bron-Kerbosch algorithm \cite{Bron1973}. This version implements an optimized pivoting rule \cite{Brito2011} to speed up the discovery of maximal cliques with large weight.  We also lift all generated inequalities as presented in Figure \ref{figLiftings}, using greedy heuristics, giving higher priority to inactive variables with the smallest reduced cost. Lifted clique inequalities have the same structure: only ones in the left-hand side. A lifted Odd-hole for variables $C$ and a wheel center $W$ can be written as $\displaystyle 	\sum_{j \in W} \lfloor \frac{|C|}{2} \rfloor x_{j} + \sum_{j \in C} x_{j} \leq \lfloor \frac{|C|}{2} \rfloor$.
 
 \begin{figure}
 \begin{center}
