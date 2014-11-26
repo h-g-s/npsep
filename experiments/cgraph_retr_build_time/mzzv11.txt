@@ -1,8 +1,0 @@
-writeclqw
-
-loaded mzzv11 
-	10240 variables (10240 integer) 9499 rows 134603 nz
-
-
-creating conflict graph ... done in 0.2800 seconds.
-original cgraph dimensions: n: 10240 m: 475060 t: 0.280

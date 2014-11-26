@@ -1,9 +1,0 @@
-Coin0009I  CoinLpIO::readLp(): Maximization problem reformulated as minimization
-writeclqw
-
-loaded sanr400-5 
-	400 variables (400 integer) 4190 rows 34661 nz
-
-
-creating conflict graph ... done in 0.0300 seconds.
-original cgraph dimensions: n: 400 m: 79632 t: 0.030

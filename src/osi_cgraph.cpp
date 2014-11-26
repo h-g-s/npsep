@@ -90,6 +90,8 @@ double mostNegativeContribution( const double coef, const char s, const double c
 /* returns how much a variable can positively contribute */
 double unitaryContribution( const double coef, const char s, const double colLb, const double colUb );
 
+/* greedy clique partitioning from "Conflict graphs in solving integer programming problems" */
+
 CGraph *osi_build_cgraph_pairwise( void *_lp )
 {
     OsiSolverInterface *lp = (OsiSolverInterface *)_lp;

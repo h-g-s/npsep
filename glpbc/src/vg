@@ -1,4 +1,0 @@
-rm erros.txt
-valgrind --leak-check=full ./glpbc ~/Dropbox/inst/miplibClique/air04.lp 1 1 2000 8 1050 3 2> erros.txt
-vim erros.txt
-

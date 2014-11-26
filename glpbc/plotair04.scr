@@ -1,9 +1,0 @@
-set terminal gif small size 600,300 enhanced 
-set title 'lower bound evolution - air04'
-set xlabel 'seconds' 
-set ylabel 'lower bound' 
-set output "air04db.gif"
-plot "./air04-log-dbound----.txt" using 1:2 with linespoints title 'glpk', \
-  "./air04-log-dbound-cCuts--.txt" using 1:2 with linespoints  title "cCuts" 
-
-

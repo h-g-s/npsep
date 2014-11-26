@@ -1,8 +1,0 @@
-writeclqw
-
-loaded eilB101 
-	2818 variables (2818 integer) 100 rows 24120 nz
-
-
-creating conflict graph ... done in 0.3500 seconds.
-original cgraph dimensions: n: 2818 m: 4080700 t: 0.350

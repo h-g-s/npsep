@@ -1,3 +1,0 @@
-export CFLAGS="-O1 -g -pg -Wall"
-export CXXFLAGS="-O1 -g -pg -Wall"
-./configure

@@ -1,8 +1,0 @@
-writeclqw
-
-loaded uct-subprob 
-	2256 variables (379 integer) 1973 rows 10147 nz
-
-
-creating conflict graph ... done in 0.0000 seconds.
-original cgraph dimensions: n: 2256 m: 3242 t: 0.000

@@ -1,8 +1,0 @@
-writeclqw
-
-loaded t1722 
-	36630 variables (36630 integer) 338 rows 133096 nz
-
-
-creating conflict graph ... done in 0.0200 seconds.
-original cgraph dimensions: n: 36630 m: 38793778 t: 0.020

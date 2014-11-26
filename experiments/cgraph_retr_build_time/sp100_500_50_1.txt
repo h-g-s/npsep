@@ -1,8 +1,0 @@
-writeclqw
-
-loaded sp100_500_50_1 
-	500 variables (500 integer) 100 rows 2486 nz
-
-
-creating conflict graph ... done in 0.0200 seconds.
-original cgraph dimensions: n: 500 m: 54654 t: 0.020

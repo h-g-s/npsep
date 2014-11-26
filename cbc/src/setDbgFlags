@@ -1,4 +1,0 @@
-export CFLAGS="-O0 -g3 -Wall -DDEBUG"
-export CXXFLAGS="-O0 -g3 -Wall -DDEBUG"
-cd ..
-./configure

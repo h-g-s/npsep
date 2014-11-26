@@ -1,8 +1,0 @@
-writeclqw
-
-loaded neos-935627 
-	10301 variables (7522 integer) 7859 rows 40476 nz
-
-
-creating conflict graph ... done in 0.0300 seconds.
-original cgraph dimensions: n: 10301 m: 162314 t: 0.030

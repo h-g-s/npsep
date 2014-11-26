@@ -5,7 +5,7 @@
 #include <cfloat>
 #include <cstdlib>
 #include <vector>
-#include <OsiClpSolverInterface.hpp>
+#include "lp.h"
 #include <CglClique.hpp>
 #include "osi_cgraph.h"
 
@@ -28,17 +28,15 @@ using namespace std;
 #define MAX( a, b ) ( (a)>(b) ? (a) : (b) )
 #define MIN( a, b ) ( (a)<(b) ? (a) : (b) )
 
-void readLP( const char *fileName, OsiSolverInterface *solver );
+LinearProgram *lp = NULL;
 
 int main( int argc, char **argv )
 {
     clock_t start;
     double pairAnalysis, cliqueAnalysis;
 
-    OsiSolverInterface *solver = NULL;
-    OsiClpSolverInterface *realSolver = new OsiClpSolverInterface();
-    solver = (OsiSolverInterface*) realSolver;
-    readLP( argv[1], solver );
+    lp = lp_create();
+    lp_read( lp, argv[1] );
     char problemName[ 256 ];
     getFileName( problemName, argv[1] );
 
@@ -77,14 +75,4 @@ int main( int argc, char **argv )
     delete realSolver;
 
     return EXIT_SUCCESS;
-}
-
-void readLP( const char *fileName, OsiSolverInterface *solver )
-{
-    solver->messageHandler()->setLogLevel(0);
-    solver->setIntParam(OsiNameDiscipline, 2);
-    solver->setHintParam(OsiDoReducePrint,true,OsiHintTry);
-    solver->readMps( fileName );
-    //solver->readLp( fileName );
-    solver->setIntParam(OsiNameDiscipline, 2);
 }

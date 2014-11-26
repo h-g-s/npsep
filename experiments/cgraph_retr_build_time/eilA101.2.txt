@@ -1,8 +1,0 @@
-writeclqw
-
-loaded eilA101.2 
-	65832 variables (65832 integer) 100 rows 959373 nz
-
-
-creating conflict graph ... done in 0.1800 seconds.
-original cgraph dimensions: n: 65832 m: 3623463372 t: 0.180

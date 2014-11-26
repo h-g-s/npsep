@@ -1,8 +1,0 @@
-writeclqw
-
-loaded rvb-sub 
-	33765 variables (33763 integer) 225 rows 984143 nz
-
-
-creating conflict graph ... done in 0.8400 seconds.
-original cgraph dimensions: n: 33765 m: 645269210 t: 0.840
