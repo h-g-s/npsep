@@ -1,4 +1,0 @@
-rm erros.txt
-valgrind ./grasp ~/Dropbox/inst/wClique/air03.clqw 2> erros.txt
-vim erros.txt
-

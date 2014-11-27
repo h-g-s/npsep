@@ -104,7 +104,7 @@ int cgraph_get_n_conflicting( const CGraph *cgraph, int node, int neighs[], int 
  * which conflict with all nodes in "nodes"
  * returns how many candidates were found
  **/
-int cgraph_get_candidates_clique_insertion( CGraph *cgraph, const int n, const int clique[], int candidates[], const int capacityCandidates );
+int cgraph_get_candidates_clique_insertion( const CGraph *cgraph, const int n, const int clique[], int candidates[], const int capacityCandidates );
 
 /**
  * returns the size of the conflict graph

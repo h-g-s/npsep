@@ -544,7 +544,7 @@ NO_SPACE:
    exit( EXIT_FAILURE );
 }
 
-int cgraph_get_candidates_clique_insertion( CGraph *cgraph, const int n, const int clique[], int candidates[], const int capacityCandidates )
+int cgraph_get_candidates_clique_insertion( const CGraph *cgraph, const int n, const int clique[], int candidates[], const int capacityCandidates )
 {
    NodeDegree *nd = cgraph->nd;
 

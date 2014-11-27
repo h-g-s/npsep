@@ -62,12 +62,34 @@ struct sort_sec_pair
     }
 };
 
+struct sort_sec_pair_reverse
+{
+    bool operator()(const std::pair<int,int> &left, const std::pair<int,int> &right)
+    {
+        if ( left.second != right.second )
+            return left.second > right.second;
+
+        return left.first < right.first;
+    }
+};
+
 struct sort_columns
 {
     bool operator()(const std::pair<int, double> &left, const std::pair<int,double> &right)
     {
         if ( fabs(left.second - right.second) > EPS )
             return ( left.second < right.second );
+
+        return left.first < right.first;
+    }
+};
+
+struct sort_columns_reverse
+{
+    bool operator()(const std::pair<int, double> &left, const std::pair<int,double> &right)
+    {
+        if ( fabs(left.second - right.second) > EPS )
+            return ( left.second > right.second );
 
         return left.first < right.first;
     }
@@ -91,6 +113,13 @@ double mostNegativeContribution( const double coef, const char s, const double c
 double unitaryContribution( const double coef, const char s, const double colLb, const double colUb );
 
 /* greedy clique partitioning from "Conflict graphs in solving integer programming problems" */
+/* store the corresponding partition for each vertex (present in row) in vPartition */
+/* returns how many partitions were created */
+vector<vector<int> > greedyCliquePartitioning(CGraph *cgraph, const CoinShallowPackedVector &row);
+
+/* generates a maximal clique containing vertex */
+/* candidates is the initial list of candidates nodeCoef */
+vector<int> getMaximalClique(const CGraph *cgraph, const int vertex, const vector<int>& candidates);
 
 CGraph *osi_build_cgraph_pairwise( void *_lp )
 {
@@ -898,4 +927,83 @@ bool cliqueDetection(CGraph* cgraph, const vector<pair<int, double> >& columns, 
     #undef FIXED_IN_ZERO
 
     return true;
+}
+
+vector<vector<int> > greedyCliquePartitioning(CGraph *cgraph, const CoinShallowPackedVector &row)
+{
+    const int numCols = cgraph_size(cgraph) / 2;
+    const int nElements = row.getNumElements();
+    int *idxs = (int*)row.getIndices();
+    const double *coefs = row.getElements();
+    int idxMap[numCols*2];
+    vector<vector<int> > partition;
+    vector<pair<int, double> > nodeCoef(nElements);
+    vector<bool> marked(numCols*2, false);
+
+    for(int i = 0; i < nElements; i++)
+    {
+        if(coefs[i] <= -EPS)
+            nodeCoef[i] = pair<int, double>(idxs[i], fabs(coefs[i]));
+        else
+            nodeCoef[i] = pair<int, double>(numCols + idxs[i], coefs[i]);
+    }
+
+    sort(nodeCoef.begin(), nodeCoef.end(), sort_columns_reverse());
+    fill(idxMap, idxMap + (numCols*2), -1);
+    for(int i = 0; i < nElements; i++)
+    	idxMap[nodeCoef[i].first] = i;
+
+    for(int i = 0; i < nElements; i++)
+    {
+        if(!marked[i])
+        {
+        	vector<int> candidates;
+        	for(int j = i+1; j < nElements; j++)
+        		if(!marked[j])
+        			candidates.push_back(nodeCoef[j].first);
+
+            vector<int> clique = getMaximalClique(cgraph, nodeCoef[i].first, candidates);
+            vector<int> tmp(clique.size());
+            for(int j = 0; j < (int)clique.size(); j++)
+            {
+            	int mIdx = idxMap[clique[j]];
+                tmp[j] = clique[j];
+                marked[mIdx] = true;
+            }
+            partition.push_back(tmp);
+        }
+    }
+    
+    return partition;
+}
+
+vector<int> getMaximalClique(const CGraph *cgraph, const int vertex, const vector<int>& candidates)
+{
+    int numVertices = cgraph_size(cgraph);
+    vector<int> clique;
+    vector<pair<int, int> > cList;
+    vector<bool> used(numVertices, false);
+
+    clique.push_back(vertex);
+    used[vertex] = true;
+
+    for(int i = 0; i < (int)candidates.size(); i++)
+        if(cgraph_conflicting_nodes(cgraph, vertex, candidates[i]))
+            cList.push_back(pair<int, int>(candidates[i], cgraph_degree(cgraph, candidates[i])));
+
+    sort(cList.begin(), cList.end(), sort_sec_pair_reverse());
+
+    for(int i = 0; i < (int)cList.size(); i++)
+    {
+        if(!used[cList[i].first])
+        {
+            clique.push_back(cList[i].first);
+            used[cList[i].first] = true;
+            for(int j = i + 1; j < (int)cList.size(); j++)
+                if(!cgraph_conflicting_nodes(cgraph, cList[i].first, cList[j].first))
+                    used[cList[j].first] = true;
+        }
+    }
+
+    return clique;
 }
