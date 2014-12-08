@@ -434,7 +434,7 @@ CGraph *osi_build_cgraph( void *_lp )
     firstGraph /= 2;
 
     start = clock();
-    int bestRow, bestNz, bestConfs = 0;
+    int bestRow = 0, bestNz = 0, bestConfs = 0;
     for(idxRow = 0; idxRow < nRows; idxRow++)
     {
         const CoinShallowPackedVector &row = M->getVector(idxRow);
