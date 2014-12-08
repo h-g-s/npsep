@@ -37,7 +37,7 @@ using namespace std;
 
 #define MIN_PAIRWISE_ANALYSIS 100
 
-#define MAX_NONZEROS 32
+#define MAX_NONZEROS 128
 
 const double LARGE_CONST = std::min( DBL_MAX/10.0, 1e20 );
 
@@ -270,6 +270,7 @@ CGraph *osi_build_cgraph( void *_lp )
     const char *sense = lp->getRowSense();
     nCols = lp->getNumCols();
     nRows = lp->getNumRows();
+    double minCoefs[nRows], maxCoefs[nRows];
     int idxRow;
     cvec.reserve( CVEC_CAP );
     neighs.reserve( 8192 );
@@ -286,6 +287,9 @@ CGraph *osi_build_cgraph( void *_lp )
         int nBools = 0; // number of binary variables
         int nPos = 0; //number of positive coefficients
         double sumNegCoefs = 0.0; //sum of all negative coefficients
+
+        minCoefs[idxRow] = DBL_MAX;
+        maxCoefs[idxRow] = -DBL_MAX;
         
         if ( (nElements<2) || (fabs(rhs[idxRow])>=LARGE_CONST) )
             continue;
@@ -308,6 +312,9 @@ CGraph *osi_build_cgraph( void *_lp )
 
             columns[i].first = idx[i];
             columns[i].second = coefs[i] * mult;
+
+            minCoefs[idxRow] = min(minCoefs[idxRow], coefs[i]);
+        	maxCoefs[idxRow] = max(maxCoefs[idxRow], coefs[i]);
 
             if(ctype[cidx] == 1)
                 nBools++;
@@ -426,15 +433,8 @@ CGraph *osi_build_cgraph( void *_lp )
         firstGraph += cgraph_degree(cgraph, i);
     firstGraph /= 2;
 
-#ifdef DEBUG_CONF
-    newConflicts = 0;
-    confS.clear();
-#endif /* DEBUG_CONF */
-
-    cvec.reserve( CVEC_CAP );
-    neighs.reserve( 8192 );
-
     start = clock();
+    int bestRow, bestNz, bestConfs = 0;
     for(idxRow = 0; idxRow < nRows; idxRow++)
     {
         const CoinShallowPackedVector &row = M->getVector(idxRow);
@@ -453,29 +453,20 @@ CGraph *osi_build_cgraph( void *_lp )
             maxDegree = max(maxDegree, cgraph_degree(cgraph, idxs[i]+nCols));
         }
 
-        if(maxDegree < 2) continue;
+        if(maxDegree < 2)
+        	continue;
+
+        vector<pair<int, int> > test;
 
         if(sense[idxRow] == 'L')
         {
-            vector<pair<int, int> > test = extendConflictGraphByRow(cgraph, nElements, idxs, coefs, thisRhs);
-            if(!test.empty())
-            {
-                for(int i = 0; i < (int)test.size(); i++)
-                {
-                    OsiSolverInterface *dbg = lp->clone();
-                    double b1, b2;
-                    b1 = (test[i].first >= nCols) ? 0.0 : 1.0;
-                    b2 = (test[i].second >= nCols) ? 0.0 : 1.0;
-                    dbg->setColBounds(test[i].first, 0.0, 1.0);
-                    dbg->setColBounds(test[i].second, 0.0, 1.0);
-                    dbg->initialSolve();
-                    if(lp->isProvenOptimal())
-                    {
-                        printf("%s and %s are not in conflict!\n", lp->getColName(test[i].first).c_str(), lp->getColName(test[i].second).c_str());
-                        exit(1);
-                    }
-                }
-            }
+            test = extendConflictGraphByRow(cgraph, nElements, idxs, coefs, thisRhs);
+            if((int)test.size() > bestConfs)
+	        {
+	        	bestConfs = (int)test.size();
+	        	bestRow = idxRow;
+	        	bestNz = nElements;
+	        }
         }
 
         else if(sense[idxRow] == 'G')
@@ -483,95 +474,46 @@ CGraph *osi_build_cgraph( void *_lp )
             thisRhs = -1.0 * thisRhs;
             for(int i = 0; i < nElements; i++)
                 coefs[i] = -1.0 * coefs[i];
-            vector<pair<int, int> > test = extendConflictGraphByRow(cgraph, nElements, idxs, coefs, thisRhs);
-            if(!test.empty())
-            {
-                for(int i = 0; i < (int)test.size(); i++)
-                {
-                    OsiSolverInterface *dbg = lp->clone();
-                    double b1, b2;
-                    b1 = (test[i].first >= nCols) ? 0.0 : 1.0;
-                    b2 = (test[i].second >= nCols) ? 0.0 : 1.0;
-                    dbg->setColBounds(test[i].first, 0.0, 1.0);
-                    dbg->setColBounds(test[i].second, 0.0, 1.0);
-                    dbg->initialSolve();
-                    if(lp->isProvenOptimal())
-                    {
-                        printf("%s and %s are not in conflict!\n", lp->getColName(test[i].first).c_str(), lp->getColName(test[i].second).c_str());
-                        exit(1);
-                    }
-                }
-            }
+            test = extendConflictGraphByRow(cgraph, nElements, idxs, coefs, thisRhs);
+            if((int)test.size() > bestConfs)
+	        {
+	        	bestConfs = (int)test.size();
+	        	bestRow = idxRow;
+	        	bestNz = nElements;
+	        }
         }
 
         else if(sense[idxRow] == 'E')
         {
-            vector<pair<int, int> > test = extendConflictGraphByRow(cgraph, nElements, idxs, coefs, thisRhs);
-            if(!test.empty())
-            {
-                for(int i = 0; i < (int)test.size(); i++)
-                {
-                    OsiSolverInterface *dbg = lp->clone();
-                    double b1, b2;
-                    b1 = (test[i].first >= nCols) ? 0.0 : 1.0;
-                    b2 = (test[i].second >= nCols) ? 0.0 : 1.0;
-                    dbg->setColBounds(test[i].first, 0.0, 1.0);
-                    dbg->setColBounds(test[i].second, 0.0, 1.0);
-                    dbg->initialSolve();
-                    if(lp->isProvenOptimal())
-                    {
-                        printf("%s and %s are not in conflict!\n", lp->getColName(test[i].first).c_str(), lp->getColName(test[i].second).c_str());
-                        exit(1);
-                    }
-                }
-            }
+            test = extendConflictGraphByRow(cgraph, nElements, idxs, coefs, thisRhs);
+            if((int)test.size() > bestConfs)
+	        {
+	        	bestConfs = (int)test.size();
+	        	bestRow = idxRow;
+	        	bestNz = nElements;
+	        }
             thisRhs = -1.0 * thisRhs;
             for(int i = 0; i < nElements; i++)
                 coefs[i] = -1.0 * coefs[i];
             test = extendConflictGraphByRow(cgraph, nElements, idxs, coefs, thisRhs);
-            if(!test.empty())
-            {
-                for(int i = 0; i < (int)test.size(); i++)
-                {
-                    OsiSolverInterface *dbg = lp->clone();
-                    double b1, b2;
-                    b1 = (test[i].first >= nCols) ? 0.0 : 1.0;
-                    b2 = (test[i].second >= nCols) ? 0.0 : 1.0;
-                    dbg->setColBounds(test[i].first, 0.0, 1.0);
-                    dbg->setColBounds(test[i].second, 0.0, 1.0);
-                    dbg->initialSolve();
-                    if(lp->isProvenOptimal())
-                    {
-                        printf("%s and %s are not in conflict!\n", lp->getColName(test[i].first).c_str(), lp->getColName(test[i].second).c_str());
-                        exit(1);
-                    }
-                }
-            }
+            if((int)test.size() > bestConfs)
+	        {
+	        	bestConfs = (int)test.size();
+	        	bestRow = idxRow;
+	        	bestNz = nElements;
+	        }
         }
+        fetchConflicts(true, cgraph);
     }
-
-#ifdef DEBUG_CONF
-    if (newConflicts)
-    {
-        printf("\nConflict extension found the following conflicts:\n");
-        for ( int cc=0 ; (cc<confS.size()) ; ++cc )
-        {
-            const int var1 = confS[cc].first, var2 = confS[cc].second;
-            printf("(%s, %s) ", var1 < nCols ? lp->getColName(var1).c_str() : ("¬" + lp->getColName(var1 - nCols)).c_str(),
-                                var2 < nCols ? lp->getColName(var2).c_str() : ("¬" + lp->getColName(var2 - nCols)).c_str() );
-        }
-        printf("\n");
-    }
-#endif /* DEBUG_CONF */
 
     double secondTime = ((double(clock() - start))/((double)CLOCKS_PER_SEC));
-    fetchConflicts(true, cgraph);
     unsigned long int secondGraph = 0;
     for(int i = 0; i < cgraph_size( cgraph ); i++)
         secondGraph += cgraph_degree(cgraph, i);
     secondGraph /= 2;
 
     printf("%.2lf %lu %.2lf %lu\n", firstTime, firstGraph, firstTime+secondTime, secondGraph);
+    printf("%s \t Nzs: %d \t Conflicts: %d\n", lp->getRowName(bestRow).c_str(), bestNz, bestConfs);
 
     cgraph_update_min_max_degree( cgraph );
 
@@ -1233,6 +1175,7 @@ double getLr(const CGraph *cgraph, const vector<vector<int> > &partitions, const
 
     //x1 esta em uma particao e x2 nao
     else if(inPart1 && !inPart2)
+    {
         for(int i = 0; i < (int)partitions.size(); i++)
         {
             double coefSel = 0.0;
@@ -1241,6 +1184,7 @@ double getLr(const CGraph *cgraph, const vector<vector<int> > &partitions, const
                 coefSel = fabs(coef1);
 
             else
+            {
                 for(int j = 0; j < (int)partitions[i].size(); j++)
                 {
                     const int var = partitions[i][j];
@@ -1249,8 +1193,10 @@ double getLr(const CGraph *cgraph, const vector<vector<int> > &partitions, const
                         continue;
                     coefSel = max(coefSel, fabs(coefs[realVar]));
                 }
+            }
             Lr -= coefSel;
         }
+    }
 
     //x2 esta em uma particao e x1 nao
     else
@@ -1373,7 +1319,6 @@ vector<pair<int, int> > extendConflictGraphByRow(CGraph *cgraph, const int nElem
                 }
             }
         }
-        fetchConflicts( false, cgraph );
     }
      #undef FIXED_IN_ZERO
 
