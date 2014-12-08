@@ -37,6 +37,8 @@ using namespace std;
 
 #define MIN_PAIRWISE_ANALYSIS 100
 
+#define MAX_NONZEROS 32
+
 const double LARGE_CONST = std::min( DBL_MAX/10.0, 1e20 );
 
 vector< pair< int, int > > cvec;/* conflict vector */
@@ -113,13 +115,18 @@ double mostNegativeContribution( const double coef, const char s, const double c
 double unitaryContribution( const double coef, const char s, const double colLb, const double colUb );
 
 /* greedy clique partitioning from "Conflict graphs in solving integer programming problems" */
-/* store the corresponding partition for each vertex (present in row) in vPartition */
-/* returns how many partitions were created */
-vector<vector<int> > greedyCliquePartitioning(CGraph *cgraph, const CoinShallowPackedVector &row);
+vector<vector<int> > greedyCliquePartitioning(const CGraph *cgraph, const int nElements, const int *idxs, const double *coefs);
+
+/* Returns the lower bound for LHS by fixing two variables (uses clique partitioning in partitions) */
+double getLr(const CGraph *cgraph, const vector<vector<int> > &partitions, const vector<double> &coefs,
+             const vector<int> &whichPartition, const double sumPosCoefs, const int x1, const int x2);
 
 /* generates a maximal clique containing vertex */
 /* candidates is the initial list of candidates nodeCoef */
 vector<int> getMaximalClique(const CGraph *cgraph, const int vertex, const vector<int>& candidates);
+
+/* uses clique partitioning to extend the conflict graph row-by-row */
+vector<pair<int, int> > extendConflictGraphByRow(CGraph *cgraph, const int numElements, const int *idxs, const double *coefs, const double rhs);
 
 CGraph *osi_build_cgraph_pairwise( void *_lp )
 {
@@ -224,7 +231,7 @@ CGraph *osi_build_cgraph_pairwise( void *_lp )
 #ifdef DEBUG_CONF
         if (newConflicts)
         {
-            printf("%s,%d,%c,%g : ", lp->getRowName(idxRow).c_str(), nNeg, sense[idxRow], rhs[idxRow]);
+            printf("%s,%c,%g : ", lp->getRowName(idxRow).c_str(), sense[idxRow], rhs[idxRow]);
             for ( int cc=0 ; (cc<confS.size()) ; ++cc )
             {
                 const int var1 = confS[cc].first, var2 = confS[cc].second;
@@ -245,6 +252,7 @@ CGraph *osi_build_cgraph_pairwise( void *_lp )
 
 CGraph *osi_build_cgraph( void *_lp )
 {
+    clock_t start = clock();
     OsiSolverInterface *lp = (OsiSolverInterface *)_lp;
 
     if (lp->getNumIntegers()<2)
@@ -397,7 +405,7 @@ CGraph *osi_build_cgraph( void *_lp )
 #ifdef DEBUG_CONF
         if (newConflicts)
         {
-            printf("%s,%d,%c,%g : ", lp->getRowName(idxRow).c_str(), nNeg, sense[idxRow], rhs[idxRow]);
+            printf("%s,%c,%g : ", lp->getRowName(idxRow).c_str(), sense[idxRow], rhs[idxRow]);
             for ( int cc=0 ; (cc<confS.size()) ; ++cc )
             {
                 const int var1 = confS[cc].first, var2 = confS[cc].second;
@@ -411,6 +419,160 @@ CGraph *osi_build_cgraph( void *_lp )
     }
 
     fetchConflicts(true, cgraph);
+
+    double firstTime = ((double(clock() - start))/((double)CLOCKS_PER_SEC));
+    unsigned long int firstGraph = 0;
+    for(int i = 0; i < cgraph_size( cgraph ); i++)
+        firstGraph += cgraph_degree(cgraph, i);
+    firstGraph /= 2;
+
+#ifdef DEBUG_CONF
+    newConflicts = 0;
+    confS.clear();
+#endif /* DEBUG_CONF */
+
+    cvec.reserve( CVEC_CAP );
+    neighs.reserve( 8192 );
+
+    start = clock();
+    for(idxRow = 0; idxRow < nRows; idxRow++)
+    {
+        const CoinShallowPackedVector &row = M->getVector(idxRow);
+        const int nElements = row.getNumElements();
+        const int *idxs = row.getIndices();
+        double *coefs = (double*) row.getElements();
+        double thisRhs = rhs[idxRow];
+
+        if(nElements > MAX_NONZEROS)
+            continue;
+
+        int maxDegree = 0;
+        for(int i = 0; i < nElements; i++)
+        {
+            maxDegree = max(maxDegree, cgraph_degree(cgraph, idxs[i]));
+            maxDegree = max(maxDegree, cgraph_degree(cgraph, idxs[i]+nCols));
+        }
+
+        if(maxDegree < 2) continue;
+
+        if(sense[idxRow] == 'L')
+        {
+            vector<pair<int, int> > test = extendConflictGraphByRow(cgraph, nElements, idxs, coefs, thisRhs);
+            if(!test.empty())
+            {
+                for(int i = 0; i < (int)test.size(); i++)
+                {
+                    OsiSolverInterface *dbg = lp->clone();
+                    double b1, b2;
+                    b1 = (test[i].first >= nCols) ? 0.0 : 1.0;
+                    b2 = (test[i].second >= nCols) ? 0.0 : 1.0;
+                    dbg->setColBounds(test[i].first, 0.0, 1.0);
+                    dbg->setColBounds(test[i].second, 0.0, 1.0);
+                    dbg->initialSolve();
+                    if(lp->isProvenOptimal())
+                    {
+                        printf("%s and %s are not in conflict!\n", lp->getColName(test[i].first).c_str(), lp->getColName(test[i].second).c_str());
+                        exit(1);
+                    }
+                }
+            }
+        }
+
+        else if(sense[idxRow] == 'G')
+        {
+            thisRhs = -1.0 * thisRhs;
+            for(int i = 0; i < nElements; i++)
+                coefs[i] = -1.0 * coefs[i];
+            vector<pair<int, int> > test = extendConflictGraphByRow(cgraph, nElements, idxs, coefs, thisRhs);
+            if(!test.empty())
+            {
+                for(int i = 0; i < (int)test.size(); i++)
+                {
+                    OsiSolverInterface *dbg = lp->clone();
+                    double b1, b2;
+                    b1 = (test[i].first >= nCols) ? 0.0 : 1.0;
+                    b2 = (test[i].second >= nCols) ? 0.0 : 1.0;
+                    dbg->setColBounds(test[i].first, 0.0, 1.0);
+                    dbg->setColBounds(test[i].second, 0.0, 1.0);
+                    dbg->initialSolve();
+                    if(lp->isProvenOptimal())
+                    {
+                        printf("%s and %s are not in conflict!\n", lp->getColName(test[i].first).c_str(), lp->getColName(test[i].second).c_str());
+                        exit(1);
+                    }
+                }
+            }
+        }
+
+        else if(sense[idxRow] == 'E')
+        {
+            vector<pair<int, int> > test = extendConflictGraphByRow(cgraph, nElements, idxs, coefs, thisRhs);
+            if(!test.empty())
+            {
+                for(int i = 0; i < (int)test.size(); i++)
+                {
+                    OsiSolverInterface *dbg = lp->clone();
+                    double b1, b2;
+                    b1 = (test[i].first >= nCols) ? 0.0 : 1.0;
+                    b2 = (test[i].second >= nCols) ? 0.0 : 1.0;
+                    dbg->setColBounds(test[i].first, 0.0, 1.0);
+                    dbg->setColBounds(test[i].second, 0.0, 1.0);
+                    dbg->initialSolve();
+                    if(lp->isProvenOptimal())
+                    {
+                        printf("%s and %s are not in conflict!\n", lp->getColName(test[i].first).c_str(), lp->getColName(test[i].second).c_str());
+                        exit(1);
+                    }
+                }
+            }
+            thisRhs = -1.0 * thisRhs;
+            for(int i = 0; i < nElements; i++)
+                coefs[i] = -1.0 * coefs[i];
+            test = extendConflictGraphByRow(cgraph, nElements, idxs, coefs, thisRhs);
+            if(!test.empty())
+            {
+                for(int i = 0; i < (int)test.size(); i++)
+                {
+                    OsiSolverInterface *dbg = lp->clone();
+                    double b1, b2;
+                    b1 = (test[i].first >= nCols) ? 0.0 : 1.0;
+                    b2 = (test[i].second >= nCols) ? 0.0 : 1.0;
+                    dbg->setColBounds(test[i].first, 0.0, 1.0);
+                    dbg->setColBounds(test[i].second, 0.0, 1.0);
+                    dbg->initialSolve();
+                    if(lp->isProvenOptimal())
+                    {
+                        printf("%s and %s are not in conflict!\n", lp->getColName(test[i].first).c_str(), lp->getColName(test[i].second).c_str());
+                        exit(1);
+                    }
+                }
+            }
+        }
+    }
+
+#ifdef DEBUG_CONF
+    if (newConflicts)
+    {
+        printf("\nConflict extension found the following conflicts:\n");
+        for ( int cc=0 ; (cc<confS.size()) ; ++cc )
+        {
+            const int var1 = confS[cc].first, var2 = confS[cc].second;
+            printf("(%s, %s) ", var1 < nCols ? lp->getColName(var1).c_str() : ("¬" + lp->getColName(var1 - nCols)).c_str(),
+                                var2 < nCols ? lp->getColName(var2).c_str() : ("¬" + lp->getColName(var2 - nCols)).c_str() );
+        }
+        printf("\n");
+    }
+#endif /* DEBUG_CONF */
+
+    double secondTime = ((double(clock() - start))/((double)CLOCKS_PER_SEC));
+    fetchConflicts(true, cgraph);
+    unsigned long int secondGraph = 0;
+    for(int i = 0; i < cgraph_size( cgraph ); i++)
+        secondGraph += cgraph_degree(cgraph, i);
+    secondGraph /= 2;
+
+    printf("%.2lf %lu %.2lf %lu\n", firstTime, firstGraph, firstTime+secondTime, secondGraph);
+
     cgraph_update_min_max_degree( cgraph );
 
     return cgraph;
@@ -535,7 +697,6 @@ double unitaryContribution( const double coef, const char s, const double colLb,
 
 void pairwiseAnalysis(CGraph* cgraph, const vector<pair<int, double> >& columns, const double sumNegCoefs, const double rhs)
 {
-    int test = 0;
     int nElements = (int)columns.size();
     for(int j1 = 0; j1 < nElements; j1++)
     {
@@ -560,7 +721,6 @@ void pairwiseAnalysis(CGraph* cgraph, const vector<pair<int, double> >& columns,
             if(coef1 + coef2 + negDiscount > rhs + 0.001)
             {
                 cvec.push_back( pair<int,int>(cidx1, cidx2) );
-                test++;
 #ifdef DEBUG_CONF
                 newConflicts++;
                 confS.push_back( pair<int,int>(cidx1, cidx2) );
@@ -929,12 +1089,9 @@ bool cliqueDetection(CGraph* cgraph, const vector<pair<int, double> >& columns, 
     return true;
 }
 
-vector<vector<int> > greedyCliquePartitioning(CGraph *cgraph, const CoinShallowPackedVector &row)
+vector<vector<int> > greedyCliquePartitioning(const CGraph *cgraph, const int nElements, const int *idxs, const double *coefs)
 {
     const int numCols = cgraph_size(cgraph) / 2;
-    const int nElements = row.getNumElements();
-    int *idxs = (int*)row.getIndices();
-    const double *coefs = row.getElements();
     int idxMap[numCols*2];
     vector<vector<int> > partition;
     vector<pair<int, double> > nodeCoef(nElements);
@@ -1006,4 +1163,219 @@ vector<int> getMaximalClique(const CGraph *cgraph, const int vertex, const vecto
     }
 
     return clique;
+}
+
+double getLr(const CGraph *cgraph, const vector<vector<int> > &partitions, const vector<double> &coefs,
+             const vector<int> &whichPartition, const double sumPosCoefs, const int x1, const int x2)
+{
+    const int numCols = cgraph_size(cgraph) / 2;
+    double Lr = sumPosCoefs;
+    double coef1, coef2;
+    int realX1, realX2, part1, part2;
+    bool inPart1, inPart2; //checks if variables are in some partition
+    /* variables with negative coefficients or complement of variables with positive coefficientes are in some partition. */
+
+    if(cgraph_conflicting_nodes(cgraph, x1, x2)) //conflict already exists
+        return DBL_MAX/2;
+
+    realX1 = x1 % numCols;
+    realX2 = x2 % numCols;
+    coef1 = coefs[realX1];
+    coef2 = coefs[realX2];
+    inPart1 = (coef1 <= -EPS || x1 >= numCols); 
+    inPart2 = (coef2 <= -EPS || x2 >= numCols); 
+    part1 = whichPartition[realX1];
+    part2 = whichPartition[realX2];
+
+    assert(fabs(coef1) > EPS && fabs(coef2) > EPS);
+    assert(part1 >= 0 && part2 >= 0);
+
+    //x1 e x2 estao em alguma particao
+    if(part1 && part2)
+        for(int i = 0; i < (int)partitions.size(); i++)
+        {
+            double coefSel = 0.0;
+
+            if(part1 == i)
+                coefSel = fabs(coef1);
+
+            else if(part2 == i)
+                coefSel = fabs(coef2);
+
+            else 
+                for(int j = 0; j < (int)partitions[i].size(); j++)
+                {
+                    const int var = partitions[i][j];
+                    const int realVar = var%numCols;
+                    coefSel = max(coefSel, fabs(coefs[realVar]));
+                }
+
+            Lr -= coefSel;
+        }
+
+    //x1 e x2 nao estao em nenhuma particao
+    else if(!inPart1 && !inPart2)
+        for(int i = 0; i < (int)partitions.size(); i++)
+        {
+            double coefSel = 0.0;
+            for(int j = 0; j < (int)partitions[i].size(); j++)
+            {
+                const int var = partitions[i][j];
+                const int realVar = var%numCols;
+                if(cgraph_conflicting_nodes(cgraph, x1, var))
+                    continue;
+                if(cgraph_conflicting_nodes(cgraph, x2, var))
+                    continue;
+                coefSel = max(coefSel, fabs(coefs[realVar]));
+            }
+            Lr -= coefSel;
+        }
+
+    //x1 esta em uma particao e x2 nao
+    else if(inPart1 && !inPart2)
+        for(int i = 0; i < (int)partitions.size(); i++)
+        {
+            double coefSel = 0.0;
+
+            if(part1 == i)
+                coefSel = fabs(coef1);
+
+            else
+                for(int j = 0; j < (int)partitions[i].size(); j++)
+                {
+                    const int var = partitions[i][j];
+                    const int realVar = var%numCols;
+                    if(cgraph_conflicting_nodes(cgraph, x2, var))
+                        continue;
+                    coefSel = max(coefSel, fabs(coefs[realVar]));
+                }
+            Lr -= coefSel;
+        }
+
+    //x2 esta em uma particao e x1 nao
+    else
+        for(int i = 0; i < (int)partitions.size(); i++)
+        {
+            double coefSel = 0.0;
+
+            if(part2 == i)
+                coefSel = fabs(coef2);
+
+            else
+                for(int j = 0; j < (int)partitions[i].size(); j++)
+                {
+                    const int var = partitions[i][j];
+                    const int realVar = var%numCols;
+                    if(cgraph_conflicting_nodes(cgraph, x1, var))
+                        continue;
+                    coefSel = max(coefSel, fabs(coefs[realVar]));
+                }
+            Lr -= coefSel;
+        }
+
+    return Lr;
+}
+
+vector<pair<int, int> > extendConflictGraphByRow(CGraph *cgraph, const int nElements, const int *idxs, const double *coefs, const double rhs)
+{
+    const int numCols = cgraph_size(cgraph) / 2;
+    double sumPosCoefs = 0.0;
+    vector<double> rowCoefs(numCols, 0.0);
+    vector<int> whichPartition(numCols, -1);
+    vector<vector<int> >  partitions = greedyCliquePartitioning(cgraph, nElements, idxs, coefs);
+    vector<pair<int, int> > newConf;
+
+    for(int i = 0; i < nElements; i++)
+    {
+        rowCoefs[idxs[i]%numCols] = coefs[i];
+        if(coefs[i] >= EPS)
+            sumPosCoefs += coefs[i];
+    }        
+
+    for(int i = 0; i < (int)partitions.size(); i++)
+        for(int j = 0; j < (int)partitions[i].size(); j++)
+        {
+            int var = partitions[i][j];
+            whichPartition[var%numCols] = i;
+        }
+
+    for(int j1 = 0; j1 < nElements; j1++)
+    {
+        const int cidx1 = idxs[j1];
+        const double coef1 = coefs[j1];
+
+        #define FIXED_IN_ZERO( idx ) ( (fabs(colLb[idx])<EPS) && (fabs(colUb[idx])<EPS) )
+
+        if (FIXED_IN_ZERO(cidx1))
+            continue;
+
+        for(int j2 = j1+1; j2 < nElements; j2++)
+        {
+            const int cidx2 = idxs[j2];
+            const double coef2 = coefs[j2];
+
+            if(FIXED_IN_ZERO(cidx2))
+                continue;
+
+            if(!cgraph_conflicting_nodes(cgraph, cidx1, cidx2))
+            {
+                double Lr = getLr(cgraph, partitions, rowCoefs, whichPartition, sumPosCoefs, cidx1, cidx2);
+                if(Lr > rhs + 0.001)
+                {
+                    cvec.push_back( pair<int,int>(cidx1, cidx2) );
+                    newConf.push_back( pair<int,int>(cidx1, cidx2) );
+#ifdef DEBUG_CONF
+                    newConflicts++;
+                    confS.push_back( pair<int,int>(cidx1, cidx2) );
+#endif
+                }
+            }
+
+            if(!cgraph_conflicting_nodes(cgraph, cidx1+numCols, cidx2))
+            {
+                double Lr = getLr(cgraph, partitions, rowCoefs, whichPartition, sumPosCoefs, cidx1+numCols, cidx2);
+                if(Lr > rhs + 0.001)
+                {
+                    cvec.push_back( pair<int,int>(cidx1+numCols, cidx2) );
+                    newConf.push_back( pair<int,int>(cidx1+numCols, cidx2) );
+#ifdef DEBUG_CONF
+                    newConflicts++;
+                    confS.push_back( pair<int,int>(cidx1+numCols, cidx2) );
+#endif
+                }
+            }
+
+            if(!cgraph_conflicting_nodes(cgraph, cidx1, cidx2+numCols))
+            {
+                double Lr = getLr(cgraph, partitions, rowCoefs, whichPartition, sumPosCoefs, cidx1, cidx2+numCols);
+                if(Lr > rhs + 0.001)
+                {
+                    cvec.push_back( pair<int,int>(cidx1, cidx2+numCols) );
+                    newConf.push_back( pair<int,int>(cidx1, cidx2+numCols) );
+#ifdef DEBUG_CONF
+                    newConflicts++;
+                    confS.push_back( pair<int,int>(cidx1, cidx2+numCols) );
+#endif
+                }
+            }
+
+            if(!cgraph_conflicting_nodes(cgraph, cidx1+numCols, cidx2+numCols))
+            {
+                double Lr = getLr(cgraph, partitions, rowCoefs, whichPartition, sumPosCoefs, cidx1+numCols, cidx2+numCols);
+                if(Lr > rhs + 0.001)
+                {
+                    cvec.push_back( pair<int,int>(cidx1+numCols, cidx2+numCols) );
+                    newConf.push_back( pair<int,int>(cidx1+numCols, cidx2+numCols) );
+#ifdef DEBUG_CONF
+                    newConflicts++;
+                    confS.push_back( pair<int,int>(cidx1+numCols, cidx2+numCols) );
+#endif
+                }
+            }
+        }
+        fetchConflicts( false, cgraph );
+    }
+     #undef FIXED_IN_ZERO
+
+    return newConf;
 }

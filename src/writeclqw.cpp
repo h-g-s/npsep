@@ -32,8 +32,8 @@ void readLP( const char *fileName, OsiSolverInterface *solver );
 
 int main( int argc, char **argv )
 {
-    clock_t start;
-    double cliqueAnalysis;
+    //clock_t start;
+    //double cliqueAnalysis;
 
     OsiSolverInterface *solver = NULL;
     OsiClpSolverInterface *realSolver = new OsiClpSolverInterface();
@@ -42,9 +42,9 @@ int main( int argc, char **argv )
     char problemName[ 256 ];
     getFileName( problemName, argv[1] );
 
-    /*start = clock();
+    //start = clock();
     CGraph *cgraphClique = osi_build_cgraph( solver );
-    cliqueAnalysis = ((double(clock() - start))/((double)CLOCKS_PER_SEC));
+    //cliqueAnalysis = ((double(clock() - start))/((double)CLOCKS_PER_SEC));
     if ( cgraph_size( cgraphClique ) == 0 )
     {
         printf("EMPTY conflict graph. exiting...\n");
@@ -56,46 +56,7 @@ int main( int argc, char **argv )
     conflictsClique /= 2;
     cgraph_free( &cgraphClique );
 
-    printf("%s %.1lu %.3lf\n", problemName, conflictsClique, cliqueAnalysis);*/
-
-    int cgraphSize = solver->getNumCols() * 2;
-    CGraph *cgraph = cgraph_create( cgraphSize );
-    int conflicts0[] = {6};
-    cgraph_add_node_conflicts(cgraph, 0, conflicts0, 1);
-    int conflicts1[] = {4, 6, 7};
-    cgraph_add_node_conflicts(cgraph, 1, conflicts1, 3);
-    int conflicts2[] = {8};
-    cgraph_add_node_conflicts(cgraph, 2, conflicts2, 1);
-    int conflicts3[] = {4, 8, 9};
-    cgraph_add_node_conflicts(cgraph, 3, conflicts3, 3);
-    int conflicts4[] = {8, 10};
-    cgraph_add_node_conflicts(cgraph, 4, conflicts4, 2);
-    int conflicts5[] = {11};
-    cgraph_add_node_conflicts(cgraph, 5, conflicts5, 1);
-    int conflicts6[] = {8};
-    cgraph_add_node_conflicts(cgraph, 6, conflicts6, 1);
-    const CoinPackedMatrix *M = solver->getMatrixByRow();
-    const CoinShallowPackedVector &row = M->getVector(0);
-
-    vector<vector<int> >  partition = greedyCliquePartitioning(cgraph, row);
-    int *idxs = (int*)row.getIndices();
-    const double *coefs = row.getElements();
-    double Lr = 0.0;
-    int numCols = cgraph_size(cgraph) / 2;
-    for(int i = 0; i < row.getNumElements(); i++)
-        if(coefs[i] > 0.000001)
-            Lr += coefs[i];
-    for(int i = 0; i < (int)partition.size(); i++)
-    {
-        Lr -= coefs[partition[i][0]%numCols];
-        for(int j = 0; j < (int)partition[i].size(); j++)
-            printf("%d ", partition[i][j]);
-        printf("\n");
-    }
-    printf("Lr = %lf\n", Lr);
-
-
-    cgraph_free(&cgraph);
+    //printf("%s %.1lu %.3lf\n", problemName, conflictsClique, cliqueAnalysis);
 
     delete realSolver;
 
