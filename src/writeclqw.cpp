@@ -50,6 +50,7 @@ int main( int argc, char **argv )
         printf("EMPTY conflict graph. exiting...\n");
         exit(0);
     }
+
     unsigned long int conflictsClique = 0;
     for(int i = 0; i < cgraph_size( cgraphClique ); i++)
         conflictsClique += cgraph_degree(cgraphClique, i);

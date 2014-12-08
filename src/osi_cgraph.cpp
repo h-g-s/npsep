@@ -270,10 +270,13 @@ CGraph *osi_build_cgraph( void *_lp )
     const char *sense = lp->getRowSense();
     nCols = lp->getNumCols();
     nRows = lp->getNumRows();
-    double minCoefs[nRows], maxCoefs[nRows];
+    double *minCoefs, *maxCoefs;
     int idxRow;
     cvec.reserve( CVEC_CAP );
     neighs.reserve( 8192 );
+
+    minCoefs = new double[nRows];
+    maxCoefs = new double[nRows];
 
     for(idxRow = 0; idxRow < nRows; idxRow++)
     {
@@ -516,6 +519,9 @@ CGraph *osi_build_cgraph( void *_lp )
     printf("%s \t Nzs: %d \t Conflicts: %d\n", lp->getRowName(bestRow).c_str(), bestNz, bestConfs);
 
     cgraph_update_min_max_degree( cgraph );
+
+    delete[] minCoefs;
+    delete[] maxCoefs;
 
     return cgraph;
 }
