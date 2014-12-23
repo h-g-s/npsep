@@ -32,8 +32,8 @@ void readLP( const char *fileName, OsiSolverInterface *solver );
 
 int main( int argc, char **argv )
 {
-    //clock_t start;
-    //double cliqueAnalysis;
+    clock_t start;
+    double cliqueAnalysis;
 
     OsiSolverInterface *solver = NULL;
     OsiClpSolverInterface *realSolver = new OsiClpSolverInterface();
@@ -42,9 +42,9 @@ int main( int argc, char **argv )
     char problemName[ 256 ];
     getFileName( problemName, argv[1] );
 
-    //start = clock();
-    CGraph *cgraphClique = osi_build_cgraph( solver );
-    //cliqueAnalysis = ((double(clock() - start))/((double)CLOCKS_PER_SEC));
+    start = clock();
+    CGraph *cgraphClique = osi_build_cgraph( solver, atoi(argv[2]) );
+    cliqueAnalysis = ((double(clock() - start))/((double)CLOCKS_PER_SEC));
     if ( cgraph_size( cgraphClique ) == 0 )
     {
         printf("EMPTY conflict graph. exiting...\n");
@@ -57,7 +57,7 @@ int main( int argc, char **argv )
     conflictsClique /= 2;
     cgraph_free( &cgraphClique );
 
-    //printf("%s %.1lu %.3lf\n", problemName, conflictsClique, cliqueAnalysis);
+    printf("%s %.1lu %.3lf\n", problemName, conflictsClique, cliqueAnalysis);
 
     delete realSolver;
 
