@@ -97,8 +97,8 @@
 \maketitle
 
 \begin{abstract}
-Conflict graphs are employed in modern Integer Programming to store relationships between variables. This information is crucial for an effective pre-processing and cut generation. CGs can be dynamically built inside branch-and-bound algorithms while analyzing the impact of the last fixations performed, but the earlier the CG is populated the faster strong inequalities and implications can be generated. On this work we present techniques which allow the fast creation of densely populated CGs at the root node. The impact of the availability of these large GCs for cut generation is evaluated by the inclusion of these techniques in the state-of-the-art open source integer programming solver COIN-OR CBC and its use in a cutting plane algorithm.
-\keywords{Conflict Graphs \and Integer Programming \and Clique Cuts \and Set Packing Polytope}
+This work explores the fast creation of densely populated conflict graphs at the root node of the search tree for integer programs. We show that not only the Generalized Upper Bound (GUB) constraints are useful for the fast detection of cliques: these can also be quickly detected in less structured constraints in $O(n log n)$. Routines for the aggressive separation and lifting of cliques and odd-holes are proposed. Improved bounds and a faster convergence to strong bounds were observed when comparing to the default separation routines found in the current version of the COmputation INfrastructure for Operations Research (COIN-OR) Branch and Cut solver.
+\keywords{Conflict Graphs \and Integer Programming \and Cutting Planes \and Cliques \and Odd Holes}
 % \PACS{PACS code1 \and PACS code2 \and more}
 % \subclass{MSC code1 \and MSC code2 \and more}
 \end{abstract}
@@ -113,14 +113,13 @@ Building a graph by looking for pairwise of conflicts may be computationally pro
 
 One important application for CGs is the generation of cutting planes derived from the Set Packing Polytope \cite{Padberg1973}, such as the Clique Inequalities. The dynamic inclusion of these inequalities allows tightening the linear relaxation of an IP problem, improving performance of branch-and-bound based solvers. Atamtürk et al. \cite{atamturk} developed algorithms and data structures that allow the construction, management and use of conflict graphs. Furthermore, they developed heuristics to extend CGs using probing techniques based on feasibility and optimality considerations. Hoffman and Padberg \cite{hoffman} used CGs to generate valid inequalities for set partitioning problems arising in airline crew-scheduling, considering inequalities based on cliques, odd-holes and anti-holes. Achterberg \cite{achterberg} presented heuristics based on SAT techniques for Mixed Integer Programming solvers to generate valid inequalities from the current infeasible subproblem and the associated branching information. The same idea has been developed independently and in parallel by Sandholm and Shields \cite{sandholm}.
 
-In this regard, we propose techniques to speed up the creation of dense conflict graphs at the root node, so that large CGs can be available at the start of the search process for the generation of strong inequalities. Such techniques include detection of constraints which present no conflicts, allowing skip them. Moreover, it is possible to detect cliques on constraints, dispensing the use of pairwise analysis and consequently reducing the processing time. Once created, a conflict graph can be augmented by using the bounds of its variables as well the current conflict graph. After construction and augment steps, we use the CG to generate Cutting Planes.
+In this regard, we propose techniques to speed up the creation of dense conflict graphs at the root node, so that large CGs can be available at the start of the search process for the generation of strong inequalities. Such techniques include detection of constraints which present no conflicts, allowing skip them. Moreover, it is possible to detect cliques on constraints, dispensing the use of pairwise analysis and consequently reducing the processing time. Once created, a conflict graph can be augmented by using the bounds of its variables as well the current conflict graph. After construction and augment steps, we use the CG to discover all violated cliques and odd holes, which are lifted in subsequent steps.
 
-For ease of understanding of our approach we consider only pure Binary Programs (PB). Despite this, it can be applied to any Integer Program containing binary variables. The rest of the paper is organized as follows. In Section \ref{seccgraph}, we formally explain our approach to build and augment conflict graphs as well our strategy to speedup the detection of logical implications. In Section \ref{cut}, we present the clique cut separation routine, including a clique extension step. In Section \ref{experiments}, the computational experiments are presented and analyzed. Finally, in Section \ref{conclusions}, we conclude and give future directions about this work.
+For ease of understanding of our approach we consider only pure Binary Programs (PB). Despite this, it can be applied to any Integer Program containing binary variables. The rest of the paper is organized as follows. In Section \ref{seccgraph}, we formally explain our approach to build and augment conflict graphs as well our strategy to speedup the detection of logical implications. In Section \ref{cut}, we present the clique cut separation routine, including a clique extension step. In Section \ref{experiments}, the computational experiments are presented and analyzed. Finally, in Section \ref{conclusions}, we conclude and discuss the results of this work.
 
 \section{Conflict Graphs in Integer Programming}\label{seccgraph}
 
 A conflict graph represents logical relations between binary variables. For two binary variables, we may discover four possible logical relations, using the notation of \cite{atamturk}:
-
 
 \begin{align}
 x = 1 \Rightarrow y = 1 & \quad \Longleftrightarrow \quad x + (1 - y) & \leq \ 1\\
@@ -128,8 +127,6 @@ x = 1 \Rightarrow y = 0 & \quad \Longleftrightarrow \quad x + y & \leq \ 1 \\
 x = 0 \Rightarrow y = 1 & \quad \Longleftrightarrow \quad (1 - x) + (1 - y) & \leq \ 1 \\
 x = 0 \Rightarrow y = 0 & \quad \Longleftrightarrow \quad (1 - x) + y & \leq \ 1
 \end{align}
-
-
 
 Given an Integer Programming (IP), a conflict graph can be constructed using probing techniques based on feasibility considerations, checking the impact fo fixing pairs of variables to different combinations of values. First, consider that each constraint $i \in \{1,\ldots,m\}$ can be written as:
 
@@ -143,35 +140,35 @@ Given an Integer Programming (IP), a conflict graph can be constructed using pro
 L_{i}^{x_{\hat{j}} = u,\, x_{\hat{k}} = v}=\sum_{j\in N_{i}^{-} \setminus \{\hat{j}, \hat{k}\}}a_{ij}+a_{i\hat{j}}u+a_{i\hat{k}}v 
 \end{equation}
 
-\noindent where $N_{i}^{-} = \{j \in N : a_{ij} < 0\}$. In this case, $L_{i}^{x_{\hat{j}} = u,\, x_{\hat{k}} = v}$ is a lower bound for the value on the left-hand side  of the constraint $i$, considering the assignments $x_{\hat{j}} = u$ and $x_{\hat{k}} = v$. If $L_{i}^{x_{\hat{j}} = u,\, x_{\hat{k}} = v} > b_{i}$, there is a conflict between the assignments of $x_{\hat{j}}$ and $x_{\hat{k}}$. 
+\noindent where $N_{i}^{-} = \{j \in N : a_{ij} < 0\}$. In this case, $L_{i}^{x_{\hat{j}} = u,\, x_{\hat{k}} = v}$ is a lower bound for the value on the left-hand side  of the constraint $i$, considering the assignments ($x_{\hat{j}} = u$ and $x_{\hat{k}} = v$). If $L_{i}^{x_{\hat{j}} = u,\, x_{\hat{k}} = v} > b_{i}$, a conflict is detected for these assignments.
 
-Performing these steps for each combination of values of two binary variables, considering each pair of variables in each constraint, leads to the creation of a conflict graph for any IP problem in $O(m \times n^2)$. For problems with many variables and constraints this technique may be expensive computationally (See Experiments section). Nevertheless, for some constraint types a large number of conflicts can be quickly discovered. This is the case of the Generalized Upper Bound constraints ($\sum_{j\in N}x_j \leq 1$). As discussed in \cite{atamturk}, even handling explicitly conflict graphs induced by these constraints requires special data structures such that in the previous decade most solvers could not use all information which could be inferred just from GUB constraints. The following subsection will describe additional cases where cliques in individual constraints can be quickly detected (i.e., faster than $O(n^2)$). The following notation will be used: $\tilde{a}_{ik}$ is the $k$-th smallest coefficient in constraint $i$ and $\acute{a}_{ik}$ indicates its index. Constants $n_i$ and $S_i^-$ denote the number of non-zero variables and the sum of all negative coefficients of constraint $i$, respectively. To illustrate one case, GUB constraints can be described as $\tilde{a}_{ik}=b_i=1 \ \forall \ k$. In the next subsection fast clique detection will be discussed for additional constraint structures.
+Performing these steps considering each pair of variables in each constraint, leads to the creation of a conflict graph in $O(m \times n^2)$. For problems with many variables and constraints this technique may be expensive computationally (See Experiments section). Nevertheless, for some constraint types a large number of conflicts can be quickly discovered. This is the case of the Generalized Upper Bound constraints ($\sum_{j\in N}x_j \leq 1$). As discussed in \cite{atamturk}, even handling explicitly conflict graphs induced by these constraints requires special data structures such that in the previous decade most solvers could not use all information which could be inferred just from GUB constraints.
 
+The following subsection will describe additional cases where cliques in individual constraints can be quickly detected (i.e., faster than $O(n^2)$). Constants $n_i$ and $S_i^-$ will be used to denote the number of non-zero variables and the sum of all negative coefficients of constraint $i$, respectively.
 
 \subsection{Fast detection of cliques in less structured constraints}
 
-We describe two simple cases where large cliques of conflicting variables can be detected just by traversing constraints with  coefficients of variables sorted in non-decreasing order. Thus, conflicts in these constraints are discovered in $O( n \log n)$.
+We describe two cases where large cliques of conflicting variables can be detected just by traversing constraints with coefficients of variables sorted in non-increasing or non-decreasing order. Thus, conflicts in these constraints are discovered in $O( n \log n)$.
 
-To detect cliques that involve the activation of some variables we start computing the lower bound of the left-hand side (LHS) for each two consecutive variables, starting the analysis from the smallest coefficient ($k=1$) to the highest one ($k=n_i$). The first step is compute the sum of negative coefficients excluding the two analyzed variables:
+At first, consider we are analyzing two variables $x_{\hat{j}}$ and $x_{\hat{k}}$ with respect to constraint $i$. The summation of negative coefficients excluding the pair of variables analyzed is:
 
 \begin{equation}\label{di}
-D_{i}^{x_{\acute{a}_{ik}}, x_{\acute{a}_{ik+1}}} = S_i^- - min(0, \tilde{a}_{ik}) - min(0, \tilde{a}_{ik+1})
+D_{i}^{x_{{\hat{j}}}, x_{{\hat{k}}}} = S_i^- - min(0, a_{i\hat{j}}) - min(0, a_{i\hat{k}})
 \end{equation}
 
-\noindent Thus, the lower bound for the LHS of constraint $i$ when variables with $k$ and $k+1$ smallest coefficients are fixed at one is:
+\noindent This formula is similar to the first term of Equation \ref{li}. However, it avoids to traverse the whole constraint for each pair of variables analyzed.
+
+Thus, the lower bound for the left-hand side (LHS) of constraint $i$ when variables $x_{\hat{j}}$ and $x_{\hat{k}}$ are fixed at one is:
 
 \begin{equation}
-LHS_{i}^{x_{\acute{a}_{ik}} = 1, x_{\acute{a}_{ik+1}} = 1} = D_{i}^{x_{\acute{a}_{ik}}, x_{\acute{a}_{ik+1}}} + \tilde{a}_{ik} + \tilde{a}_{ik+1}
+LHS_{i}^{x_{\hat{j}} = 1, x_{\hat{k}} = 1} = D_{i}^{x_{{\hat{j}}}, x_{{\hat{k}}}} + a_{i\hat{j}} + a_{i\hat{k}}
 \end{equation}
 
-Since $LHS_{i}^{x_{\acute{a}_{ik}} = 1, x_{\acute{a}_{ik+1}} = 1}$ is monotonically non-decreasing as $k$ increases, if $LHS_{i}^{x_{\acute{a}_{ik}} = 1, x_{\acute{a}_{ik+1}} = 1} > b_{i}$, then there is a clique involving the activation of all variables from position $k$ until position $n_i$. Moreover, we can discard the existence of such cliques by checking if $LHS_{i}^{x_{\acute{a}_{in_i-1}} = 1, x_{\acute{a}_{in_i}} = 1} \leq b_i$.
+Suppose constraint $i$ is ordered in non-decreasing order. Since we traverse constraint $i$ in this order, $LHS_{i}^{x_{\hat{j}} = 1, x_{\hat{j}+1} = 1}$ is monotonically non-decreasing. As a result, if $LHS_{i}^{x_{\hat{j}} = 1, x_{\hat{j}+1} = 1} > b_{i}$ then there is a clique involving the activation of all variables from position $\hat{j}$ until position $n_i$. Moreover, we can discard the existence of such cliques in this constraint by checking if $LHS_{i}^{x_{n_i-1} = 1, x_{n_i} = 1} \leq b_i$.
 
-The same idea can be used to detect cliques that involve the deactivation of some variables, computing the lower bound of the LHS for each two consecutive variables, starting from the highest coefficient ($k=n_i$) to the smallest one ($k=1$). The lower bound for the LHS of constraint $i$ when variables $x_{\acute{a}_{ik}}$ and $x_{\acute{a}_{ik-1}}$ are fixed at zero is equal to $D_{i}^{x_{\acute{a}_{ik}}, x_{\acute{a}_{ik-1}}}$, which is obtained by equation \ref{di}:  $LHS_{i}^{x_{\acute{a}_{ik}} = 0, x_{\acute{a}_{ik-1}} = 0} = D_{i}^{x_{\acute{a}_{ik}}, x_{\acute{a}_{ik-1}}} $
+%Since we traverse constraint $i$ in non-decreasing order, $LHS_{i}^{x_{\acute{a}_{ik}} = 1, x_{\acute{a}_{ik+1}} = 1}$ is monotonically non-decreasing. As a result, if $LHS_{i}^{x_{\acute{a}_{ik}} = 1, x_{\acute{a}_{ik+1}} = 1} > b_{i}$ then there is a clique involving the activation of all variables from position $k$ until position $n_i$. Moreover, we can discard the existence of such cliques by checking if $LHS_{i}^{x_{\acute{a}_{in_i-1}} = 1, x_{\acute{a}_{in_i}} = 1} \leq b_i$.
 
-
-In the same form, $LHS_{i}^{x_{\acute{a}_{ik}} = 0, x_{\acute{a}_{ik-1}} = 0}$ is monotonically non-decreasing as $k$ decreases. If $LHS_{i}^{x_{\acute{a}_{ik}} = 0, x_{\acute{a}_{ik-1}} = 0} > b_{i}$, then there is a clique involving the deactivation of all variables from position $k$ until the variable of first position ($k=1$). Moreover, we can discard the existence of such cliques by checking if $LHS_{i}^{x_{\acute{a}_{i2}} = 0, x_{\acute{a}_{i1}} = 0} \leq b_i$.
-
-When no clique is found we use the pairwise analysis. Nevertheless, in our experiments we observe a large number of constraints that have cliques, speeding up the creation of conflict graphs.
+%When no clique is found we use the pairwise analysis. Nevertheless, in our experiments we observe a large number of constraints that have cliques, speeding up the creation of conflict graphs.
 
 \begin{example}
 
