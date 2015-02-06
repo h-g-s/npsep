@@ -1,0 +1,31 @@
+----------------------- REVIEW 1 ---------------------
+- The notation is heavy, sometimes unnecessarily.  For example, on page 1 (line -9) the authors could simply choose variables such as $x_{\ell}$ and $x_k$: there is no need of using names like $x_{k^{^}}$. Also, the authors could try to improve the notation by avoiding the use of superscripts (which contains subscripts). Perhaps the superscripts could be given in square brackets.
+
+- The claimed complexity of the algorithm (for detecting large cliques) is not completely clear. The authors claim that the algorithm is O(n\logn) because it basically just needs sorting of the (n) coefficients. However, they state that "For variables which are not involved in these easy to compute cliques a pairwise analysis is performed for each constraint". As in the worst case a pairwise analysis requires O(n^2) time, something is unclear.  The statement in the abstract ("... useful for the fast detection of cliques: these can also be quickly detected in less structured constraints in O(n\log n)") sounds misleading, unless the authors can explain this statement better. Perhaps O(n\logn) is on the average, or according to the computational tests? This needs a clarification.
+
+- For the separation, it seems a more interesting method is used. However, this method is a different publication of the authors.
+
+- The lifting procedure requires some explanation.
+
+- The computational study is not so satisfactory.  The authors only compare with CGL. Also, there is little to no discussion on the experimental results. The authors claim that the computational results have shown that the proposed procedure approach compares favourably to CGL , "specially, in restricted execution times". More details should be given to support such a statement (what is meant by  a "restricted execution time"? This is independent on the size of the instance?).
+
+Evaluation:
+
+The paper needs some revision to clarify some statements (see the questions raised above). The idea of sorting and looking for the first consecutive variables which, after fixing, the lower bound of the activity of the constraint violates the right hand side,  seems to be very basic. But, if it has not been used before, the paper brings some contribution concerning the use of such an idea and cut separation procedures.  The positive aspect is the fact that the computational results (not so many) have shown to compare favourably to CGL ("in restricted execution times"). More robust computational tests are needed to convince that the proposed approach is a good one.
+
+
+----------------------- REVIEW 2 ---------------------
+I recommend the follwoing improvements/clarifications:
+p 3 l 10: "We describe two cases where large cliques of conflicting variables ..." The two cases differ only by complementing variables. This is the same, i.e., there is only one case.
+p 4 l -8: "We also lift all generated inequalities as presented in Figure 2, using greedy heuristics, ..." I wonder how you do that in time better than O(mn^2), if you have, say, m cliques of about n/2 variables.
+Table 1: How many conflict edges does FCG generate? This is the interesting number, and it is missing.
+Time on Telebus instances: I don't understand this speedup. Set partitioning is essentially GUB, and you said this is treated differently. Did you use PD for that? Why?
+
+
+----------------------- REVIEW 3 ---------------------
+The contribution of the paper is the procedure for the detection of cliques of the conflict graph. The preliminary results in Table 1 show that this procedure seems to be effective in reducing the total computation time when compared to the pairwise detection strategy. However, a more detailed computational study is necessary to establish the effectiveness of the procedure.
+
+With respect to the separation routines which are the subject of Section 3, there are several problems: (i) I am not able to see any real contribution in the clique separation procedure; (ii) it is not clear how the separation of ALL odd-holes is performed (the authors mention in the Introduction that "Exact separation routines are employed to discover all violated cliques and odd holes"); (iii) the lifting procedure for odd-holes is not presented; (iv) most important: there is no mention to previous works on separation heuristics for the set packing polytope. For instance, I refer the authors to
+
+Rebennack, S., M. Oswald, D. O. Theis, H. Seitz, G. Reinelt and P. M. Pardalos,
+A branch and cut solver for the maximum stable set problem, Journal of Combinatorial Optimization 21, 434-457, 2011.
