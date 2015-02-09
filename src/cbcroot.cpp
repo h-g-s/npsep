@@ -59,8 +59,11 @@ void help()
    printf("\t-cgl changes separation routine to CGL\n");
    printf("\t-mtm=int max two mir passes for when no clique cuts are found\n");
    printf("\t-mgm=int max gomory passes for when no clique cuts are found\n");
+   printf("\t-allint  considers that all variables are integers\n");
    clq_sep_params_help_cmd_line();
 }
+
+static bool transformInPI = false;
 
 void parseParameters( int argc, char **argv );
 
@@ -89,7 +92,17 @@ int main( int argc, char **argv )
    parseParameters( argc, argv );
 
    readLP( argv[1] );
+
+   if (transformInPI)
+   {
+      vector< int > ints( solver->getNumCols() );
+      for ( int i=0 ; (i<solver->getNumCols()) ; ++i ) ints[i] = i;
+      solver->setInteger( &ints[0], solver->getNumCols() );
+   }
+ 
    const int numCols = solver->getNumCols(), numRows = solver->getNumRows();
+
+
 
    //decideLpMethod();
 
@@ -468,10 +481,14 @@ void parseParameters( int argc, char **argv )
          continue;
       }
 
+      if (strcmp( argv[i], "-allint" )==0)
+          transformInPI = true;
+
       char pName[256];
       char pValue[256];
       getParamName( pName, argv[i] );
       getParamValue( pValue, argv[i] );
+
 
       if (strcmp( pName, "mtm" )==0)
       {
