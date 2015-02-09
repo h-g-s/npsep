@@ -382,8 +382,12 @@ int main( int argc, char **argv )
 void readLP( const char *fileName )
 {
    solver->setIntParam(OsiNameDiscipline, 2);
-   solver->readMps( fileName );
-   //solver->readLp( fileName );
+
+   if ( strstr( fileName, ".lp" ) || strstr( fileName, ".LP" ) )
+       solver->readLp( fileName );
+    else
+       solver->readMps( fileName );
+
    solver->setIntParam(OsiNameDiscipline, 2);
    solver->messageHandler()->setLogLevel(1);
    solver->setHintParam(OsiDoReducePrint,true,OsiHintTry);
