@@ -87,6 +87,8 @@ int main( int argc, char **argv )
    }
 
    realSolver = new OsiClpSolverInterface();
+   /* makes CLP faster for hard instances */
+   realSolver->getModelPtr()->setPerturbation(50);
 
    solver = (OsiSolverInterface*) realSolver;
    parseParameters( argc, argv );
