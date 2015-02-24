@@ -1,0 +1,12 @@
+NPSep TODO list
+
+Performance:
+    o  remove dominated cliques from lp
+    o  constraint propagation (using first variables which 
+       are active in the relaxation ?)
+
+Reorganization:
+    o  osi_cgraph : make cgraph construction solver independent
+        (a first step would be to separate functions which are not 
+         solver dependent e.g. processClique into other .c files)
+
