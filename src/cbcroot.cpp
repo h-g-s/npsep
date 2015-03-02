@@ -59,8 +59,11 @@ void help()
    printf("\t-cgl changes separation routine to CGL\n");
    printf("\t-mtm=int max two mir passes for when no clique cuts are found\n");
    printf("\t-mgm=int max gomory passes for when no clique cuts are found\n");
+   printf("\t-allint  considers that all variables are integers\n");
    clq_sep_params_help_cmd_line();
 }
+
+static bool transformInPI = false;
 
 void parseParameters( int argc, char **argv );
 
@@ -84,12 +87,24 @@ int main( int argc, char **argv )
    }
 
    realSolver = new OsiClpSolverInterface();
+   /* makes CLP faster for hard instances */
+   realSolver->getModelPtr()->setPerturbation(50);
 
    solver = (OsiSolverInterface*) realSolver;
    parseParameters( argc, argv );
 
    readLP( argv[1] );
+
+   if (transformInPI)
+   {
+      vector< int > ints( solver->getNumCols() );
+      for ( int i=0 ; (i<solver->getNumCols()) ; ++i ) ints[i] = i;
+      solver->setInteger( &ints[0], solver->getNumCols() );
+   }
+ 
    const int numCols = solver->getNumCols(), numRows = solver->getNumRows();
+
+
 
    //decideLpMethod();
 
@@ -382,8 +397,12 @@ int main( int argc, char **argv )
 void readLP( const char *fileName )
 {
    solver->setIntParam(OsiNameDiscipline, 2);
-   solver->readMps( fileName );
-   //solver->readLp( fileName );
+
+   if ( strstr( fileName, ".lp" ) || strstr( fileName, ".LP" ) )
+       solver->readLp( fileName );
+    else
+       solver->readMps( fileName );
+
    solver->setIntParam(OsiNameDiscipline, 2);
    solver->messageHandler()->setLogLevel(1);
    solver->setHintParam(OsiDoReducePrint,true,OsiHintTry);
@@ -464,10 +483,14 @@ void parseParameters( int argc, char **argv )
          continue;
       }
 
+      if (strcmp( argv[i], "-allint" )==0)
+          transformInPI = true;
+
       char pName[256];
       char pValue[256];
       getParamName( pName, argv[i] );
       getParamValue( pValue, argv[i] );
+
 
       if (strcmp( pName, "mtm" )==0)
       {

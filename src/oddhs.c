@@ -720,7 +720,13 @@ int oddhs_find_wheel_centers( const int cols, const double *x, const double rc[]
    while ( ((p=nh_remove_first(nh, &n))!=INT_MAX) &&
            (nCenters<MAX_WHEEL_CENTERS) )
    {
+      /* must have conflict with all other centers */
+      for ( i=0 ; (i<nCenters) ; ++i )
+          if (!cgraph_conflicting_nodes( cgraph, n, centers[i]))
+              continue;
+
       centers[nCenters] = n;
+      
       nCenters++;
    }
 
