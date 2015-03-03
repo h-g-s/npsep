@@ -162,6 +162,8 @@ CGraph *osi_build_cgraph_pairwise( void *_lp )
         vector< pair<int, double> > columns(nElements);
         int nBools = 0, nPos = 0; // number of binary variables
         double sumNegCoefs = 0.0; //sum of all negative coefficients
+        double minCoef = numeric_limits<double>::max();
+      	double maxCoef = numeric_limits<double>::min();
         
         if ( (nElements<2) || (fabs(rhs[idxRow])>=LARGE_CONST) )
             continue;
@@ -195,6 +197,9 @@ CGraph *osi_build_cgraph_pairwise( void *_lp )
                 sumNegCoefs += columns[i].second;
             else nPos++;
 
+            minCoef = min(minCoef, columns[i].second);
+         	maxCoef = max(maxCoef, columns[i].second);
+
             /* inserting trivial conflicts: variable-complement */
             if(ctype[cidx] != 1) //consider only binary variables
                 continue;
@@ -209,24 +214,35 @@ CGraph *osi_build_cgraph_pairwise( void *_lp )
         if(nBools < nElements || (nPos == nElements && fabs(rhs[idxRow]) <= EPS))
             continue;
 
-        pairwiseAnalysis(cgraph, columns, sumNegCoefs, rhs[idxRow] * mult);
+      	/* special case: GUB constraints */
+		if ( DBL_EQUAL( minCoef, maxCoef ) &&  DBL_EQUAL( maxCoef, rhs[idxRow] * mult ) &&
+		    DBL_EQUAL(minCoef, 1.0) && ((sense[idxRow]=='E') || (sense[idxRow]=='L'))
+            && (row.getNumElements() > 3) ) 
+		{
+		    processClique( row.getNumElements(), (const int *)idx, cgraph, colLb, colUb );
+		}
 
-        /*equality constraints are converted into two inequality constraints (<=).
-        the first one is analyzed above and the second (multiplying the constraint by -1) is analyzed below.
-        Example: x + y + z = 2 ==>  (x + y + z <= 2) and (- x - y - z <= -2)*/
-        if(sense[idxRow] == 'E')
-        {
-            vector<pair<int, double> > newColumns(nElements);
-            sumNegCoefs = 0.0;
-            for(int i = 0; i < nElements; i++)
-            {
-                newColumns[i].first = columns[nElements-i-1].first;
-                newColumns[i].second = -1.0 * columns[nElements-i-1].second;
-                if(newColumns[i].second <= -EPS)
-                    sumNegCoefs += newColumns[i].second;
-            }
-            pairwiseAnalysis(cgraph, newColumns, sumNegCoefs, -1.0 * rhs[idxRow]);            
-        }
+		else
+		{
+	        pairwiseAnalysis(cgraph, columns, sumNegCoefs, rhs[idxRow] * mult);
+
+	        /*equality constraints are converted into two inequality constraints (<=).
+	        the first one is analyzed above and the second (multiplying the constraint by -1) is analyzed below.
+	        Example: x + y + z = 2 ==>  (x + y + z <= 2) and (- x - y - z <= -2)*/
+	        if(sense[idxRow] == 'E')
+	        {
+	            vector<pair<int, double> > newColumns(nElements);
+	            sumNegCoefs = 0.0;
+	            for(int i = 0; i < nElements; i++)
+	            {
+	                newColumns[i].first = columns[nElements-i-1].first;
+	                newColumns[i].second = -1.0 * columns[nElements-i-1].second;
+	                if(newColumns[i].second <= -EPS)
+	                    sumNegCoefs += newColumns[i].second;
+	            }
+	            pairwiseAnalysis(cgraph, newColumns, sumNegCoefs, -1.0 * rhs[idxRow]);            
+	        }
+	    }
 
 #ifdef DEBUG_CONF
         if (newConflicts)
@@ -285,6 +301,8 @@ CGraph *osi_build_cgraph( void *_lp, bool greedyClqExt /*= true*/ )
         int nBools = 0; // number of binary variables
         int nPos = 0; //number of positive coefficients
         double sumNegCoefs = 0.0; //sum of all negative coefficients
+        double minCoef = numeric_limits<double>::max();
+        double maxCoef = numeric_limits<double>::min();
         
         if ( (nElements<2) || (fabs(rhs[idxRow])>=LARGE_CONST) )
             continue;
@@ -318,6 +336,9 @@ CGraph *osi_build_cgraph( void *_lp, bool greedyClqExt /*= true*/ )
                 sumNegCoefs += columns[i].second;
             else nPos++;
 
+            minCoef = min(minCoef, columns[i].second);
+            maxCoef = max(maxCoef, columns[i].second);
+
             /* inserting trivial conflicts: variable-complement */
             if(ctype[cidx] != 1) //consider only binary variables
                 continue;
@@ -332,72 +353,83 @@ CGraph *osi_build_cgraph( void *_lp, bool greedyClqExt /*= true*/ )
         if(nBools < nElements || (nPos == nElements && fabs(rhs[idxRow]) <= EPS))
             continue;
 
-        sort(columns.begin(), columns.end(), sort_columns());
-
-        if(nPos < nElements || nElements <= MIN_PAIRWISE_ANALYSIS)
+        /* special case: GUB constraints */
+        if ( DBL_EQUAL( minCoef, maxCoef ) &&  DBL_EQUAL( maxCoef, rhs[idxRow] * mult ) &&
+            DBL_EQUAL(minCoef, 1.0) && ((sense[idxRow]=='E') || (sense[idxRow]=='L'))
+            && (row.getNumElements() > 3) ) 
         {
-            bool groupingWorked = pairwiseAnalysisByGrouping(cgraph, columns, sumNegCoefs, rhs[idxRow] * mult);
-            if(!groupingWorked)
-                pairwiseAnalysis(cgraph, columns, sumNegCoefs, rhs[idxRow] * mult);
-
-            /*equality constraints are converted into two inequality constraints (<=).
-            the first one is analyzed above and the second (multiplying the constraint by -1) is analyzed below.
-            Example: x + y + z = 2 ==>  (x + y + z <= 2) and (- x - y - z <= -2)*/
-            if(sense[idxRow] == 'E')
-            {
-                vector<pair<int, double> > newColumns(nElements);
-                sumNegCoefs = 0.0;
-                for(int i = 0; i < nElements; i++)
-                {
-                    newColumns[i].first = columns[nElements-i-1].first;
-                    newColumns[i].second = -1.0 * columns[nElements-i-1].second;
-                    if(newColumns[i].second <= -EPS)
-                        sumNegCoefs += newColumns[i].second;
-                }
-                groupingWorked = pairwiseAnalysisByGrouping(cgraph, newColumns, sumNegCoefs, -1.0 * rhs[idxRow]);
-                if(!groupingWorked)
-                    pairwiseAnalysis(cgraph, newColumns, sumNegCoefs, -1.0 * rhs[idxRow]);
-            }   
+            processClique( row.getNumElements(), (const int *)idx, cgraph, colLb, colUb );
         }
 
         else
         {
-            bool foundClique = cliqueDetection(cgraph, columns, sumNegCoefs, rhs[idxRow] * mult);
+            sort(columns.begin(), columns.end(), sort_columns());
 
-            if(!foundClique)/* normal case, checking pairwise conflicts
-                 * (these are computed increasing RHS in thisRhs) */
+            if(nPos < nElements || nElements <= MIN_PAIRWISE_ANALYSIS)
             {
                 bool groupingWorked = pairwiseAnalysisByGrouping(cgraph, columns, sumNegCoefs, rhs[idxRow] * mult);
-
                 if(!groupingWorked)
                     pairwiseAnalysis(cgraph, columns, sumNegCoefs, rhs[idxRow] * mult);
+
+                /*equality constraints are converted into two inequality constraints (<=).
+                the first one is analyzed above and the second (multiplying the constraint by -1) is analyzed below.
+                Example: x + y + z = 2 ==>  (x + y + z <= 2) and (- x - y - z <= -2)*/
+                if(sense[idxRow] == 'E')
+                {
+                    vector<pair<int, double> > newColumns(nElements);
+                    sumNegCoefs = 0.0;
+                    for(int i = 0; i < nElements; i++)
+                    {
+                        newColumns[i].first = columns[nElements-i-1].first;
+                        newColumns[i].second = -1.0 * columns[nElements-i-1].second;
+                        if(newColumns[i].second <= -EPS)
+                            sumNegCoefs += newColumns[i].second;
+                    }
+                    groupingWorked = pairwiseAnalysisByGrouping(cgraph, newColumns, sumNegCoefs, -1.0 * rhs[idxRow]);
+                    if(!groupingWorked)
+                        pairwiseAnalysis(cgraph, newColumns, sumNegCoefs, -1.0 * rhs[idxRow]);
+                }   
             }
 
-            /*equality constraints are converted into two inequality constraints (<=).
-            the first one is analyzed above and the second (multiplying the constraint by -1) is analyzed below.
-            Example: x + y + z = 2 ==>  (x + y + z <= 2) and (- x - y - z <= -2)*/
-            if(sense[idxRow] == 'E')
+            else
             {
-                vector<pair<int, double> > newColumns(nElements);
-                sumNegCoefs = 0.0;
-                for(int i = 0; i < nElements; i++)
-                {
-                    newColumns[i].first = columns[nElements-i-1].first;
-                    newColumns[i].second = -1.0 * columns[nElements-i-1].second;
-                    if(newColumns[i].second <= -EPS)
-                        sumNegCoefs += newColumns[i].second;
-                }
-
-                bool foundClique = cliqueDetection(cgraph, newColumns, sumNegCoefs, -1.0 * rhs[idxRow]);
+                bool foundClique = cliqueDetection(cgraph, columns, sumNegCoefs, rhs[idxRow] * mult);
 
                 if(!foundClique)/* normal case, checking pairwise conflicts
                      * (these are computed increasing RHS in thisRhs) */
                 {
-                    bool groupingWorked = pairwiseAnalysisByGrouping(cgraph, newColumns, sumNegCoefs, -1.0 * rhs[idxRow]);
+                    bool groupingWorked = pairwiseAnalysisByGrouping(cgraph, columns, sumNegCoefs, rhs[idxRow] * mult);
 
                     if(!groupingWorked)
-                        pairwiseAnalysis(cgraph, newColumns, sumNegCoefs, -1.0 * rhs[idxRow]);
-                }            
+                        pairwiseAnalysis(cgraph, columns, sumNegCoefs, rhs[idxRow] * mult);
+                }
+
+                /*equality constraints are converted into two inequality constraints (<=).
+                the first one is analyzed above and the second (multiplying the constraint by -1) is analyzed below.
+                Example: x + y + z = 2 ==>  (x + y + z <= 2) and (- x - y - z <= -2)*/
+                if(sense[idxRow] == 'E')
+                {
+                    vector<pair<int, double> > newColumns(nElements);
+                    sumNegCoefs = 0.0;
+                    for(int i = 0; i < nElements; i++)
+                    {
+                        newColumns[i].first = columns[nElements-i-1].first;
+                        newColumns[i].second = -1.0 * columns[nElements-i-1].second;
+                        if(newColumns[i].second <= -EPS)
+                            sumNegCoefs += newColumns[i].second;
+                    }
+
+                    bool foundClique = cliqueDetection(cgraph, newColumns, sumNegCoefs, -1.0 * rhs[idxRow]);
+
+                    if(!foundClique)/* normal case, checking pairwise conflicts
+                         * (these are computed increasing RHS in thisRhs) */
+                    {
+                        bool groupingWorked = pairwiseAnalysisByGrouping(cgraph, newColumns, sumNegCoefs, -1.0 * rhs[idxRow]);
+
+                        if(!groupingWorked)
+                            pairwiseAnalysis(cgraph, newColumns, sumNegCoefs, -1.0 * rhs[idxRow]);
+                    }            
+                }
             }
         }
 

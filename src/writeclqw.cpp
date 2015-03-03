@@ -33,7 +33,7 @@ void readLP( const char *fileName, OsiSolverInterface *solver );
 int main( int argc, char **argv )
 {
     clock_t start;
-    double cliqueAnalysis;
+    double cliqueAnalysis, pairwiseAnalysis;
 
     OsiSolverInterface *solver = NULL;
     OsiClpSolverInterface *realSolver = new OsiClpSolverInterface();
@@ -43,21 +43,34 @@ int main( int argc, char **argv )
     getFileName( problemName, argv[1] );
 
     start = clock();
-    CGraph *cgraphClique = osi_build_cgraph( solver, atoi(argv[2]) );
+    CGraph *cgraphClique = osi_build_cgraph( solver, false );
     cliqueAnalysis = ((double(clock() - start))/((double)CLOCKS_PER_SEC));
     if ( cgraph_size( cgraphClique ) == 0 )
     {
         printf("EMPTY conflict graph. exiting...\n");
         exit(0);
     }
-
     unsigned long int conflictsClique = 0;
     for(int i = 0; i < cgraph_size( cgraphClique ); i++)
         conflictsClique += cgraph_degree(cgraphClique, i);
     conflictsClique /= 2;
     cgraph_free( &cgraphClique );
 
-    printf("%s %.1lu %.3lf\n", problemName, conflictsClique, cliqueAnalysis);
+    start = clock();
+    CGraph *cgraphPairwise = osi_build_cgraph_pairwise( solver );
+    pairwiseAnalysis = ((double(clock() - start))/((double)CLOCKS_PER_SEC));
+    if ( cgraph_size( cgraphPairwise ) == 0 )
+    {
+        printf("EMPTY conflict graph. exiting...\n");
+        exit(0);
+    }
+    unsigned long int conflictsPairwise = 0;
+    for(int i = 0; i < cgraph_size( cgraphPairwise ); i++)
+        conflictsPairwise += cgraph_degree(cgraphPairwise, i);
+    conflictsPairwise /= 2;
+    cgraph_free( &cgraphPairwise );
+
+    printf("%s %.1lu %.3lf %.1lu %.3lf\n", problemName, conflictsPairwise, pairwiseAnalysis, conflictsClique, cliqueAnalysis);
 
     delete realSolver;
 
