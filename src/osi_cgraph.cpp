@@ -97,7 +97,11 @@ struct sort_columns_reverse
     }
 };
 
-bool cliqueDetection(CGraph* cgraph, const vector<pair<int, double> >& columns, const double sumNegCoefs, const double rhs);
+/* Searches for a clique in this constraint. */
+void cliqueDetection(CGraph* cgraph, const vector<pair<int, double> >& columns, const double sumNegCoefs, const double rhs);
+
+/* Searches for a clique involving the complement of variables in this constraint. */
+void cliqueComplementDetection(CGraph* cgraph, const vector<pair<int, double> >& columns, const double sumNegCoefs, const double rhs);
 
 bool pairwiseAnalysisByGrouping(CGraph* cgraph, const vector<pair<int, double> >& columns, const double sumNegCoefs, const double rhs);
 
@@ -127,6 +131,14 @@ vector<int> getMaximalClique(const CGraph *cgraph, const int vertex, const vecto
 
 /* uses clique partitioning to extend the conflict graph row-by-row */
 void extendConflictGraphByRow(CGraph *cgraph, const int numElements, const int *idxs, const double *coefs, const double rhs);
+
+/* Returns the first position of columns which the lower bound for LHS (considering activation of variables) is greater than rhs */
+/* l=initial position for search in columns u=last position for search in columns */
+int binary_search(const vector< pair<int, double> >& columns, double rhs, double coef, double sumNegCoefs, int l, int u);
+
+/* Returns the first position of columns which the lower bound for LHS (considering deactivation of variables) is greater than rhs */
+/* l=initial position for search in columns u=last position for search in columns */
+int binary_search_complement(const vector< pair<int, double> >& columns, double rhs, double coef, double sumNegCoefs, int l, int u);
 
 CGraph *osi_build_cgraph_pairwise( void *_lp )
 {
@@ -263,244 +275,6 @@ CGraph *osi_build_cgraph_pairwise( void *_lp )
     fetchConflicts(true, cgraph);
     cgraph_update_min_max_degree( cgraph );
 
-    return cgraph;
-}
-
-CGraph *osi_build_cgraph( void *_lp, bool greedyClqExt /*= true*/ )
-{
-    OsiSolverInterface *lp = (OsiSolverInterface *)_lp;
-
-    if (lp->getNumIntegers()<2)
-        return 0;
-
-    int cgraphSize = lp->getNumCols() * 2; //considering binary complement
-                                          //using extra memory to facilitate indexing
-
-    CGraph *cgraph = cgraph_create( cgraphSize );
-    const char *ctype = lp->getColType();
-    const CoinPackedMatrix *M = lp->getMatrixByRow();
-    const double *rhs = lp->getRightHandSide();
-    colLb = (double*)lp->getColLower();
-    colUb = (double*)lp->getColUpper();
-    const char *sense = lp->getRowSense();
-    nCols = lp->getNumCols();
-    nRows = lp->getNumRows();
-    int idxRow;
-    cvec.reserve( CVEC_CAP );
-    neighs.reserve( 8192 );
-
-    for(idxRow = 0; idxRow < nRows; idxRow++)
-    {
-        clock_t rowStart = clock();
-#define FIXED_IN_ZERO( idx ) ( (fabs(colLb[idx])<EPS) && (fabs(colUb[idx])<EPS) )
-        const CoinShallowPackedVector &row = M->getVector(idxRow);
-        const int nElements = row.getNumElements();
-        const int *idx = row.getIndices();
-        const double *coefs = row.getElements();
-        vector< pair<int, double> > columns(nElements);
-        int nBools = 0; // number of binary variables
-        int nPos = 0; //number of positive coefficients
-        double sumNegCoefs = 0.0; //sum of all negative coefficients
-        double minCoef = numeric_limits<double>::max();
-        double maxCoef = numeric_limits<double>::min();
-        
-        if ( (nElements<2) || (fabs(rhs[idxRow])>=LARGE_CONST) )
-            continue;
-
-        if ( sense[idxRow] == 'R' )  // lets not consider ranged constraints by now
-        {
-            printf("TODO: CHECK FOR RANGED CONSTRAINT (%s) rhs is %g\n", lp->getRowName(idxRow).c_str(), rhs[idxRow] );
-            continue;
-        }
-
-#ifdef DEBUG_CONF
-        newConflicts = 0;
-        confS.clear();
-#endif /* DEBUG_CONF */
-
-        double mult = (sense[idxRow] == 'G') ? mult = -1.0 : mult = 1.0;
-        for(int i = 0; i < nElements; i++)
-        {
-            const int cidx = idx[i];
-
-            columns[i].first = idx[i];
-            columns[i].second = coefs[i] * mult;
-
-            if(ctype[cidx] == 1)
-                nBools++;
-
-            if (FIXED_IN_ZERO(cidx))
-                continue;
-
-            if(columns[i].second <= -EPS)
-                sumNegCoefs += columns[i].second;
-            else nPos++;
-
-            minCoef = min(minCoef, columns[i].second);
-            maxCoef = max(maxCoef, columns[i].second);
-
-            /* inserting trivial conflicts: variable-complement */
-            if(ctype[cidx] != 1) //consider only binary variables
-                continue;
-            cvec.push_back( pair<int, int>(cidx, cidx + nCols) );
-#ifdef DEBUG_CONF
-            newConflicts++;
-            confS.push_back( pair<int,int>(cidx, cidx + nCols) );
-#endif /* DEBUG_CONF */
-        }
-
-        /* considering just constraints which have only binary variables */
-        if(nBools < nElements || (nPos == nElements && fabs(rhs[idxRow]) <= EPS))
-            continue;
-
-        /* special case: GUB constraints */
-        if ( DBL_EQUAL( minCoef, maxCoef ) &&  DBL_EQUAL( maxCoef, rhs[idxRow] * mult ) &&
-            DBL_EQUAL(minCoef, 1.0) && ((sense[idxRow]=='E') || (sense[idxRow]=='L'))
-            && (row.getNumElements() > 3) ) 
-        {
-            processClique( row.getNumElements(), (const int *)idx, cgraph, colLb, colUb );
-        }
-
-        else
-        {
-            sort(columns.begin(), columns.end(), sort_columns());
-
-            if(nPos < nElements || nElements <= MIN_PAIRWISE_ANALYSIS)
-            {
-                bool groupingWorked = pairwiseAnalysisByGrouping(cgraph, columns, sumNegCoefs, rhs[idxRow] * mult);
-                if(!groupingWorked)
-                    pairwiseAnalysis(cgraph, columns, sumNegCoefs, rhs[idxRow] * mult);
-
-                /*equality constraints are converted into two inequality constraints (<=).
-                the first one is analyzed above and the second (multiplying the constraint by -1) is analyzed below.
-                Example: x + y + z = 2 ==>  (x + y + z <= 2) and (- x - y - z <= -2)*/
-                if(sense[idxRow] == 'E')
-                {
-                    vector<pair<int, double> > newColumns(nElements);
-                    sumNegCoefs = 0.0;
-                    for(int i = 0; i < nElements; i++)
-                    {
-                        newColumns[i].first = columns[nElements-i-1].first;
-                        newColumns[i].second = -1.0 * columns[nElements-i-1].second;
-                        if(newColumns[i].second <= -EPS)
-                            sumNegCoefs += newColumns[i].second;
-                    }
-                    groupingWorked = pairwiseAnalysisByGrouping(cgraph, newColumns, sumNegCoefs, -1.0 * rhs[idxRow]);
-                    if(!groupingWorked)
-                        pairwiseAnalysis(cgraph, newColumns, sumNegCoefs, -1.0 * rhs[idxRow]);
-                }   
-            }
-
-            else
-            {
-                bool foundClique = cliqueDetection(cgraph, columns, sumNegCoefs, rhs[idxRow] * mult);
-
-                if(!foundClique)/* normal case, checking pairwise conflicts
-                     * (these are computed increasing RHS in thisRhs) */
-                {
-                    bool groupingWorked = pairwiseAnalysisByGrouping(cgraph, columns, sumNegCoefs, rhs[idxRow] * mult);
-
-                    if(!groupingWorked)
-                        pairwiseAnalysis(cgraph, columns, sumNegCoefs, rhs[idxRow] * mult);
-                }
-
-                /*equality constraints are converted into two inequality constraints (<=).
-                the first one is analyzed above and the second (multiplying the constraint by -1) is analyzed below.
-                Example: x + y + z = 2 ==>  (x + y + z <= 2) and (- x - y - z <= -2)*/
-                if(sense[idxRow] == 'E')
-                {
-                    vector<pair<int, double> > newColumns(nElements);
-                    sumNegCoefs = 0.0;
-                    for(int i = 0; i < nElements; i++)
-                    {
-                        newColumns[i].first = columns[nElements-i-1].first;
-                        newColumns[i].second = -1.0 * columns[nElements-i-1].second;
-                        if(newColumns[i].second <= -EPS)
-                            sumNegCoefs += newColumns[i].second;
-                    }
-
-                    bool foundClique = cliqueDetection(cgraph, newColumns, sumNegCoefs, -1.0 * rhs[idxRow]);
-
-                    if(!foundClique)/* normal case, checking pairwise conflicts
-                         * (these are computed increasing RHS in thisRhs) */
-                    {
-                        bool groupingWorked = pairwiseAnalysisByGrouping(cgraph, newColumns, sumNegCoefs, -1.0 * rhs[idxRow]);
-
-                        if(!groupingWorked)
-                            pairwiseAnalysis(cgraph, newColumns, sumNegCoefs, -1.0 * rhs[idxRow]);
-                    }            
-                }
-            }
-        }
-
-#ifdef DEBUG_CONF
-        if (newConflicts)
-        {
-            printf("%s,%c,%g : ", lp->getRowName(idxRow).c_str(), sense[idxRow], rhs[idxRow]);
-            for ( int cc=0 ; (cc<confS.size()) ; ++cc )
-            {
-                const int var1 = confS[cc].first, var2 = confS[cc].second;
-                printf("(%s, %s) ", var1 < nCols ? lp->getColName(var1).c_str() : ("¬" + lp->getColName(var1 - nCols)).c_str(),
-                                    var2 < nCols ? lp->getColName(var2).c_str() : ("¬" + lp->getColName(var2 - nCols)).c_str() );
-            }
-            printf("\n");
-        }
-#endif
-#undef FIXED_IN_ZERO
-    }
-
-    fetchConflicts(true, cgraph);
-
-    if(!greedyClqExt || cgraph_max_degree(cgraph) < 2)
-    {
-        cgraph_update_min_max_degree( cgraph );
-        return cgraph;
-    }
-
-    for(idxRow = 0; idxRow < nRows; idxRow++)
-    {
-        const CoinShallowPackedVector &row = M->getVector(idxRow);
-        const int nElements = row.getNumElements();
-        const int *idxs = row.getIndices();
-        double *coefs = (double*) row.getElements();
-        double thisRhs = rhs[idxRow];
-
-        if(nElements > MAX_NONZEROS)
-            continue;
-
-        int maxDegree = 0;
-        for(int i = 0; (i < nElements) && (maxDegree<2); i++)
-        {
-            maxDegree = max(maxDegree, cgraph_degree(cgraph, idxs[i]));
-            maxDegree = max(maxDegree, cgraph_degree(cgraph, idxs[i]+nCols));
-        }
-
-        if(maxDegree < 2)
-        	continue;
-
-        if(sense[idxRow] == 'L')
-            extendConflictGraphByRow(cgraph, nElements, idxs, coefs, thisRhs);
-
-        else if(sense[idxRow] == 'G')
-        {
-            thisRhs = -1.0 * thisRhs;
-            for(int i = 0; i < nElements; i++)
-                coefs[i] = -1.0 * coefs[i];
-            extendConflictGraphByRow(cgraph, nElements, idxs, coefs, thisRhs);
-        }
-
-        else if(sense[idxRow] == 'E')
-        {
-            extendConflictGraphByRow(cgraph, nElements, idxs, coefs, thisRhs);
-            thisRhs = -1.0 * thisRhs;
-            for(int i = 0; i < nElements; i++)
-                coefs[i] = -1.0 * coefs[i];
-            extendConflictGraphByRow(cgraph, nElements, idxs, coefs, thisRhs);
-        }
-        fetchConflicts(true, cgraph);
-    }
-
-    cgraph_update_min_max_degree( cgraph );
     return cgraph;
 }
 
@@ -653,23 +427,23 @@ void pairwiseAnalysis(CGraph* cgraph, const vector<pair<int, double> >& columns,
 #endif
             }
 
-            if(coef1 + negDiscount > rhs + 0.001) /* cidx1 = 1 and cidx2 = 0 */
-            {
-                cvec.push_back( pair<int,int>(cidx1, cidx2+nCols) );
-#ifdef DEBUG_CONF
-                newConflicts++;
-                confS.push_back( pair<int,int>(cidx1, cidx2+nCols) );
-#endif
-            }
+//             if(coef1 + negDiscount > rhs + 0.001) /* cidx1 = 1 and cidx2 = 0 */
+//             {
+//                 cvec.push_back( pair<int,int>(cidx1, cidx2+nCols) );
+// #ifdef DEBUG_CONF
+//                 newConflicts++;
+//                 confS.push_back( pair<int,int>(cidx1, cidx2+nCols) );
+// #endif
+//             }
 
-            if(coef2 + negDiscount > rhs + 0.001) /* cidx1 = 0 and cidx2 = 1 */
-            {
-                cvec.push_back( pair<int,int>(cidx1+nCols, cidx2) );
-#ifdef DEBUG_CONF
-                newConflicts++;
-                confS.push_back( pair<int,int>(cidx1+nCols, cidx2) );
-#endif
-            }
+//             if(coef2 + negDiscount > rhs + 0.001) /* cidx1 = 0 and cidx2 = 1 */
+//             {
+//                 cvec.push_back( pair<int,int>(cidx1+nCols, cidx2) );
+// #ifdef DEBUG_CONF
+//                 newConflicts++;
+//                 confS.push_back( pair<int,int>(cidx1+nCols, cidx2) );
+// #endif
+//             }
 
             if(negDiscount > rhs + 0.001) /* cidx1 = 0 and cidx2 = 0 */
             {
@@ -853,165 +627,6 @@ bool pairwiseAnalysisByGrouping(CGraph* cgraph, const vector<pair<int, double> >
         fetchConflicts(false, cgraph);
     }
     #undef FIXED_IN_ZERO
-    return true;
-}
-
-bool cliqueDetection(CGraph* cgraph, const vector<pair<int, double> >& columns, const double sumNegCoefs, const double rhs)
-{
-    int nElements = (int)columns.size(), cliqueStart = -1, cliqueCompStart = -1;
-    double L00, L11; //L00 = lower bound for LHS when the two variaveis with smallest coefficients are deactivated.
-                     //L11 = lower bound for LHS when the two variaveis with highest coefficients are activated.
-    int cliqueCompSize = 0, cliqueSize = 0;
-
-    L00 = sumNegCoefs - min(0.0, columns[1].second) - min(0.0, columns[0].second);
-    L11 = sumNegCoefs - min(0.0, columns[nElements-2].second) - min(0.0, columns[nElements-1].second)
-          + columns[nElements-2].second + columns[nElements-1].second;
-
-    if(L00 <= rhs && L11 <= rhs)
-        return false;
-
-    #define FIXED_IN_ZERO( idx ) ( (fabs(colLb[idx])<EPS) && (fabs(colUb[idx])<EPS) )
-
-    if(L00 > rhs + 0.001)
-    {
-        for(int i = nElements - 1; i > 0; i--)
-        {
-            double D = sumNegCoefs - min(0.0, columns[i].second) - min(0.0, columns[i-1].second);
-
-            if(D > rhs + 0.001)
-            {
-                cliqueCompStart = i;
-                break;
-            }
-        }
-        assert(cliqueCompStart > 0 && cliqueCompStart < nElements);
-        int n = cliqueCompStart + 1, idxs[n];
-        for(int i = 0; i < n; i++)
-        {
-            if (FIXED_IN_ZERO(columns[i].first))
-                continue;
-            idxs[i] = columns[i].first + nCols; //binary complement
-            cliqueCompSize++;
-        }
-        if(cliqueCompSize > 2)
-        {
-            processClique( cliqueCompSize, (const int *)idxs, cgraph, colLb, colUb );
-
-            //looking for the same coefficient. For example: x + 2y + 2z + 3w >= 4 (- x - 2y - 2z - 3w <= -4)
-            for(int j = cliqueCompStart + 1; j < nElements; j++)
-            {
-                if(fabs(columns[j].second - columns[cliqueCompStart].second) <= EPS)
-                {
-                	if(!FIXED_IN_ZERO(columns[j].first))
-                	{
-	                    idxs[n-1] = columns[j].first;
-	                    processClique( cliqueCompSize, (const int *)idxs, cgraph, colLb, colUb );
-	                    cliqueCompStart++;
-	                }
-                }
-                else break;
-            }
-        }
-    }
-
-    if(L11 > rhs + 0.001)
-    {
-        for(int i = 0; i < nElements - 1; i++)
-        {
-            double D = sumNegCoefs - min(0.0, columns[i].second) - min(0.0, columns[i+1].second);
-            double L = D + columns[i].second + columns[i+1].second;
-
-            if(L > rhs + 0.001)
-            {
-                cliqueStart = i;
-                break;
-            }
-        }
-        
-        assert(cliqueStart >= 0 && cliqueStart < nElements - 1);
-        int n = nElements - cliqueStart, idxs[n];
-        for(int i = cliqueStart, j = 0; i < nElements; i++)
-        {
-            if (FIXED_IN_ZERO(columns[i].first))
-                continue;
-            idxs[j++] = columns[i].first;
-            cliqueSize++;
-        }
-        if(cliqueSize > 2)
-        {
-            processClique( cliqueSize, (const int *)idxs, cgraph, colLb, colUb );
-
-            //looking for the same coefficient. For example: x + y + 2z + 2w <= 2
-            for(int j = cliqueStart - 1; j >= 0; j--)
-            {
-                if(fabs(columns[j].second - columns[cliqueStart].second) <= EPS && !FIXED_IN_ZERO(columns[j].first))
-                {
-                    idxs[0] = columns[j].first;
-                    processClique( cliqueSize, (const int *)idxs, cgraph, colLb, colUb );
-                    cliqueStart--;
-                }
-                else break;
-            }
-        }
-    }
-
-    //checking for conflicts between variables that didnt appear in any clique
-    int last = max(cliqueCompStart, cliqueStart);
-    	last = max(last, 0); //just to handle the case when cliqueCompStart and cliqueStart are equal to -1
-    for(int i = 0; i < last; i++)
-    {
-        if(FIXED_IN_ZERO(columns[i].first))
-            continue;
-        for(int j = i+1; j < nElements; j++)
-        {
-            if(FIXED_IN_ZERO(columns[j].first))
-                continue;
-
-            double negDiscount = sumNegCoefs - min(0.0, columns[i].second) - min(0.0, columns[j].second);
-            int cidx1 = columns[i].first, cidx2 = columns[j].first;
-            double coef1 = columns[i].second, coef2 = columns[j].second;
-
-            if(coef1 + coef2 + negDiscount > rhs + 0.001)
-            {
-                cvec.push_back( pair<int,int>(cidx1, cidx2) );
-#ifdef DEBUG_CONF
-                newConflicts++;
-                confS.push_back( pair<int,int>(cidx1, cidx2) );
-#endif
-            }
-
-            if(coef1 + negDiscount > rhs + 0.001) /* cidx1 = 1 and cidx2 = 0 */
-            {
-                cvec.push_back( pair<int,int>(cidx1, cidx2+nCols) );
-#ifdef DEBUG_CONF
-                newConflicts++;
-                confS.push_back( pair<int,int>(cidx1, cidx2+nCols) );
-#endif
-            }
-
-            if(coef2 + negDiscount > rhs + 0.001) /* cidx1 = 0 and cidx2 = 1 */
-            {
-                cvec.push_back( pair<int,int>(cidx1+nCols, cidx2) );
-#ifdef DEBUG_CONF
-                newConflicts++;
-                confS.push_back( pair<int,int>(cidx1+nCols, cidx2) );
-#endif
-            }
-
-            if(negDiscount > rhs + 0.001) /* cidx1 = 0 and cidx2 = 0 */
-            {
-                cvec.push_back( pair<int,int>(cidx1+nCols, cidx2+nCols) );
-#ifdef DEBUG_CONF
-                newConflicts++;
-                confS.push_back( pair<int,int>(cidx1+nCols, cidx2+nCols) );
-#endif
-            }
-        }
-        fetchConflicts( false, cgraph );
-    }
-
-    #undef FIXED_IN_ZERO
-
     return true;
 }
 
@@ -1324,4 +939,357 @@ void extendConflictGraphByRow(CGraph *cgraph, const int nElements, const int *id
         }
     }
      #undef FIXED_IN_ZERO
+}
+
+int binary_search(const vector< pair<int, double> >& columns, double rhs, double coef, double sumNegCoefs, int l, int u)
+{
+	int mid, position;
+	if(l <= u)
+	{
+		mid = (l + u) / 2;
+		double D = sumNegCoefs - min(0.0, coef) - min(0.0, columns[mid].second);
+        double LHS = D + coef + columns[mid].second;
+	  	if(rhs >= LHS)
+	    	position = binary_search(columns, rhs, coef, sumNegCoefs, mid + 1, u);
+	  	else
+	    	position = binary_search(columns, rhs, coef, sumNegCoefs, l, mid-1);
+	}
+	else
+	{
+	 //Check boundaries
+	 if(l < u || u < 0)
+	    u++;//Fix boundaries
+	 position =  u + 1;
+	}
+	return position;
+}
+
+int binary_search_complement(const vector< pair<int, double> >& columns, double rhs, double coef, double sumNegCoefs, int l, int u)
+{
+	int mid, position;
+	if(l <= u)
+	{
+		mid = (l + u) / 2;
+		double LHS = sumNegCoefs - min(0.0, coef) - min(0.0, columns[mid].second);
+	  	if(rhs >= LHS)
+	    	position = binary_search_complement(columns, rhs, coef, sumNegCoefs, mid + 1, u);
+	  	else
+	    	position = binary_search_complement(columns, rhs, coef, sumNegCoefs, l, mid-1);
+	}
+	else
+	{
+	 //Check boundaries
+	 if(l < u || u < 0)
+	    u++;//Fix boundaries
+	 position =  u + 1;
+	}
+	return position;
+}
+
+CGraph *osi_build_cgraph( void *_lp )
+{
+    OsiSolverInterface *lp = (OsiSolverInterface *)_lp;
+
+    if (lp->getNumIntegers()<2)
+        return 0;
+
+    int cgraphSize = lp->getNumCols() * 2;
+    CGraph *cgraph = cgraph_create( cgraphSize );
+    const char *ctype = lp->getColType();
+    const CoinPackedMatrix *M = lp->getMatrixByRow();
+    const double *rhs = lp->getRightHandSide();
+    colLb = (double*)lp->getColLower();
+    colUb = (double*)lp->getColUpper();
+    const char *sense = lp->getRowSense();
+    nCols = lp->getNumCols();
+    nRows = lp->getNumRows();
+    int idxRow;
+    cvec.reserve( CVEC_CAP );
+    neighs.reserve( 8192 );
+
+    for(idxRow = 0; idxRow < nRows; idxRow++)
+    {
+        clock_t rowStart = clock();
+#define FIXED_IN_ZERO( idx ) ( (fabs(colLb[idx])<EPS) && (fabs(colUb[idx])<EPS) )
+        const CoinShallowPackedVector &row = M->getVector(idxRow);
+        const int nElements = row.getNumElements();
+        const int *idx = row.getIndices();
+        const double *coefs = row.getElements();
+        vector< pair<int, double> > columns(nElements);
+        int nBools = 0; // number of binary variables
+        int nPos = 0; //number of positive coefficients
+        double sumNegCoefs = 0.0; //sum of all negative coefficients
+        double minCoef = numeric_limits<double>::max();
+        double maxCoef = numeric_limits<double>::min();
+        
+        if ( (nElements<2) || (fabs(rhs[idxRow])>=LARGE_CONST) )
+            continue;
+
+        if ( sense[idxRow] == 'R' )  // lets not consider ranged constraints by now
+        {
+            printf("TODO: CHECK FOR RANGED CONSTRAINT (%s) rhs is %g\n", lp->getRowName(idxRow).c_str(), rhs[idxRow] );
+            continue;
+        }
+
+        double mult = (sense[idxRow] == 'G') ? mult = -1.0 : mult = 1.0;
+        for(int i = 0; i < nElements; i++)
+        {
+            const int cidx = idx[i];
+
+            columns[i].first = idx[i];
+            columns[i].second = coefs[i] * mult;
+
+            if(ctype[cidx] == 1)
+                nBools++;
+
+            if (FIXED_IN_ZERO(cidx))
+                continue;
+
+            if(columns[i].second <= -EPS)
+                sumNegCoefs += columns[i].second;
+            else nPos++;
+
+            minCoef = min(minCoef, columns[i].second);
+            maxCoef = max(maxCoef, columns[i].second);
+
+            /* inserting trivial conflicts: variable-complement */
+            if(ctype[cidx] != 1) //consider only binary variables
+                continue;
+            cvec.push_back( pair<int, int>(cidx, cidx + nCols) );
+        }
+
+        /* considering just constraints which have only binary variables */
+        if(nBools < nElements || (nPos == nElements && fabs(rhs[idxRow]) <= EPS))
+            continue;
+
+        /* special case: GUB constraints */
+        if ( DBL_EQUAL( minCoef, maxCoef ) &&  DBL_EQUAL( maxCoef, rhs[idxRow] * mult ) &&
+            DBL_EQUAL(minCoef, 1.0) && ((sense[idxRow]=='E') || (sense[idxRow]=='L'))
+            && (row.getNumElements() > 3) ) 
+        {
+            processClique( row.getNumElements(), (const int *)idx, cgraph, colLb, colUb );
+        }
+
+        else
+        {
+            sort(columns.begin(), columns.end(), sort_columns());
+            cliqueDetection(cgraph, columns, sumNegCoefs, rhs[idxRow] * mult);
+            cliqueComplementDetection(cgraph, columns, sumNegCoefs, rhs[idxRow] * mult);
+
+            /*equality constraints are converted into two inequality constraints (<=).
+            the first one is analyzed above and the second (multiplying the constraint by -1) is analyzed below.
+            Example: x + y + z = 2 ==>  (x + y + z <= 2) and (- x - y - z <= -2)*/
+            if(sense[idxRow] == 'E')
+            {
+                vector<pair<int, double> > newColumns(nElements);
+                sumNegCoefs = 0.0;
+                for(int i = 0; i < nElements; i++)
+                {
+                    newColumns[i].first = columns[nElements-i-1].first;
+                    newColumns[i].second = -1.0 * columns[nElements-i-1].second;
+                    if(newColumns[i].second <= -EPS)
+                        sumNegCoefs += newColumns[i].second;
+                }
+
+                cliqueDetection(cgraph, newColumns, sumNegCoefs, -1.0 * rhs[idxRow]);
+                cliqueComplementDetection(cgraph, newColumns, sumNegCoefs, -1.0 * rhs[idxRow]);
+            }
+        }
+    }
+
+    fetchConflicts(true, cgraph);
+    cgraph_update_min_max_degree( cgraph );
+
+    return cgraph;
+}
+
+void cliqueDetection(CGraph* cgraph, const vector<pair<int, double> >& columns, const double sumNegCoefs, const double rhs)
+{
+    int nElements = (int)columns.size(), cliqueStart = -1;
+    double maxLHS; //maxLHS = lower bound for LHS when the two variaveis with highest coefficients are activated.
+    int cliqueSize = 0;
+
+    maxLHS = sumNegCoefs - min(0.0, columns[nElements-2].second) - min(0.0, columns[nElements-1].second)
+          + columns[nElements-2].second + columns[nElements-1].second;
+
+    if(maxLHS <= rhs) return; //there is no clique involving activation of variables in this constraint.
+
+    for(int i = 0; i < nElements - 1; i++)
+    {
+        double D = sumNegCoefs - min(0.0, columns[i].second) - min(0.0, columns[i+1].second);
+        double LHS = D + columns[i].second + columns[i+1].second;
+
+        if(LHS > rhs + 0.001)
+        {
+            cliqueStart = i;
+            break;
+        }
+    }
+
+    assert(cliqueStart >= 0 && cliqueStart < nElements - 1);
+    int n = nElements - cliqueStart, idxs[n];
+    #define FIXED_IN_ZERO( idx ) ( (fabs(colLb[idx])<EPS) && (fabs(colUb[idx])<EPS) )
+    for(int i = cliqueStart, j = 0; i < nElements; i++)
+    {
+        if (FIXED_IN_ZERO(columns[i].first))
+            continue;
+        idxs[j++] = columns[i].first;
+        cliqueSize++;
+    }
+    //process the first clique found
+    processClique( cliqueSize, (const int *)idxs, cgraph, colLb, colUb );
+
+    //now we have to check the variables that are outside of the clique found.
+    for(int i = cliqueStart - 1; i >= 0; i--)
+    {
+    	int idx = columns[i].first;
+    	double coef = columns[i].second;
+    	int position = binary_search(columns, rhs, coef, sumNegCoefs, cliqueStart, nElements - 1);
+
+		if(position < nElements) //clique was found
+		{
+			int n = nElements - position + 1, idxs[n];
+			cliqueSize = 1;
+			idxs[0] = idx;
+		    for(int i = position, j = 1; i < nElements; i++)
+		    {
+		        if (FIXED_IN_ZERO(columns[i].first))
+		            continue;
+		        idxs[j++] = columns[i].first;
+		        cliqueSize++;
+		    }
+		    processClique( cliqueSize, (const int *)idxs, cgraph, colLb, colUb );								
+		}
+		else break;
+    }
+
+    #undef FIXED_IN_ZERO
+}
+
+// void cliqueComplementDetection(CGraph* cgraph, const vector<pair<int, double> >& columns, const double sumNegCoefs, const double rhs)
+// {
+//     int nElements = (int)columns.size(), cliqueCompStart = -1;
+//     double maxLHS; //minLHS = lower bound for LHS when the two variaveis with smallest coefficients are deactivated.
+//     int cliqueCompSize = 0;
+
+//     maxLHS = sumNegCoefs - min(0.0, columns[1].second) - min(0.0, columns[0].second);
+
+//     if(maxLHS <= rhs) return; //there is no clique involving the complement of variables in this constraint.
+
+//     for(int i = nElements - 1; i > 0; i--)
+//     {
+//         double D = sumNegCoefs - min(0.0, columns[i].second) - min(0.0, columns[i-1].second);
+
+//         if(D > rhs + 0.001)
+//         {
+//             cliqueCompStart = i;
+//             break;
+//         }
+//     }
+
+//     assert(cliqueCompStart > 0 && cliqueCompStart < nElements);
+//     int n = cliqueCompStart + 1, idxs[n];
+//     #define FIXED_IN_ZERO( idx ) ( (fabs(colLb[idx])<EPS) && (fabs(colUb[idx])<EPS) )
+//     for(int i = 0; i < n; i++)
+//     {
+//         if (FIXED_IN_ZERO(columns[i].first))
+//             continue;
+//         idxs[i] = columns[i].first + nCols; //binary complement
+//         cliqueCompSize++;
+//     }
+
+//     //process the first clique found
+//     processClique( cliqueCompSize, (const int *)idxs, cgraph, colLb, colUb );
+
+//     //now we have to check the variables that are outside of the clique found.
+//     for(int i = cliqueCompStart + 1; i < nElements; i++)
+//     {
+//     	printf("\n");
+//     	int idx = columns[i].first;
+//     	double coef = columns[i].second;
+//     	int position = binary_search_complement(columns, rhs, coef, sumNegCoefs, 0, cliqueCompStart);
+
+//     	printf("idx=%d coef=%.2lf position=%d\n", idx, coef, position);
+
+// 		if(position <= cliqueCompStart)//clique was found
+// 		{
+// 			int n = position + 2, idxs[n];
+// 			cliqueCompSize = 1;
+// 			idxs[0] = idx + nCols;
+// 		    for(int i = 0, j = 1; i <= position; i++)
+// 		    {
+// 		        if (FIXED_IN_ZERO(columns[i].first))
+// 		            continue;
+// 		        idxs[j++] = columns[i].first + nCols;
+// 		        cliqueCompSize++;
+// 		    }
+// 		    processClique( cliqueCompSize, (const int *)idxs, cgraph, colLb, colUb );
+// 		}
+// 		else break;
+//     }
+
+//     #undef FIXED_IN_ZERO
+// }
+
+void cliqueComplementDetection(CGraph* cgraph, const vector<pair<int, double> >& columns, const double sumNegCoefs, const double rhs)
+{
+    int nElements = (int)columns.size(), cliqueCompStart = -1;
+    double maxLHS; //minLHS = lower bound for LHS when the two variaveis with smallest coefficients are deactivated.
+    int cliqueCompSize = 0;
+    vector<pair<int, double> > columnsInv(nElements);
+    for(int i = 0; i < nElements; i++) columnsInv[i] = columns[nElements-i-1];
+
+    maxLHS = sumNegCoefs - min(0.0, columnsInv[nElements-2].second) - min(0.0, columnsInv[nElements-1].second);
+
+    if(maxLHS <= rhs) return; //there is no clique involving activation of variables in this constraint.
+
+    for(int i = 0; i < nElements - 1; i++)
+    {
+        double LHS = sumNegCoefs - min(0.0, columnsInv[i].second) - min(0.0, columnsInv[i+1].second);
+
+        if(LHS > rhs + 0.001)
+        {
+            cliqueCompStart = i;
+            break;
+        }
+    }
+
+    assert(cliqueCompStart >= 0 && cliqueCompStart < nElements - 1);
+    int n = nElements - cliqueCompStart, idxs[n];
+    #define FIXED_IN_ZERO( idx ) ( (fabs(colLb[idx])<EPS) && (fabs(colUb[idx])<EPS) )
+    for(int i = cliqueCompStart, j = 0; i < nElements; i++)
+    {
+        if (FIXED_IN_ZERO(columnsInv[i].first))
+            continue;
+        idxs[j++] = columnsInv[i].first+nCols;
+        cliqueCompSize++;
+    }
+    //process the first clique found
+    processClique( cliqueCompSize, (const int *)idxs, cgraph, colLb, colUb );
+
+    //now we have to check the variables that are outside of the clique found.
+    for(int i = cliqueCompStart - 1; i >= 0; i--)
+    {
+    	int idx = columnsInv[i].first;
+    	double coef = columnsInv[i].second;
+    	int position = binary_search_complement(columnsInv, rhs, coef, sumNegCoefs, cliqueCompStart, nElements - 1);
+
+		if(position < nElements) //clique was found
+		{
+			int n = nElements - position + 1, idxs[n];
+			cliqueCompSize = 1;
+			idxs[0] = idx+nCols;
+		    for(int i = position, j = 1; i < nElements; i++)
+		    {
+		        if (FIXED_IN_ZERO(columnsInv[i].first))
+		            continue;
+		        idxs[j++] = columnsInv[i].first+nCols;
+		        cliqueCompSize++;
+		    }
+		    processClique( cliqueCompSize, (const int *)idxs, cgraph, colLb, colUb );								
+		}
+		else break;
+    }
+
+    #undef FIXED_IN_ZERO
 }

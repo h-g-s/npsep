@@ -43,7 +43,7 @@ int main( int argc, char **argv )
     getFileName( problemName, argv[1] );
 
     start = clock();
-    CGraph *cgraphClique = osi_build_cgraph( solver, false );
+    CGraph *cgraphClique = osi_build_cgraph( solver );
     cliqueAnalysis = ((double(clock() - start))/((double)CLOCKS_PER_SEC));
     if ( cgraph_size( cgraphClique ) == 0 )
     {
@@ -54,6 +54,11 @@ int main( int argc, char **argv )
     for(int i = 0; i < cgraph_size( cgraphClique ); i++)
         conflictsClique += cgraph_degree(cgraphClique, i);
     conflictsClique /= 2;
+    /*for(int i = 0; i < cgraph_size( cgraphClique ); i++)
+        for(int j = i+1; j < cgraph_size( cgraphClique ); j++)
+            if(cgraph_conflicting_nodes(cgraphClique, i, j))
+                printf("%s %s\n", i < solver->getNumCols() ? solver->getColName(i).c_str() : ("¬" + solver->getColName(i - solver->getNumCols())).c_str(),
+                                  j < solver->getNumCols() ? solver->getColName(j).c_str() : ("¬" + solver->getColName(j - solver->getNumCols())).c_str() );*/
     cgraph_free( &cgraphClique );
 
     start = clock();
@@ -68,6 +73,12 @@ int main( int argc, char **argv )
     for(int i = 0; i < cgraph_size( cgraphPairwise ); i++)
         conflictsPairwise += cgraph_degree(cgraphPairwise, i);
     conflictsPairwise /= 2;
+    /*printf("\n");
+    for(int i = 0; i < cgraph_size( cgraphPairwise ); i++)
+        for(int j = i+1; j < cgraph_size( cgraphPairwise ); j++)
+            if(cgraph_conflicting_nodes(cgraphPairwise, i, j))
+                printf("%s %s\n", i < solver->getNumCols() ? solver->getColName(i).c_str() : ("¬" + solver->getColName(i - solver->getNumCols())).c_str(),
+                                  j < solver->getNumCols() ? solver->getColName(j).c_str() : ("¬" + solver->getColName(j - solver->getNumCols())).c_str() );*/
     cgraph_free( &cgraphPairwise );
 
     printf("%s %.1lu %.3lf %.1lu %.3lf\n", problemName, conflictsPairwise, pairwiseAnalysis, conflictsClique, cliqueAnalysis);

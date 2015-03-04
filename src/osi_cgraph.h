@@ -13,7 +13,8 @@ extern int maxRowTimeIdx;
 extern int success;
 
 /* lp should be a pointer to a OsiSolverInterface object */
-CGraph *osi_build_cgraph( void *_lp, bool greedyClqExt = true );
+//CGraph *osi_build_cgraph( void *_lp, bool greedyClqExt = true );
+CGraph *osi_build_cgraph( void *_lp );
 CGraph *osi_build_cgraph_pairwise( void *_lp );
 
 #endif
