@@ -255,20 +255,7 @@ CGraph *osi_build_cgraph_pairwise( void *_lp )
 	            pairwiseAnalysis(cgraph, newColumns, sumNegCoefs, -1.0 * rhs[idxRow]);            
 	        }
 	    }
-
-#ifdef DEBUG_CONF
-        if (newConflicts)
-        {
-            printf("%s,%c,%g : ", lp->getRowName(idxRow).c_str(), sense[idxRow], rhs[idxRow]);
-            for ( int cc=0 ; (cc<confS.size()) ; ++cc )
-            {
-                const int var1 = confS[cc].first, var2 = confS[cc].second;
-                printf("(%s, %s) ", var1 < nCols ? lp->getColName(var1).c_str() : ("¬" + lp->getColName(var1 - nCols)).c_str(),
-                                    var2 < nCols ? lp->getColName(var2).c_str() : ("¬" + lp->getColName(var2 - nCols)).c_str() );
-            }
-            printf("\n");
-        }
-#endif
+	    
 #undef FIXED_IN_ZERO
     }
 
@@ -1112,14 +1099,14 @@ void cliqueDetection(CGraph* cgraph, const vector<pair<int, double> >& columns, 
     maxLHS = sumNegCoefs - min(0.0, columns[nElements-2].second) - min(0.0, columns[nElements-1].second)
           + columns[nElements-2].second + columns[nElements-1].second;
 
-    if(maxLHS <= rhs) return; //there is no clique involving activation of variables in this constraint.
+    if(maxLHS <= rhs + EPS) return; //there is no clique involving activation of variables in this constraint.
 
     for(int i = 0; i < nElements - 1; i++)
     {
         double D = sumNegCoefs - min(0.0, columns[i].second) - min(0.0, columns[i+1].second);
         double LHS = D + columns[i].second + columns[i+1].second;
 
-        if(LHS > rhs + 0.001)
+        if(LHS > rhs + EPS)
         {
             cliqueStart = i;
             break;
@@ -1241,13 +1228,13 @@ void cliqueComplementDetection(CGraph* cgraph, const vector<pair<int, double> >&
 
     maxLHS = sumNegCoefs - min(0.0, columnsInv[nElements-2].second) - min(0.0, columnsInv[nElements-1].second);
 
-    if(maxLHS <= rhs) return; //there is no clique involving activation of variables in this constraint.
+    if(maxLHS <= rhs + EPS) return; //there is no clique involving activation of variables in this constraint.
 
     for(int i = 0; i < nElements - 1; i++)
     {
         double LHS = sumNegCoefs - min(0.0, columnsInv[i].second) - min(0.0, columnsInv[i+1].second);
 
-        if(LHS > rhs + 0.001)
+        if(LHS > rhs + EPS)
         {
             cliqueCompStart = i;
             break;
