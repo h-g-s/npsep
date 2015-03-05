@@ -19,12 +19,12 @@
 
 /* default values */
 #define CLQ_SEP_DEF_MAX_DEPTH      3
-#define CLQ_SEP_DEF_MAX_PASSES     3
+#define CLQ_SEP_DEF_MAX_PASSES     999
 #define CLQ_SEP_DEF_MIN_VIOL    0.02
 #define CLQ_SEP_DEF_MIN_FRAC   0.001
 #define CLQ_SEP_DEF_EXTEND         2
 #define CLQ_SEP_DEF_ENUM          10
-#define CLQ_SEP_DEF_VERBOSE        1
+#define CLQ_SEP_DEF_VERBOSE        0
 #define CLQ_SEP_DEF_TLBK          20   /* time limit bron-kerbosch */
 
 /* command line param names */
@@ -160,7 +160,7 @@ void clq_sep_update_ppgraph_weights( CGraph *ppcg, const int cols, const double 
 
 void clq_sep_separate( CliqueSeparation *sep, const double x[] )
 {
-   printf("verbose mode now %d.\n", ((int)sep->verbose) );
+   //printf("verbose mode now %d.\n", ((int)sep->verbose) );
    const CGraph *cgraph = sep->cgraph;
 
    clq_set_clear( sep->clqSet );

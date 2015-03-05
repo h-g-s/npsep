@@ -26,7 +26,8 @@ extern "C"
 using namespace std;
 
 #define MIN_VIOLATION 0.02
-#define MAX_TIME 500
+#define MAX_TIME 300
+#define EPS 1e-6
 
 /* minimum fractional part to a variable to be considered fractional */
 #define MIN_FRAC      0.001
@@ -51,6 +52,7 @@ SeparationMethod sepMethod = Default;
 char methodName[256];
 int maxTwoMir = 0;
 int maxGomory = 0;
+string optFile;
 
 void help()
 {
@@ -78,6 +80,90 @@ vector<string> getVarNames(const vector<string> &colNames, int numCols);
 
 void decideLpMethod();
 
+bool differentSense( const double v1, const double v2 )
+{
+	if ( (v1>1e-5) && (v2<-1e-5) )
+	return true;
+
+	if ( (v1<-1e-5) && (v2>1e-5) )
+	return true;
+
+	return false;
+
+}
+
+const double abs_mip_gap( const double v1, const double v2 )
+{
+    /* are equal */
+    if ( fabs(v1-v2) <= EPS )
+        return 0.0;
+
+    /* have different sense */
+    if (differentSense( v1, v2 ))
+        return 1.0;
+
+    /* one of them equals zero */
+    if ( (fabs(v1)<=EPS) || (fabs(v2)<=EPS) )
+        return 1.0;
+
+    double minV, maxV;
+    if (v1<v2)
+    {
+        minV = v1;
+        maxV = v2;
+    }
+    else
+    {
+        minV = v2;
+        maxV = v1;
+    }
+
+    if ( minV <= -0.0001 )
+    {
+        minV *= -1.0;
+        maxV *= -1.0;
+
+        std::swap( minV, maxV );
+    }
+
+
+    double result = 1.0-(minV/maxV);
+
+    assert( result >= -0.0001 );
+    assert( result <=  1.0001 );
+
+    result = min( 1.0, result );
+    result = max( 0.0, result );
+
+    return result;
+}
+
+map<string, double> getOptimals()
+{
+	map<string, double> optimals;
+	FILE *file = fopen(optFile.c_str(), "r");
+    if(!file)
+    {
+        perror("Cant open this file!\n");
+        exit(EXIT_FAILURE);
+    }
+
+    char line[128];
+    if(fgets(line, 128, file))
+    {
+    	while(fgets(line, 128, file) != NULL)
+    	{
+    		char *instance, *cOpt;
+    		instance = strtok(line, ",;\n");
+    		cOpt = strtok(NULL, ",;\n");
+    		optimals.insert(pair<string, double>(instance, atof(cOpt)));
+    	}
+    }
+
+    fclose(file);
+    return optimals;
+}
+
 int main( int argc, char **argv )
 {
    if ( argc < 2 )
@@ -104,15 +190,18 @@ int main( int argc, char **argv )
  
    const int numCols = solver->getNumCols(), numRows = solver->getNumRows();
 
-
-
    //decideLpMethod();
 
-   printf("cbcroot: root node relaxation and clique cuts\n\n");
+   //printf("cbcroot: root node relaxation and clique cuts\n\n");
    char problemName[ 256 ];
    getFileName( problemName, argv[1] );
-   printf("loaded %s \n", problemName );
-   printf("\t%d variables (%d integer) %d rows\n\n", numCols, solver->getNumIntegers(), numRows );
+   //printf("loaded %s \n", problemName );
+   //printf("\t%d variables (%d integer) %d rows\n\n", numCols, solver->getNumIntegers(), numRows );
+
+
+   map<string, double> optimals = getOptimals();
+   assert(optimals.find(problemName) != optimals.end());
+   double instOpt = optimals[problemName];
 
    CGraph *cgraph = osi_build_cgraph( solver );
 
@@ -120,18 +209,17 @@ int main( int argc, char **argv )
       CliqueSeparation *clqSep = clq_sep_create( cgraph );
       //clq_sep_set_verbose( clqSep, 1 );
       clq_sep_set_params_parse_cmd_line( clqSep, argc, (const char**)argv );
-      clq_sep_params_print( clqSep );
+      //clq_sep_params_print( clqSep );
       clq_sep_free( &clqSep );
    }
    CliqueSeparation *clqSep = NULL;
-
 
    int pass = 0;
    int newCuts = 0, totalCuts = 0;
    vector<double> ones( numCols, 1.0 );
    const CliqueSet *clqSet = NULL;
 
-   printf(">>> solving relaxation ... ");
+   //printf(">>> solving relaxation ... ");
    clock_t start = clock();
    //solver->setHintParam( OsiDoDualInInitial, true, OsiHintDo );
    solver->initialSolve();
@@ -175,9 +263,11 @@ int main( int argc, char **argv )
 
    double initialBound = solver->getObjValue();
 
-   printf("Initial dual bound %g\n", solver->getObjValue() );
+   //printf("Initial dual bound %g\n", solver->getObjValue() );
    clock_t end = clock();
-   printf("solved in %.3f\n", ((double)(end-start)) / ((double)CLOCKS_PER_SEC) );
+   //printf("solved in %.3f\n", ((double)(end-start)) / ((double)CLOCKS_PER_SEC) );
+   printf("%.2lf %d %d %.7lf %.7lf %.7lf\n", ((double)(end-start)) / ((double)CLOCKS_PER_SEC), pass, 0, solver->getObjValue(),
+   												instOpt, abs_mip_gap(solver->getObjValue(), instOpt));
    //clock_t startSep = 0, endSep;
    double timeSep;
 
@@ -229,7 +319,7 @@ int main( int argc, char **argv )
                         const OsiRowCut &orc = allCuts.rowCut(j);
                         if(newOrc == orc)
                         {
-                            printf("A duplicate cut has been detected!\n");
+                            //printf("A duplicate cut has been detected!\n");
                             cutsToRemove[i] = true;
                             break;
                         }
@@ -276,10 +366,10 @@ int main( int argc, char **argv )
 
       if ( pTime > MAX_TIME )
       {
-         printf("time limit reached. discarding cuts.\n");
+         //printf("time limit reached. discarding cuts.\n");
          newCuts = 0;
       }
-      printf( "round %d : %s separated %d cuts in %.4f seconds. dual limit now: %g time: %.3f\n", pass+1, methodName, newCuts, sepTime, solver->getObjValue(), pTime );
+      //printf( "round %d : %s separated %d cuts in %.4f seconds. dual limit now: %g time: %.3f\n", pass+1, methodName, newCuts, sepTime, solver->getObjValue(), pTime );
 
       if (newCuts<60)
       {
@@ -325,7 +415,7 @@ int main( int argc, char **argv )
 
       if (newCuts)
       {
-         printf("resolving relaxation ... ");
+         //printf("resolving relaxation ... ");
          fflush( stdout );
          clock_t start = clock();
          solver->resolve();
@@ -362,14 +452,15 @@ int main( int argc, char **argv )
                exit( EXIT_FAILURE );
             }
 
-
             fprintf( stderr, "ERROR: Could not solve LP relaxation. Exiting.\n" );
             exit( EXIT_FAILURE );
          }
          clock_t end = clock();
-         printf("solved in %.3f after adding cuts of pass %d. dual limit now %g\n", ((double)(end-start)) / ((double)CLOCKS_PER_SEC), pass, solver->getObjValue() );
-         printf("\n");
+         //printf("solved in %.3f after adding cuts of pass %d. dual limit now %g\n", ((double)(end-start)) / ((double)CLOCKS_PER_SEC), pass, solver->getObjValue() );
+         //printf("\n");
          fflush( stdout );
+         printf("%.2lf %d %d %.7lf %.7lf %.7lf\n", sepTime, pass, newCuts, solver->getObjValue(),
+         								instOpt, abs_mip_gap(solver->getObjValue(), instOpt));
       }
 
       fflush( stdout );
@@ -379,15 +470,15 @@ int main( int argc, char **argv )
 
    clock_t tend = clock();
    double totalTime = ((double)(tend-start)) / ((double)CLOCKS_PER_SEC);
-   printf("\nend of root node relaxation. initial dual limit: %.7f final: %.7f time: %.3f total cuts: %d\n", initialBound, solver->getObjValue(), totalTime, totalCuts );
+   //printf("\nend of root node relaxation. initial dual limit: %.7f final: %.7f time: %.3f total cuts: %d\n", initialBound, solver->getObjValue(), totalTime, totalCuts );
 
    //printf("min violation: %g\n", cliqueGen.getMinViolation() );
 
    /*clq_sep_free( &clqSep );*/
    cgraph_free( &cgraph );
 
-   strcat(problemName, "CUT");
-   solver->writeMps(problemName);
+   //strcat(problemName, "CUT");
+   //solver->writeMps(problemName);
 
    delete realSolver;
 
@@ -397,15 +488,13 @@ int main( int argc, char **argv )
 void readLP( const char *fileName )
 {
    solver->setIntParam(OsiNameDiscipline, 2);
+   solver->messageHandler()->setLogLevel(1);
+   solver->setHintParam(OsiDoReducePrint,true,OsiHintTry);
 
    if ( strstr( fileName, ".lp" ) || strstr( fileName, ".LP" ) )
        solver->readLp( fileName );
     else
        solver->readMps( fileName );
-
-   solver->setIntParam(OsiNameDiscipline, 2);
-   solver->messageHandler()->setLogLevel(1);
-   solver->setHintParam(OsiDoReducePrint,true,OsiHintTry);
 }
 
 void printGraphSummary( CGraph *cgraph, const char *graphName )
@@ -503,6 +592,12 @@ void parseParameters( int argc, char **argv )
       {
          maxGomory = atoi( pValue );
          printf("using at max %d gomory passes.\n", maxGomory );
+         continue;
+      }
+
+      if (strcmp( pName, "optFile" )==0)
+      {
+         optFile = pValue;
          continue;
       }
 

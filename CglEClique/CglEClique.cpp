@@ -96,7 +96,7 @@ void CglEClique::generateCuts( const OsiSolverInterface &si, OsiCuts &cs, const 
    /* adding cuts */
    int i;
 
-   printf("inserting %d cliques.\n", clq_set_number_of_cliques(clqSet) );
+   //printf("inserting %d cliques.\n", clq_set_number_of_cliques(clqSet) );
    for ( i=0 ; (i<clq_set_number_of_cliques(clqSet)) ; ++i )
    {
       const int size = clq_set_clique_size( clqSet, i );
