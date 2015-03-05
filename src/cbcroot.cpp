@@ -156,7 +156,10 @@ map<string, double> getOptimals()
     		char *instance, *cOpt;
     		instance = strtok(line, ",;\n");
     		cOpt = strtok(NULL, ",;\n");
-    		optimals.insert(pair<string, double>(instance, atof(cOpt)));
+        double opt;
+        if(strcmp(cOpt, "Infeasible")==0) opt = DBL_MAX;
+        else opt = atof(cOpt);
+    		optimals.insert(pair<string, double>(instance, opt));
     	}
     }
 
@@ -202,6 +205,12 @@ int main( int argc, char **argv )
    map<string, double> optimals = getOptimals();
    assert(optimals.find(problemName) != optimals.end());
    double instOpt = optimals[problemName];
+
+   if(instOpt == DBL_MAX)
+   {
+      fprintf( stderr, "This instance do not have a feasible solution!\n" );
+      return 0;
+   }
 
    CGraph *cgraph = osi_build_cgraph( solver );
 
@@ -346,7 +355,8 @@ int main( int argc, char **argv )
                info.level = 0;
                info.pass = 1;
                cliqueGen.setMinViolation( MIN_VIOLATION );
-
+               cliqueGen.setStarCliqueReport(false);
+               cliqueGen.setRowCliqueReport(false);
                cliqueGen.generateCuts( *solver, cuts, info );
                newCuts = cuts.sizeCuts();
 
@@ -375,7 +385,7 @@ int main( int argc, char **argv )
       {
          if (passesGomory<maxGomory)
          {
-            printf("\n- generating gomory cuts.\n");
+            //printf("\n- generating gomory cuts.\n");
             CglGomory cglGomory;
             OsiCuts cuts;
             CglTreeInfo info;
@@ -393,7 +403,7 @@ int main( int argc, char **argv )
          }
          if (passesTwoMir<maxTwoMir)
          {
-            printf("\n- generating two mir cuts.\n");
+            //printf("\n- generating two mir cuts.\n");
             CglTwomir cglTwoMir;
             OsiCuts cuts;
             CglTreeInfo info;
@@ -566,7 +576,7 @@ void parseParameters( int argc, char **argv )
    {
       if (strstr( argv[i], "-cgl"))
       {
-         printf("Using COIN CGL separation.\n");
+         //printf("Using COIN CGL separation.\n");
          sprintf( methodName, "cgl" );
          sepMethod = CglSepM;
          continue;
@@ -624,7 +634,7 @@ int addOddHoles( OsiSolverInterface *solver, OddHoleSep *oddhs )
       if (viol < 1e-5)
          continue;
 
-      printf("lhs %g viol %g rhs %g\n", lhs, viol, (double)(size/2) );
+      //printf("lhs %g viol %g rhs %g\n", lhs, viol, (double)(size/2) );
 
       OsiRowCut orc;
       orc.setRow( size, s, &row[0] );
