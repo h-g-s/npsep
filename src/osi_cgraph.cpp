@@ -48,11 +48,6 @@ double *colUb;
 int nCols;
 int nRows;
 
-#ifdef DEBUG_CONF
-    int newConflicts;
-    vector< pair<int,int> > confS;
-#endif /* DEBUG_CONF */
-
 struct sort_sec_pair
 {
     bool operator()(const std::pair<int,int> &left, const std::pair<int,int> &right)
@@ -186,11 +181,6 @@ CGraph *osi_build_cgraph_pairwise( void *_lp )
             continue;
         }
 
-#ifdef DEBUG_CONF
-        newConflicts = 0;
-        confS.clear();
-#endif /* DEBUG_CONF */
-
         double mult = (sense[idxRow] == 'G') ? mult = -1.0 : mult = 1.0;
         for(int i = 0; i < nElements; i++)
         {
@@ -216,10 +206,6 @@ CGraph *osi_build_cgraph_pairwise( void *_lp )
             if(ctype[cidx] != 1) //consider only binary variables
                 continue;
             cvec.push_back( pair<int, int>(cidx, cidx + nCols) );
-#ifdef DEBUG_CONF
-            newConflicts++;
-            confS.push_back( pair<int,int>(cidx, cidx + nCols) );
-#endif /* DEBUG_CONF */
         }
 
         /* considering just constraints which have only binary variables */
@@ -406,40 +392,16 @@ void pairwiseAnalysis(CGraph* cgraph, const vector<pair<int, double> >& columns,
             const double negDiscount = sumNegCoefs - min(0.0, coef1) - min(0.0, coef2);
 
             if(coef1 + coef2 + negDiscount > rhs + 0.001)
-            {
                 cvec.push_back( pair<int,int>(cidx1, cidx2) );
-#ifdef DEBUG_CONF
-                newConflicts++;
-                confS.push_back( pair<int,int>(cidx1, cidx2) );
-#endif
-            }
 
-//             if(coef1 + negDiscount > rhs + 0.001) /* cidx1 = 1 and cidx2 = 0 */
-//             {
-//                 cvec.push_back( pair<int,int>(cidx1, cidx2+nCols) );
-// #ifdef DEBUG_CONF
-//                 newConflicts++;
-//                 confS.push_back( pair<int,int>(cidx1, cidx2+nCols) );
-// #endif
-//             }
+            if(coef1 + negDiscount > rhs + 0.001) /* cidx1 = 1 and cidx2 = 0 */
+                cvec.push_back( pair<int,int>(cidx1, cidx2+nCols) );
 
-//             if(coef2 + negDiscount > rhs + 0.001) /* cidx1 = 0 and cidx2 = 1 */
-//             {
-//                 cvec.push_back( pair<int,int>(cidx1+nCols, cidx2) );
-// #ifdef DEBUG_CONF
-//                 newConflicts++;
-//                 confS.push_back( pair<int,int>(cidx1+nCols, cidx2) );
-// #endif
-//             }
+            if(coef2 + negDiscount > rhs + 0.001) /* cidx1 = 0 and cidx2 = 1 */
+                cvec.push_back( pair<int,int>(cidx1+nCols, cidx2) );
 
             if(negDiscount > rhs + 0.001) /* cidx1 = 0 and cidx2 = 0 */
-            {
                 cvec.push_back( pair<int,int>(cidx1+nCols, cidx2+nCols) );
-#ifdef DEBUG_CONF
-                newConflicts++;
-                confS.push_back( pair<int,int>(cidx1+nCols, cidx2+nCols) );
-#endif
-            }
         }
         fetchConflicts( false, cgraph );
     }
@@ -485,10 +447,6 @@ bool pairwiseAnalysisByGrouping(CGraph* cgraph, const vector<pair<int, double> >
                     if (FIXED_IN_ZERO(coefsGroup[i][l]))
                         continue;
                     cvec.push_back(pair<int,int>(coefsGroup[i][k], coefsGroup[i][l]));
-#ifdef DEBUG_CONF
-                    newConflicts++;
-                    confS.push_back(pair<int,int>(coefsGroup[i][k], coefsGroup[i][l]));
-#endif
                 }
             }   
         }
@@ -505,11 +463,6 @@ bool pairwiseAnalysisByGrouping(CGraph* cgraph, const vector<pair<int, double> >
                         continue;
                     cvec.push_back( pair<int,int>(coefsGroup[i][k], coefsGroup[i][l]+nCols));
                     cvec.push_back( pair<int,int>(coefsGroup[i][k]+nCols, coefsGroup[i][l]));
-#ifdef DEBUG_CONF
-                    newConflicts+=2;
-                    confS.push_back( pair<int,int>(coefsGroup[i][k], coefsGroup[i][l]+nCols) );
-                    confS.push_back( pair<int,int>(coefsGroup[i][k]+nCols, coefsGroup[i][l]) );
-#endif
                 }
             }
         }
@@ -525,10 +478,6 @@ bool pairwiseAnalysisByGrouping(CGraph* cgraph, const vector<pair<int, double> >
                     if (FIXED_IN_ZERO(coefsGroup[i][l]))
                         continue;
                     cvec.push_back( pair<int,int>(coefsGroup[i][k]+nCols,coefsGroup[i][l]+nCols));
-#ifdef DEBUG_CONF
-                    newConflicts++;
-                    confS.push_back( pair<int,int>(coefsGroup[i][k]+nCols,coefsGroup[i][l]+nCols) );
-#endif
                 }
             }
         }
@@ -549,10 +498,6 @@ bool pairwiseAnalysisByGrouping(CGraph* cgraph, const vector<pair<int, double> >
                         if (FIXED_IN_ZERO(coefsGroup[j][l]))
                             continue;
                         cvec.push_back( pair<int,int>(coefsGroup[i][k], coefsGroup[j][l]));
-#ifdef DEBUG_CONF
-                        newConflicts++;
-                        confS.push_back( pair<int,int>(coefsGroup[i][k], coefsGroup[j][l]) );
-#endif
                     }
                 }
             }
@@ -567,10 +512,6 @@ bool pairwiseAnalysisByGrouping(CGraph* cgraph, const vector<pair<int, double> >
                         if (FIXED_IN_ZERO(coefsGroup[j][l]))
                             continue;
                         cvec.push_back( pair<int,int>(coefsGroup[i][k], coefsGroup[j][l]+nCols) );
-#ifdef DEBUG_CONF
-                        newConflicts++;
-                        confS.push_back( pair<int,int>(coefsGroup[i][k], coefsGroup[j][l]+nCols) );
-#endif
                     }
                 }
             }
@@ -585,10 +526,6 @@ bool pairwiseAnalysisByGrouping(CGraph* cgraph, const vector<pair<int, double> >
                         if (FIXED_IN_ZERO(coefsGroup[j][l]))
                             continue;
                         cvec.push_back( pair<int,int>(coefsGroup[i][k]+nCols, coefsGroup[j][l]) );
-#ifdef DEBUG_CONF
-                        newConflicts++;
-                        confS.push_back( pair<int,int>(coefsGroup[i][k]+nCols, coefsGroup[j][l]) );
-#endif
                     }
                 }
             }
@@ -603,10 +540,6 @@ bool pairwiseAnalysisByGrouping(CGraph* cgraph, const vector<pair<int, double> >
                         if (FIXED_IN_ZERO(coefsGroup[j][l]))
                             continue;
                         cvec.push_back( pair<int,int>(coefsGroup[i][k]+nCols,coefsGroup[j][l]+nCols) );
-#ifdef DEBUG_CONF
-                        newConflicts++;
-                        confS.push_back( pair<int,int>(coefsGroup[i][k]+nCols,coefsGroup[j][l]+nCols) );
-#endif
                     }
                 }
             }
@@ -876,52 +809,28 @@ void extendConflictGraphByRow(CGraph *cgraph, const int nElements, const int *id
             {
                 double Lr = getLr(cgraph, partitions, rowCoefs, whichPartition, sumPosCoefs, cidx1, cidx2);
                 if(Lr > rhs + 0.001)
-                {
                     cvec.push_back( pair<int,int>(cidx1, cidx2) );
-#ifdef DEBUG_CONF
-                    newConflicts++;
-                    confS.push_back( pair<int,int>(cidx1, cidx2) );
-#endif
-                }
             }
 
             if(!cgraph_conflicting_nodes(cgraph, cidx1+numCols, cidx2))
             {
                 double Lr = getLr(cgraph, partitions, rowCoefs, whichPartition, sumPosCoefs, cidx1+numCols, cidx2);
                 if(Lr > rhs + 0.001)
-                {
                     cvec.push_back( pair<int,int>(cidx1+numCols, cidx2) );
-#ifdef DEBUG_CONF
-                    newConflicts++;
-                    confS.push_back( pair<int,int>(cidx1+numCols, cidx2) );
-#endif
-                }
             }
 
             if(!cgraph_conflicting_nodes(cgraph, cidx1, cidx2+numCols))
             {
                 double Lr = getLr(cgraph, partitions, rowCoefs, whichPartition, sumPosCoefs, cidx1, cidx2+numCols);
                 if(Lr > rhs + 0.001)
-                {
                     cvec.push_back( pair<int,int>(cidx1, cidx2+numCols) );
-#ifdef DEBUG_CONF
-                    newConflicts++;
-                    confS.push_back( pair<int,int>(cidx1, cidx2+numCols) );
-#endif
-                }
             }
 
             if(!cgraph_conflicting_nodes(cgraph, cidx1+numCols, cidx2+numCols))
             {
                 double Lr = getLr(cgraph, partitions, rowCoefs, whichPartition, sumPosCoefs, cidx1+numCols, cidx2+numCols);
                 if(Lr > rhs + 0.001)
-                {
                     cvec.push_back( pair<int,int>(cidx1+numCols, cidx2+numCols) );
-#ifdef DEBUG_CONF
-                    newConflicts++;
-                    confS.push_back( pair<int,int>(cidx1+numCols, cidx2+numCols) );
-#endif
-                }
             }
         }
     }
