@@ -87,7 +87,7 @@ The developed approach can detect all conflicts involving original variables and
 
 \section{Cutting Planes}\label{cut}
 
-Linear programming relaxations can be significantly strengthened by the inclusion of inequalities derived from the Set Packing Polytope~\cite{Padberg1973,Rebennack2009}. A clique inequality for a set $C$ of conflicting variables has the form $ \sum_{j\in C}x_{j} \leq 1$ and an odd-hole inequality with conflicting variables $C$ can be defined as $ \sum_{j\in C}x_{j} \leq \frac{|C|-1}{2}$.
+Linear programming relaxations can be significantly strengthened by the inclusion of inequalities derived from the Set Packing Polytope~\cite{Rebennack2009}. A clique inequality for a set $C$ of conflicting variables has the form $\displaystyle \sum_{j\in C}x_{j} \leq 1$ and an odd-hole inequality with conflicting variables $C$ can be defined as $\displaystyle \sum_{j\in C}x_{j} \leq \frac{|C|-1}{2}$.
 
 Our proposed clique separation routine has two main components. The first of them is a module to separate \emph{all} violated cliques in the conflict subgraph induced by variables with fractional values at linear relaxation of root node. This module uses an improved version of the (exact) Bron-Kerbosch algorithm~\cite{Bron1973} that implements an optimized pivoting rule~\cite{Brito2011} to speed up the discovery of maximal cliques with large weight. The second component is a (heuristic) lifting module that considers the original conflict graph and iteratively tries to insert inactive variables, which are previously sorted in non-decreasing order of reduced cost. 
 
