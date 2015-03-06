@@ -3,7 +3,7 @@ set key inside bottom vertical Right
 set xlabel 'time (sec)'
 set ylabel 'average gap closed (%)'
 set xrange [0:150]
-set yrange [30:85]
+set yrange [45:85]
 set term postscript eps enhanced "Arial" 24
 set output 'nurse.eps'
 plot 'nurseSEPEXT.txt' title 'LNPSEP' with linespoints ls 4, \

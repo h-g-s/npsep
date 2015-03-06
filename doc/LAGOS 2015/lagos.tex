@@ -79,15 +79,15 @@ At first, consider that at a given position $k$ the summation of negative coeffi
 
 Since this lower bound is monotonically non-decreasing as $k$ increases, if $\displaystyle LHS_{i}\lbrack y_{ik} = 1, y_{ik+1} = 1 \rbrack > b_{i}$, then there is a clique involving the activation of all variables from position $k$ until position $n_i$. Moreover, we can discard the existence of such cliques by checking if $\displaystyle LHS_{i}\lbrack y_{in_i-1} = 1, y_{in_i} = 1 \rbrack \leq b_i$.
 
-Analogously, cliques involving complements of variables from positions $n_i$ until $k$ (i.e. traversing constraint $i$ in reverse order) can be obtained or discarded by calculating the limit incurred from positions $k$ and $k-1$: $\displaystyle LHS_{i}\lbrack y_{ik} = 0, y_{ik-1} = 0 \rbrack = D_{i}^{y_{ik}, y_{ik-1}} $.
+Analogously, cliques involving complements of variables from positions $n_i$ until $k$ (i.e. traversing constraint $i$ in non-increasing order) can be obtained or discarded by calculating the limit incurred from positions $k$ and $k-1$: $\displaystyle LHS_{i}\lbrack y_{ik} = 0, y_{ik-1} = 0 \rbrack = D_{i}\lbrack y_{ik}, y_{ik-1}\rbrack$.
 
-When the detected clique does not involve all variables of the analyzed constraint, a binary search is performed for each variable outside of the clique. Given a variable $y_{io}$ outside of the clique detected in $i$, binary search returns the first variable $y_{il}$ that has conflict with $y_{io}$. Thus, all variables from position $l$ to $n_i$ have conflict with $zy_{io}$, forming another clique.
+When the detected clique does not involve all variables of the analyzed constraint, a binary search is performed for each variable outside of the clique. Given a variable $y_{io}$ outside of the clique detected in $i$, binary search returns the first variable $y_{il}$ that has conflict with $y_{io}$. Thus, all variables from position $l$ to $n_i$ have conflict with $y_{io}$, forming another clique.
 
-The developed approach can detect all conflicts involving original variables and also all cliques involving complimentary variables. Conflicts involving both original and complimentary variables are not discovered.
+The developed approach can detect all conflicts involving original variables and also all cliques involving complements of variables. Conflicts involving both original and complements of variables are not discovered.
 
 \section{Cutting Planes}\label{cut}
 
-Linear programming relaxations can be significantly strengthened by the inclusion of inequalities derived from the Set Packing Polytope~\cite{Padberg1973,Rebennack2009}. A clique inequality for a set $C$ of conflicting variables has the form $ \sum_{j\in C}x_{j} \leq 1$ and an odd-hole inequality with conflicting variables $C$ can be defined as: $ \sum_{j\in C}x_{j} \leq \frac{|C|-1}{2}$.
+Linear programming relaxations can be significantly strengthened by the inclusion of inequalities derived from the Set Packing Polytope~\cite{Padberg1973,Rebennack2009}. A clique inequality for a set $C$ of conflicting variables has the form $ \sum_{j\in C}x_{j} \leq 1$ and an odd-hole inequality with conflicting variables $C$ can be defined as $ \sum_{j\in C}x_{j} \leq \frac{|C|-1}{2}$.
 
 Our proposed clique separation routine has two main components. The first of them is a module to separate \emph{all} violated cliques in the conflict subgraph induced by variables with fractional values at linear relaxation of root node. This module uses an improved version of the (exact) Bron-Kerbosch algorithm~\cite{Bron1973} that implements an optimized pivoting rule~\cite{Brito2011} to speed up the discovery of maximal cliques with large weight. The second component is a (heuristic) lifting module that considers the original conflict graph and iteratively tries to insert inactive variables, which are previously sorted in non-decreasing order of reduced cost. 
 
@@ -97,7 +97,7 @@ The developed odd-hole separation routine is the same used in~\cite{Rebennack200
 
 Our code was written using the open source COIN-OR \cite{LougeeHeimer2003} CLP libraries to solve linear programs and the CGL library was used to compare with our cut generation routines. All experiments ran on a computer with an Intel Core i7 3.6GHz processor and 32GB of RAM.
 
-The first set of instances is the benchmark set of from MIPLIB 2010~\cite{miplib}, containing 87 instances. The second set of instances (INRC) comes from an IP formulation  used to solve the Nurse Rostering Problem~\cite{Santos2014} of the International Nurse Rostering Competition, containing 60 instances. Finally, the Telebus set consists in set partitioning problems from~\cite{Borndorfer1998}, containing 28 instances. Characteristics of each problem set are presented in Table~\ref{tab:inst}: columns ($n$), rows ($m$), non-zeros ($nz$). The notation ($\underline{v}$,$\overline{v}$,$\tilde{v}$) indicates minimum, maximum and average values.
+The first set of instances is the benchmark set of from MIPLIB 2010~\cite{miplib}, containing 87 instances. The second set of instances (INRC) comes from an IP formulation  used to solve the Nurse Rostering Problem~\cite{Santos2014} of the International Nurse Rostering Competition, containing 60 instances. Characteristics of each problem set are presented in Table~\ref{tab:inst}: columns ($n$), rows ($m$), non-zeros ($nz$). The notation ($\underline{v}$,$\overline{v}$,$\tilde{v}$) indicates minimum, maximum and average values.
 
 The first experiment compares the construction of conflict graphs using pairwise detection ($PD$), which only detects cliques quickly in GUB constraints (conflicts in the remaining constraints are discovering by pairwise inspection), and our approach ($FCG$). Results are presented in Table~\ref{tab:graph}: number of edges ($|E|$) and total time in seconds spent in the construction of conflicts graphs for all instances of each set ($Time (sec)$). 
 
@@ -116,8 +116,6 @@ The first experiment compares the construction of conflict graphs using pairwise
 \hline 
 \texttt{INRC} & {9.8/63.6/29.7} & {3/29.2/11.7} & {201.1/1068.1/534.8}\tabularnewline
 \hline 
-\texttt{Telebus} & {1.1/146.7/33.7} & {0.3/1.8/1} & {1.4/545.3/135.6}\tabularnewline
-\hline 
 \end{tabular}
 \end{center}
 \label{tab:inst}
@@ -133,13 +131,12 @@ The first experiment compares the construction of conflict graphs using pairwise
 \multicolumn{ 1}{|c|}{} & \multicolumn{1}{c|}{\textbf{$|\underline{E}|$/$|\overline{E}|$/$|\tilde{E}|$ ($\times10^{3}$)}} & \multicolumn{1}{c|}{\textbf{Time (sec)}} & \multicolumn{1}{c|}{\textbf{$|\underline{E}|$/$|\overline{E}|$/$|\tilde{E}|$ ($\times10^{3}$)}} & \multicolumn{1}{c|}{\textbf{Time (sec)}} \\ \hline
 \texttt{MIPLIB} & 0/11396,11/480,82 & 173,37 & 0/11396,11/477,71 & 23,91 \\ \hline
 \texttt{INRC} & 2470,14/12807,28/6346,36 & 370,4 & 2469,70/12803,68/6344,88 & 369,99 \\ \hline
-\texttt{Telebus} & 13,81/1935532,75/129464,94 & 505,15 & 13,81/1935532,75/129464,94 & 501,77 \\ \hline
 \end{tabular}
 \end{center}
 \label{tab:graph}
 \end{table}
 
-The second experiment compares the cut generation routine of COIN-OR CGL (CGL) and our cut generation routines with (LNPSEP) and without lifting module (NPSEP). Figure~\ref{figExperiments} shows the average gap closed improvement for each instance set. After removing infeasible instances and instances where neither our code or CGL found any violated inequality, there were left 18 instances of MIPLIB, 60 of INRC and 28 of Telebus set. The time limit was fixed in 150 seconds. While remarkable improvements in terms of bounds were obtained in the INRC instances (from 76.56\% with CGL to 84.76\% with LNPSEP), which have a large number of dense set partitioning and packing constraints, a modest improvement occurred in MIPLIB instances. The average gap closed for these instances was improved from 67.32\%, obtained with CGL, to 68.83\%, obtained with LNPSEP within the time limit imposed. We did not included the Telebus results because all strategies obtained an average gap closed near to 92,40\%.
+The second experiment compares the cut generation routine of COIN-OR CGL (CGL) and our cut generation routines with (LNPSEP) and without lifting module (NPSEP). Figure~\ref{figExperiments} shows the average gap closed improvement for each instance set. After removing infeasible instances and instances where neither our code or CGL found any violated inequality, there were left 18 instances of MIPLIB and 60 of INRC set. The time limit was fixed in 150 seconds. While remarkable improvements in terms of bounds were obtained in the INRC instances (from 76.56\% with CGL to 84.76\% with LNPSEP), which have a large number of dense set partitioning and packing constraints, a modest improvement occurred in MIPLIB instances. The average gap closed for these instances was improved from 67.32\%, obtained with CGL, to 68.83\%, obtained with LNPSEP within the time limit imposed. 
 
 \begin{figure}	
 	\begin{minipage}[h]{.5\textwidth}
@@ -158,7 +155,7 @@ The second experiment compares the cut generation routine of COIN-OR CGL (CGL) a
 
 \section{Conclusions}\label{conclusions}
 
-We developed an approach for fast creation of densely CGs using the detection of cliques in less structured constraints. A speedup of up to 7 times was obtained in the overall time to create an initial conflict graph. We also proposed and implemented a cut separation procedure. Experiments show that our cut generator can produce significantly better dual bounds than COIN-OR CGL, specially in restricted execution times.
+We developed an approach for fast creation of densely CGs using the detection of cliques in less structured constraints. A speedup of up to 7 times was obtained in the overall time to create an initial conflict graph. We also proposed and implemented a cut separation procedure. Experiments show that our cut generator can produce significantly better dual bounds than COIN-OR CGL, specially in restricted execution times. The source code of this work and detailed results of all experiments can be found on the project web page: \url{https://github.com/hgs/npsep/wiki}.
 
 \bibliographystyle{endm}
 \bibliography{references}
