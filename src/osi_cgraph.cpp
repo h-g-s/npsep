@@ -16,6 +16,8 @@ extern "C"
 #define oo  (INT_MAX/2)
 #define WORST_PRIORITY_ROW 10000   // to be considered
 
+//#define FIXED_IN_ZERO( idx ) ( (fabs(colLb[idx])<EPS) && (fabs(colUb[idx])<EPS) )
+
 using namespace std;
 
 #define EPS 1e-6
@@ -115,11 +117,14 @@ int binary_search(const vector< pair<int, double> >& columns, double partialLHS,
 /* partialLHS = LHS calculated with only one variable */
 int binary_search_complement(const vector< pair<int, double> >& columns, double partialLHS, double rhs, int colStart, int colEnd);
 
-/* Searches for a clique in this constraint. */
+/* Searches for cliques involving the activation of variables in this constraint. */
 void cliqueDetection(CGraph* cgraph, const vector<pair<int, double> >& columns, const double sumNegCoefs, const double rhs);
 
-/* Searches for a clique involving the complement of variables in this constraint. */
+/* Searches for cliques involving the complement of variables in this constraint. */
 void cliqueComplementDetection(CGraph* cgraph, const vector<pair<int, double> >& columns, const double sumNegCoefs, const double rhs);
+
+/* Searches for cliques involving variables and complements of variables in this constraint. */
+void mixedCliqueDetection(CGraph* cgraph, const vector<pair<int, double> >& columns, const double sumNegCoefs, const double rhs);
 
 CGraph *osi_build_cgraph_pairwise( void *_lp )
 {
@@ -147,7 +152,6 @@ CGraph *osi_build_cgraph_pairwise( void *_lp )
     for(idxRow = 0; idxRow < nRows; idxRow++)
     {
         clock_t rowStart = clock();
-#define FIXED_IN_ZERO( idx ) ( (fabs(colLb[idx])<EPS) && (fabs(colUb[idx])<EPS) )
         const CoinShallowPackedVector &row = M->getVector(idxRow);
         const int nElements = row.getNumElements();
         const int *idx = row.getIndices();
@@ -177,9 +181,6 @@ CGraph *osi_build_cgraph_pairwise( void *_lp )
 
             if(ctype[cidx] == 1)
                 nBools++;
-
-            if (FIXED_IN_ZERO(cidx))
-                continue;
 
             if(columns[i].second <= -EPS)
                 sumNegCoefs += columns[i].second;
@@ -227,8 +228,6 @@ CGraph *osi_build_cgraph_pairwise( void *_lp )
 	            pairwiseAnalysis(cgraph, newColumns, sumNegCoefs, -1.0 * rhs[idxRow]);            
 	        }
 	    }
-	    
-#undef FIXED_IN_ZERO
     }
 
     fetchConflicts(true, cgraph);
@@ -245,36 +244,26 @@ void pairwiseAnalysis(CGraph* cgraph, const vector<pair<int, double> >& columns,
         const int cidx1 = columns[j1].first;
         const double coef1 = columns[j1].second;
 
-        #define FIXED_IN_ZERO( idx ) ( (fabs(colLb[idx])<EPS) && (fabs(colUb[idx])<EPS) )
-
-        if (FIXED_IN_ZERO(cidx1))
-            continue;
-
         for(int j2 = j1+1; j2 < nElements; j2++)
         {
             const int cidx2 = columns[j2].first;
             const double coef2 = columns[j2].second;
-
-            if(FIXED_IN_ZERO(cidx2))
-                continue;
-
             const double negDiscount = sumNegCoefs - min(0.0, coef1) - min(0.0, coef2);
 
-            if(coef1 + coef2 + negDiscount > rhs + 0.001)
+            if(coef1 + coef2 + negDiscount > rhs + EPS)
                 cvec.push_back( pair<int,int>(cidx1, cidx2) );
 
-            if(coef1 + negDiscount > rhs + 0.001) /* cidx1 = 1 and cidx2 = 0 */
-                cvec.push_back( pair<int,int>(cidx1, cidx2+nCols) );
+            // if(coef1 + negDiscount > rhs + EPS) /* cidx1 = 1 and cidx2 = 0 */
+            //     cvec.push_back( pair<int,int>(cidx1, cidx2+nCols) );
 
-            if(coef2 + negDiscount > rhs + 0.001) /* cidx1 = 0 and cidx2 = 1 */
-                cvec.push_back( pair<int,int>(cidx1+nCols, cidx2) );
+            // if(coef2 + negDiscount > rhs + EPS) /* cidx1 = 0 and cidx2 = 1 */
+            //     cvec.push_back( pair<int,int>(cidx1+nCols, cidx2) );
 
-            if(negDiscount > rhs + 0.001) /* cidx1 = 0 and cidx2 = 0 */
+            if(negDiscount > rhs + EPS) /* cidx1 = 0 and cidx2 = 0 */
                 cvec.push_back( pair<int,int>(cidx1+nCols, cidx2+nCols) );
         }
         fetchConflicts( false, cgraph );
     }
-    #undef FIXED_IN_ZERO
 }
 
 void processClique( const int n, const int *idx, CGraph *cgraph, const double *colLb, const double *colUb )
@@ -291,7 +280,6 @@ void processClique( const int n, const int *idx, CGraph *cgraph, const double *c
     else
     {
         int i1, i2, nm1 = n-1;
-        int nCols = cgraph_size(cgraph) / 2; //divide by 2 to eliminate the complement of the variables
 
         for ( i1=0 ; (i1<nm1) ; ++i1 )
         {
@@ -402,7 +390,7 @@ int binary_search(const vector< pair<int, double> >& columns, double partialLHS,
 		mid = (colStart + colEnd) / 2;
         double LHS = partialLHS - min(0.0, columns[mid].second) + columns[mid].second;
 
-	  	if(rhs >= LHS)
+	  	if(rhs + EPS >= LHS)
             colStart = mid + 1;
 	  	else
             colEnd = mid - 1;
@@ -418,7 +406,7 @@ int binary_search_complement(const vector< pair<int, double> >& columns, double 
     {
         mid = (colStart + colEnd) / 2;
         double LHS = partialLHS - min(0.0, columns[mid].second);
-        if(rhs <= LHS)
+        if(rhs + EPS <= LHS)
             colStart = mid + 1;
         else
             colEnd = mid - 1;
@@ -451,7 +439,6 @@ CGraph *osi_build_cgraph( void *_lp )
     for(idxRow = 0; idxRow < nRows; idxRow++)
     {
         clock_t rowStart = clock();
-#define FIXED_IN_ZERO( idx ) ( (fabs(colLb[idx])<EPS) && (fabs(colUb[idx])<EPS) )
         const CoinShallowPackedVector &row = M->getVector(idxRow);
         const int nElements = row.getNumElements();
         const int *idx = row.getIndices();
@@ -483,9 +470,6 @@ CGraph *osi_build_cgraph( void *_lp )
             if(ctype[cidx] == 1)
                 nBools++;
 
-            if (FIXED_IN_ZERO(cidx))
-                continue;
-
             if(columns[i].second <= -EPS)
                 sumNegCoefs += columns[i].second;
             else nPos++;
@@ -516,6 +500,7 @@ CGraph *osi_build_cgraph( void *_lp )
             sort(columns.begin(), columns.end(), sort_columns());
             cliqueDetection(cgraph, columns, sumNegCoefs, rhs[idxRow] * mult);
             cliqueComplementDetection(cgraph, columns, sumNegCoefs, rhs[idxRow] * mult);
+            //mixedCliqueDetection(cgraph, columns, sumNegCoefs, rhs[idxRow] * mult);
 
             /*equality constraints are converted into two inequality constraints (<=).
             the first one is analyzed above and the second (multiplying the constraint by -1) is analyzed below.
@@ -534,6 +519,7 @@ CGraph *osi_build_cgraph( void *_lp )
 
                 cliqueDetection(cgraph, newColumns, sumNegCoefs, -1.0 * rhs[idxRow]);
                 cliqueComplementDetection(cgraph, newColumns, sumNegCoefs, -1.0 * rhs[idxRow]);
+                //mixedCliqueDetection(cgraph, newColumns, sumNegCoefs, -1.0 * rhs[idxRow]);
             }
         }
     }
@@ -569,11 +555,8 @@ void cliqueDetection(CGraph* cgraph, const vector<pair<int, double> >& columns, 
 
     assert(cliqueStart >= 0 && cliqueStart < nElements - 1);
     int n = nElements - cliqueStart, idxs[n];
-    #define FIXED_IN_ZERO( idx ) ( (fabs(colLb[idx])<EPS) && (fabs(colUb[idx])<EPS) )
     for(int i = cliqueStart, j = 0; i < nElements; i++)
     {
-        if (FIXED_IN_ZERO(columns[i].first))
-            continue;
         idxs[j++] = columns[i].first;
         cliqueSize++;
     }
@@ -596,8 +579,6 @@ void cliqueDetection(CGraph* cgraph, const vector<pair<int, double> >& columns, 
 			idxs[0] = idx;
 		    for(int i = position, j = 1; i < nElements; i++)
 		    {
-		        if (FIXED_IN_ZERO(columns[i].first))
-		            continue;
 		        idxs[j++] = columns[i].first;
 		        cliqueSize++;
 		    }
@@ -605,19 +586,17 @@ void cliqueDetection(CGraph* cgraph, const vector<pair<int, double> >& columns, 
 		}
 		else break;
     }
-
-    #undef FIXED_IN_ZERO
 }
 
 void cliqueComplementDetection(CGraph* cgraph, const vector<pair<int, double> >& columns, const double sumNegCoefs, const double rhs)
 {
     int nElements = (int)columns.size(), cliqueCompStart = -1;
-    double maxLHS; //minLHS = lower bound for LHS when the two variaveis with smallest coefficients are deactivated.
+    double maxLHS; //maxLHS = lower bound for LHS when the two variaveis with smallest coefficients are deactivated.
     int cliqueCompSize = 0;
 
     maxLHS = sumNegCoefs - min(0.0, columns[1].second) - min(0.0, columns[0].second);
 
-    if(maxLHS <= rhs) return; //there is no clique involving the complement of variables in this constraint.
+    if(maxLHS <= rhs + EPS) return; //there is no clique involving the complement of variables in this constraint.
 
     for(int i = nElements - 1; i > 0; i--)
     {
@@ -632,11 +611,8 @@ void cliqueComplementDetection(CGraph* cgraph, const vector<pair<int, double> >&
 
     assert(cliqueCompStart > 0 && cliqueCompStart < nElements);
     int n = cliqueCompStart + 1, idxs[n];
-    #define FIXED_IN_ZERO( idx ) ( (fabs(colLb[idx])<EPS) && (fabs(colUb[idx])<EPS) )
     for(int i = 0; i < n; i++)
     {
-        if (FIXED_IN_ZERO(columns[i].first))
-            continue;
         idxs[i] = columns[i].first + nCols; //binary complement
         cliqueCompSize++;
     }
@@ -659,8 +635,6 @@ void cliqueComplementDetection(CGraph* cgraph, const vector<pair<int, double> >&
 			idxs[0] = idx + nCols;
 		    for(int i = 0, j = 1; i <= position; i++)
 		    {
-		        if (FIXED_IN_ZERO(columns[i].first))
-		            continue;
 		        idxs[j++] = columns[i].first + nCols;
 		        cliqueCompSize++;
 		    }
@@ -668,6 +642,35 @@ void cliqueComplementDetection(CGraph* cgraph, const vector<pair<int, double> >&
 		}
 		else break;
     }
+}
 
-    #undef FIXED_IN_ZERO
+void mixedCliqueDetection(CGraph* cgraph, const vector<pair<int, double> >& columns, const double sumNegCoefs, const double rhs)
+{
+	int nElements = (int)columns.size();
+	for(int i = nElements - 2; i >= 0; i--)
+	{
+		int idx = columns[i].first;
+    	double coef = columns[i].second;
+		double maxLHS = sumNegCoefs - min(0.0, columns[i].second) - min(0.0, columns[nElements-1].second)
+						+ columns[nElements-1].second;
+
+	    if(maxLHS <= rhs + EPS) continue; //there are no conflicts here
+
+	    double partialLHS = sumNegCoefs - min(0.0, coef);
+    	int position = binary_search(columns, partialLHS, rhs, i+1, nElements - 1);
+
+		if(position < nElements) //a clique was found
+		{
+			int n = nElements - position + 1, idxs[n];
+			int cliqueSize = 1;
+			idxs[0] = idx + nCols;
+		    for(int j = position, k = 1; j < nElements; j++)
+		    {
+		        idxs[k++] = columns[j].first;
+		        cliqueSize++;
+		    }
+		    processClique( cliqueSize, (const int *)idxs, cgraph, colLb, colUb );								
+		}
+		else break;
+	}
 }
