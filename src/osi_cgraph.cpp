@@ -92,14 +92,6 @@ struct sort_columns_reverse
     }
 };
 
-/* Searches for a clique in this constraint. */
-void cliqueDetection(CGraph* cgraph, const vector<pair<int, double> >& columns, const double sumNegCoefs, const double rhs);
-
-/* Searches for a clique involving the complement of variables in this constraint. */
-void cliqueComplementDetection(CGraph* cgraph, const vector<pair<int, double> >& columns, const double sumNegCoefs, const double rhs);
-
-bool pairwiseAnalysisByGrouping(CGraph* cgraph, const vector<pair<int, double> >& columns, const double sumNegCoefs, const double rhs);
-
 void pairwiseAnalysis(CGraph* cgraph, const vector<pair<int, double> >& columns, const double sumNegCoefs, const double rhs);
 
 void processClique( const int n, const int *idx, CGraph *cgraph, const double *colLb, const double *colUb );
@@ -113,27 +105,21 @@ double mostNegativeContribution( const double coef, const char s, const double c
 /* returns how much a variable can positively contribute */
 double unitaryContribution( const double coef, const char s, const double colLb, const double colUb );
 
-/* greedy clique partitioning from "Conflict graphs in solving integer programming problems" */
-vector<vector<int> > greedyCliquePartitioning(const CGraph *cgraph, const int nElements, const int *idxs, const double *coefs);
-
-/* Returns the lower bound for LHS by fixing two variables (uses clique partitioning in partitions) */
-double getLr(const CGraph *cgraph, const vector<vector<int> > &partitions, const vector<double> &coefs,
-             const vector<int> &whichPartition, const double sumPosCoefs, const int x1, const int x2);
-
-/* generates a maximal clique containing vertex */
-/* candidates is the initial list of candidates nodeCoef */
-vector<int> getMaximalClique(const CGraph *cgraph, const int vertex, const vector<int>& candidates);
-
-/* uses clique partitioning to extend the conflict graph row-by-row */
-void extendConflictGraphByRow(CGraph *cgraph, const int numElements, const int *idxs, const double *coefs, const double rhs);
-
 /* Returns the first position of columns which the lower bound for LHS (considering activation of variables) is greater than rhs */
-/* l=initial position for search in columns u=last position for search in columns */
-int binary_search(const vector< pair<int, double> >& columns, double rhs, double coef, double sumNegCoefs, int l, int u);
+/* colStart=initial position for search in columns, colEnd=last position for search in columns */
+/* partialLHS = LHS calculated with only one variable */
+int binary_search(const vector< pair<int, double> >& columns, double partialLHS, double rhs, int colStart, int colEnd);
 
 /* Returns the first position of columns which the lower bound for LHS (considering deactivation of variables) is greater than rhs */
-/* l=initial position for search in columns u=last position for search in columns */
-int binary_search_complement(const vector< pair<int, double> >& columns, double rhs, double coef, double sumNegCoefs, int l, int u);
+/* colStart=initial position for search in columns, colEnd=last position for search in columns */
+/* partialLHS = LHS calculated with only one variable */
+int binary_search_complement(const vector< pair<int, double> >& columns, double partialLHS, double rhs, int colStart, int colEnd);
+
+/* Searches for a clique in this constraint. */
+void cliqueDetection(CGraph* cgraph, const vector<pair<int, double> >& columns, const double sumNegCoefs, const double rhs);
+
+/* Searches for a clique involving the complement of variables in this constraint. */
+void cliqueComplementDetection(CGraph* cgraph, const vector<pair<int, double> >& columns, const double sumNegCoefs, const double rhs);
 
 CGraph *osi_build_cgraph_pairwise( void *_lp )
 {
@@ -249,6 +235,46 @@ CGraph *osi_build_cgraph_pairwise( void *_lp )
     cgraph_update_min_max_degree( cgraph );
 
     return cgraph;
+}
+
+void pairwiseAnalysis(CGraph* cgraph, const vector<pair<int, double> >& columns, const double sumNegCoefs, const double rhs)
+{
+    int nElements = (int)columns.size();
+    for(int j1 = 0; j1 < nElements; j1++)
+    {
+        const int cidx1 = columns[j1].first;
+        const double coef1 = columns[j1].second;
+
+        #define FIXED_IN_ZERO( idx ) ( (fabs(colLb[idx])<EPS) && (fabs(colUb[idx])<EPS) )
+
+        if (FIXED_IN_ZERO(cidx1))
+            continue;
+
+        for(int j2 = j1+1; j2 < nElements; j2++)
+        {
+            const int cidx2 = columns[j2].first;
+            const double coef2 = columns[j2].second;
+
+            if(FIXED_IN_ZERO(cidx2))
+                continue;
+
+            const double negDiscount = sumNegCoefs - min(0.0, coef1) - min(0.0, coef2);
+
+            if(coef1 + coef2 + negDiscount > rhs + 0.001)
+                cvec.push_back( pair<int,int>(cidx1, cidx2) );
+
+            if(coef1 + negDiscount > rhs + 0.001) /* cidx1 = 1 and cidx2 = 0 */
+                cvec.push_back( pair<int,int>(cidx1, cidx2+nCols) );
+
+            if(coef2 + negDiscount > rhs + 0.001) /* cidx1 = 0 and cidx2 = 1 */
+                cvec.push_back( pair<int,int>(cidx1+nCols, cidx2) );
+
+            if(negDiscount > rhs + 0.001) /* cidx1 = 0 and cidx2 = 0 */
+                cvec.push_back( pair<int,int>(cidx1+nCols, cidx2+nCols) );
+        }
+        fetchConflicts( false, cgraph );
+    }
+    #undef FIXED_IN_ZERO
 }
 
 void processClique( const int n, const int *idx, CGraph *cgraph, const double *colLb, const double *colUb )
@@ -368,518 +394,37 @@ double unitaryContribution( const double coef, const char s, const double colLb,
     return coef;
 }
 
-void pairwiseAnalysis(CGraph* cgraph, const vector<pair<int, double> >& columns, const double sumNegCoefs, const double rhs)
+int binary_search(const vector< pair<int, double> >& columns, double partialLHS, double rhs, int colStart, int colEnd)
 {
-    int nElements = (int)columns.size();
-    for(int j1 = 0; j1 < nElements; j1++)
-    {
-        const int cidx1 = columns[j1].first;
-        const double coef1 = columns[j1].second;
+	int mid;
+    while(colStart <= colEnd)
+	{
+		mid = (colStart + colEnd) / 2;
+        double LHS = partialLHS - min(0.0, columns[mid].second) + columns[mid].second;
 
-        #define FIXED_IN_ZERO( idx ) ( (fabs(colLb[idx])<EPS) && (fabs(colUb[idx])<EPS) )
+	  	if(rhs >= LHS)
+            colStart = mid + 1;
+	  	else
+            colEnd = mid - 1;
+	}
 
-        if (FIXED_IN_ZERO(cidx1))
-            continue;
-
-        for(int j2 = j1+1; j2 < nElements; j2++)
-        {
-            const int cidx2 = columns[j2].first;
-            const double coef2 = columns[j2].second;
-
-            if(FIXED_IN_ZERO(cidx2))
-                continue;
-
-            const double negDiscount = sumNegCoefs - min(0.0, coef1) - min(0.0, coef2);
-
-            if(coef1 + coef2 + negDiscount > rhs + 0.001)
-                cvec.push_back( pair<int,int>(cidx1, cidx2) );
-
-            if(coef1 + negDiscount > rhs + 0.001) /* cidx1 = 1 and cidx2 = 0 */
-                cvec.push_back( pair<int,int>(cidx1, cidx2+nCols) );
-
-            if(coef2 + negDiscount > rhs + 0.001) /* cidx1 = 0 and cidx2 = 1 */
-                cvec.push_back( pair<int,int>(cidx1+nCols, cidx2) );
-
-            if(negDiscount > rhs + 0.001) /* cidx1 = 0 and cidx2 = 0 */
-                cvec.push_back( pair<int,int>(cidx1+nCols, cidx2+nCols) );
-        }
-        fetchConflicts( false, cgraph );
-    }
-    #undef FIXED_IN_ZERO
+	return colEnd + 1;
 }
 
-bool pairwiseAnalysisByGrouping(CGraph* cgraph, const vector<pair<int, double> >& columns, const double sumNegCoefs, const double rhs)
+int binary_search_complement(const vector< pair<int, double> >& columns, double partialLHS, double rhs, int colStart, int colEnd)
 {
-    int nElements = (int)columns.size();
-    vector<vector<int> > coefsGroup; //coefficients with same value will be grouped
-    vector<double> diffCoefs; //different coefficients in the current row
-    double prevCoef = -LARGE_CONST;
-    for(int i = 0; i < nElements; i++)
+    int mid;
+    while(colStart <= colEnd)
     {
-        if( ((int)(diffCoefs.size())) >= MAX_DIFFERENT_COEFS)
-            return false;
-
-        if(columns[i].second > prevCoef)
-        {
-            vector<int> tmp(1, columns[i].first);
-            coefsGroup.push_back(tmp);
-            diffCoefs.push_back(columns[i].second);
-            prevCoef = columns[i].second;
-        }
-        else coefsGroup.rbegin()->push_back(columns[i].first);
-    }
-
-    #define FIXED_IN_ZERO( idx ) ( (fabs(colLb[idx])<EPS) && (fabs(colUb[idx])<EPS) )
-
-    for(int i = 0; i < (int)diffCoefs.size(); i++)
-    {
-        const double coef1 = diffCoefs[i];
-        double negDiscount = sumNegCoefs - min(0.0, coef1) - min(0.0, coef1);
-
-        if(coef1 + coef1 + negDiscount > rhs + 0.001)
-        {
-            for(int k = 0; k < (int)coefsGroup[i].size(); k++)
-            {
-                if (FIXED_IN_ZERO(coefsGroup[i][k]))
-                    continue;
-                for(int l = k+1; l < (int)coefsGroup[i].size(); l++)
-                {
-                    if (FIXED_IN_ZERO(coefsGroup[i][l]))
-                        continue;
-                    cvec.push_back(pair<int,int>(coefsGroup[i][k], coefsGroup[i][l]));
-                }
-            }   
-        }
-
-        if(coef1 + negDiscount > rhs + 0.001)
-        {
-            for(int k = 0; k < (int)coefsGroup[i].size(); k++)
-            {
-                if (FIXED_IN_ZERO(coefsGroup[i][k]))
-                    continue;
-                for(int l = k+1; l < (int)coefsGroup[i].size(); l++)
-                {
-                    if (FIXED_IN_ZERO(coefsGroup[i][l]))
-                        continue;
-                    cvec.push_back( pair<int,int>(coefsGroup[i][k], coefsGroup[i][l]+nCols));
-                    cvec.push_back( pair<int,int>(coefsGroup[i][k]+nCols, coefsGroup[i][l]));
-                }
-            }
-        }
-
-        if(negDiscount > rhs + 0.001)
-        {
-            for(int k = 0; k < (int)coefsGroup[i].size(); k++)
-            {
-                if (FIXED_IN_ZERO(coefsGroup[i][k]))
-                    continue;
-                for(int l = k+1; l < (int)coefsGroup[i].size(); l++)
-                {
-                    if (FIXED_IN_ZERO(coefsGroup[i][l]))
-                        continue;
-                    cvec.push_back( pair<int,int>(coefsGroup[i][k]+nCols,coefsGroup[i][l]+nCols));
-                }
-            }
-        }
-
-        for(int j = i + 1; j < (int)diffCoefs.size(); j++)
-        {
-            const double coef2 = diffCoefs[j];
-            negDiscount = sumNegCoefs - min(0.0, coef1) - min(0.0, coef2);
-
-            if(coef1 + coef2 + negDiscount > rhs + 0.001)
-            {
-                for(int k = 0; k < (int)coefsGroup[i].size(); k++)
-                {
-                    if (FIXED_IN_ZERO(coefsGroup[i][k]))
-                        continue;
-                    for(int l = 0; l < (int)coefsGroup[j].size(); l++)
-                    {
-                        if (FIXED_IN_ZERO(coefsGroup[j][l]))
-                            continue;
-                        cvec.push_back( pair<int,int>(coefsGroup[i][k], coefsGroup[j][l]));
-                    }
-                }
-            }
-            if(coef1 + negDiscount > rhs + 0.001)
-            {
-                for(int k = 0; k < (int)coefsGroup[i].size(); k++)
-                {
-                    if (FIXED_IN_ZERO(coefsGroup[i][k]))
-                        continue;
-                    for(int l = 0; l < (int)coefsGroup[j].size(); l++)
-                    {
-                        if (FIXED_IN_ZERO(coefsGroup[j][l]))
-                            continue;
-                        cvec.push_back( pair<int,int>(coefsGroup[i][k], coefsGroup[j][l]+nCols) );
-                    }
-                }
-            }
-            if(coef2 + negDiscount > rhs + 0.001)
-            {
-                for(int k = 0; k < (int)coefsGroup[i].size(); k++)
-                {
-                    if (FIXED_IN_ZERO(coefsGroup[i][k]))
-                        continue;
-                    for(int l = 0; l < (int)coefsGroup[j].size(); l++)
-                    {
-                        if (FIXED_IN_ZERO(coefsGroup[j][l]))
-                            continue;
-                        cvec.push_back( pair<int,int>(coefsGroup[i][k]+nCols, coefsGroup[j][l]) );
-                    }
-                }
-            }
-            if(negDiscount > rhs + 0.001)
-            {
-                for(int k = 0; k < (int)coefsGroup[i].size(); k++)
-                {
-                    if (FIXED_IN_ZERO(coefsGroup[i][k]))
-                        continue;
-                    for(int l = 0; l < (int)coefsGroup[j].size(); l++)
-                    {
-                        if (FIXED_IN_ZERO(coefsGroup[j][l]))
-                            continue;
-                        cvec.push_back( pair<int,int>(coefsGroup[i][k]+nCols,coefsGroup[j][l]+nCols) );
-                    }
-                }
-            }
-        }
-        fetchConflicts(false, cgraph);
-    }
-    #undef FIXED_IN_ZERO
-    return true;
-}
-
-vector<vector<int> > greedyCliquePartitioning(const CGraph *cgraph, const int nElements, const int *idxs, const double *coefs)
-{
-    const int numCols = cgraph_size(cgraph) / 2;
-    int idxMap[numCols*2];
-    vector<vector<int> > partition;
-    vector<pair<int, double> > nodeCoef(nElements);
-    vector<bool> marked(numCols*2, false);
-
-    for(int i = 0; i < nElements; i++)
-    {
-        if(coefs[i] <= -EPS)
-            nodeCoef[i] = pair<int, double>(idxs[i], fabs(coefs[i]));
+        mid = (colStart + colEnd) / 2;
+        double LHS = partialLHS - min(0.0, columns[mid].second);
+        if(rhs <= LHS)
+            colStart = mid + 1;
         else
-            nodeCoef[i] = pair<int, double>(numCols + idxs[i], coefs[i]);
+            colEnd = mid - 1;
     }
 
-    sort(nodeCoef.begin(), nodeCoef.end(), sort_columns_reverse());
-    fill(idxMap, idxMap + (numCols*2), -1);
-    for(int i = 0; i < nElements; i++)
-    	idxMap[nodeCoef[i].first] = i;
-
-    for(int i = 0; i < nElements; i++)
-    {
-        if(!marked[i])
-        {
-        	vector<int> candidates;
-        	for(int j = i+1; j < nElements; j++)
-        		if(!marked[j])
-        			candidates.push_back(nodeCoef[j].first);
-
-            vector<int> clique = getMaximalClique(cgraph, nodeCoef[i].first, candidates);
-            vector<int> tmp(clique.size());
-            for(int j = 0; j < (int)clique.size(); j++)
-            {
-            	int mIdx = idxMap[clique[j]];
-                tmp[j] = clique[j];
-                marked[mIdx] = true;
-            }
-            partition.push_back(tmp);
-        }
-    }
-    
-    return partition;
-}
-
-vector<int> getMaximalClique(const CGraph *cgraph, const int vertex, const vector<int>& candidates)
-{
-    int numVertices = cgraph_size(cgraph);
-    vector<int> clique;
-    vector<pair<int, int> > cList;
-    vector<bool> used(numVertices, false);
-
-    clique.push_back(vertex);
-    used[vertex] = true;
-
-    for(int i = 0; i < (int)candidates.size(); i++)
-        if(cgraph_conflicting_nodes(cgraph, vertex, candidates[i]))
-            cList.push_back(pair<int, int>(candidates[i], cgraph_degree(cgraph, candidates[i])));
-
-    sort(cList.begin(), cList.end(), sort_sec_pair_reverse());
-
-    for(int i = 0; i < (int)cList.size(); i++)
-    {
-        if(!used[cList[i].first])
-        {
-            clique.push_back(cList[i].first);
-            used[cList[i].first] = true;
-            for(int j = i + 1; j < (int)cList.size(); j++)
-                if(!cgraph_conflicting_nodes(cgraph, cList[i].first, cList[j].first))
-                    used[cList[j].first] = true;
-        }
-    }
-
-    return clique;
-}
-
-double getLr(const CGraph *cgraph, const vector<vector<int> > &partitions, const vector<double> &coefs,
-             const vector<int> &whichPartition, const double sumPosCoefs, const int x1, const int x2)
-{
-    const int numCols = cgraph_size(cgraph) / 2;
-    double Lr = sumPosCoefs;
-    double coef1, coef2;
-    int realX1, realX2, part1, part2;
-    bool inPart1, inPart2; //checks if variables are in some partition
-    /* variables with negative coefficients or complement of variables with positive coefficientes are in some partition. */
-
-    if(cgraph_conflicting_nodes(cgraph, x1, x2)) //conflict already exists
-        return DBL_MAX/2;
-
-    realX1 = x1 % numCols;
-    realX2 = x2 % numCols;
-    coef1 = coefs[realX1];
-    coef2 = coefs[realX2];
-    inPart1 = (coef1 <= -EPS || x1 >= numCols); 
-    inPart2 = (coef2 <= -EPS || x2 >= numCols); 
-    part1 = whichPartition[realX1];
-    part2 = whichPartition[realX2];
-
-    assert(fabs(coef1) > EPS && fabs(coef2) > EPS);
-    assert(part1 >= 0 && part2 >= 0);
-
-    //x1 and x2 are in some partition
-    if(part1 && part2)
-        for(int i = 0; i < (int)partitions.size(); i++)
-        {
-            double coefSel = 0.0;
-
-            if(part1 == i)
-                coefSel = fabs(coef1);
-
-            else if(part2 == i)
-                coefSel = fabs(coef2);
-
-            else
-            { 
-                const int var = partitions[i][0];
-                const int realVar = var%numCols;
-                coefSel = fabs(coefs[realVar]);
-            }
-
-            Lr -= coefSel;
-        }
-
-    //x1 and x2 are not in any partition
-    else if(!inPart1 && !inPart2)
-    {
-        for(int i = 0; i < (int)partitions.size(); i++)
-        {
-            double coefSel = 0.0;
-            int var = partitions[i][0];
-            int realVar = var%numCols;
-
-            if(!cgraph_conflicting_nodes(cgraph, x1, var) && !cgraph_conflicting_nodes(cgraph, x2, var))
-                coefSel = fabs(coefs[realVar]);
-            
-            else
-                for(int j = 1; j < (int)partitions[i].size(); j++)
-                {
-                    var = partitions[i][j];
-                    realVar = var%numCols;
-                    if(cgraph_conflicting_nodes(cgraph, x1, var))
-                        continue;
-                    if(cgraph_conflicting_nodes(cgraph, x2, var))
-                        continue;
-                    coefSel = max(coefSel, fabs(coefs[realVar]));
-                }
-            Lr -= coefSel;
-        }
-    }
-
-    //x1 is in some partition and x2 not
-    else if(inPart1 && !inPart2)
-    {
-        for(int i = 0; i < (int)partitions.size(); i++)
-        {
-            double coefSel = 0.0;
-            int var = partitions[i][0];
-            int realVar = var%numCols;
-
-            if(part1 == i)
-                coefSel = fabs(coef1);
-
-            else
-            {
-                int var = partitions[i][0];
-                int realVar = var%numCols;
-
-                if(!cgraph_conflicting_nodes(cgraph, x2, var))
-                    coefSel = fabs(coefs[realVar]);
-                else
-                    for(int j = 1; j < (int)partitions[i].size(); j++)
-                    {
-                        var = partitions[i][j];
-                        realVar = var%numCols;
-                        if(cgraph_conflicting_nodes(cgraph, x2, var))
-                            continue;
-                        coefSel = max(coefSel, fabs(coefs[realVar]));
-                    }
-            }
-            Lr -= coefSel;
-        }
-    }
-
-    //x2 is in some partition and x1 not
-    else
-        for(int i = 0; i < (int)partitions.size(); i++)
-        {
-            double coefSel = 0.0;
-
-            if(part2 == i)
-                coefSel = fabs(coef2);
-
-            else
-            {
-                int var = partitions[i][0];
-                int realVar = var%numCols;
-
-                if(!cgraph_conflicting_nodes(cgraph, x1, var))
-                    coefSel = fabs(coefs[realVar]);
-                else
-                    for(int j = 1; j < (int)partitions[i].size(); j++)
-                    {
-                        const int var = partitions[i][j];
-                        const int realVar = var%numCols;
-                        if(cgraph_conflicting_nodes(cgraph, x1, var))
-                            continue;
-                        coefSel = max(coefSel, fabs(coefs[realVar]));
-                    }
-            }
-            Lr -= coefSel;
-        }
-
-    return Lr;
-}
-
-void extendConflictGraphByRow(CGraph *cgraph, const int nElements, const int *idxs, const double *coefs, const double rhs)
-{
-    const int numCols = cgraph_size(cgraph) / 2;
-    double sumPosCoefs = 0.0;
-    vector<double> rowCoefs(numCols, 0.0);
-    vector<int> whichPartition(numCols, -1);
-    vector<vector<int> >  partitions = greedyCliquePartitioning(cgraph, nElements, idxs, coefs);
-
-    for(int i = 0; i < nElements; i++)
-    {
-        rowCoefs[idxs[i]%numCols] = coefs[i];
-        if(coefs[i] >= EPS)
-            sumPosCoefs += coefs[i];
-    }        
-
-    for(int i = 0; i < (int)partitions.size(); i++)
-        for(int j = 0; j < (int)partitions[i].size(); j++)
-        {
-            int var = partitions[i][j];
-            whichPartition[var%numCols] = i;
-        }
-
-    for(int j1 = 0; j1 < nElements; j1++)
-    {
-        const int cidx1 = idxs[j1];
-        const double coef1 = coefs[j1];
-
-        #define FIXED_IN_ZERO( idx ) ( (fabs(colLb[idx])<EPS) && (fabs(colUb[idx])<EPS) )
-
-        if (FIXED_IN_ZERO(cidx1))
-            continue;
-
-        for(int j2 = j1+1; j2 < nElements; j2++)
-        {
-            const int cidx2 = idxs[j2];
-            const double coef2 = coefs[j2];
-
-            if(FIXED_IN_ZERO(cidx2))
-                continue;
-
-            if(!cgraph_conflicting_nodes(cgraph, cidx1, cidx2))
-            {
-                double Lr = getLr(cgraph, partitions, rowCoefs, whichPartition, sumPosCoefs, cidx1, cidx2);
-                if(Lr > rhs + 0.001)
-                    cvec.push_back( pair<int,int>(cidx1, cidx2) );
-            }
-
-            if(!cgraph_conflicting_nodes(cgraph, cidx1+numCols, cidx2))
-            {
-                double Lr = getLr(cgraph, partitions, rowCoefs, whichPartition, sumPosCoefs, cidx1+numCols, cidx2);
-                if(Lr > rhs + 0.001)
-                    cvec.push_back( pair<int,int>(cidx1+numCols, cidx2) );
-            }
-
-            if(!cgraph_conflicting_nodes(cgraph, cidx1, cidx2+numCols))
-            {
-                double Lr = getLr(cgraph, partitions, rowCoefs, whichPartition, sumPosCoefs, cidx1, cidx2+numCols);
-                if(Lr > rhs + 0.001)
-                    cvec.push_back( pair<int,int>(cidx1, cidx2+numCols) );
-            }
-
-            if(!cgraph_conflicting_nodes(cgraph, cidx1+numCols, cidx2+numCols))
-            {
-                double Lr = getLr(cgraph, partitions, rowCoefs, whichPartition, sumPosCoefs, cidx1+numCols, cidx2+numCols);
-                if(Lr > rhs + 0.001)
-                    cvec.push_back( pair<int,int>(cidx1+numCols, cidx2+numCols) );
-            }
-        }
-    }
-     #undef FIXED_IN_ZERO
-}
-
-int binary_search(const vector< pair<int, double> >& columns, double rhs, double coef, double sumNegCoefs, int l, int u)
-{
-	int mid, position;
-	if(l <= u)
-	{
-		mid = (l + u) / 2;
-		double D = sumNegCoefs - min(0.0, coef) - min(0.0, columns[mid].second);
-        double LHS = D + coef + columns[mid].second;
-	  	if(rhs >= LHS)
-	    	position = binary_search(columns, rhs, coef, sumNegCoefs, mid + 1, u);
-	  	else
-	    	position = binary_search(columns, rhs, coef, sumNegCoefs, l, mid-1);
-	}
-	else
-	{
-	 //Check boundaries
-	 if(l < u || u < 0)
-	    u++;//Fix boundaries
-	 position =  u + 1;
-	}
-	return position;
-}
-
-int binary_search_complement(const vector< pair<int, double> >& columns, double rhs, double coef, double sumNegCoefs, int l, int u)
-{
-	int mid, position;
-	if(l <= u)
-	{
-		mid = (l + u) / 2;
-		double LHS = sumNegCoefs - min(0.0, coef) - min(0.0, columns[mid].second);
-	  	if(rhs >= LHS)
-	    	position = binary_search_complement(columns, rhs, coef, sumNegCoefs, mid + 1, u);
-	  	else
-	    	position = binary_search_complement(columns, rhs, coef, sumNegCoefs, l, mid-1);
-	}
-	else
-	{
-	 //Check boundaries
-	 if(l < u || u < 0)
-	    u++;//Fix boundaries
-	 position =  u + 1;
-	}
-	return position;
+    return colEnd - 1;
 }
 
 CGraph *osi_build_cgraph( void *_lp )
@@ -1040,7 +585,9 @@ void cliqueDetection(CGraph* cgraph, const vector<pair<int, double> >& columns, 
     {
     	int idx = columns[i].first;
     	double coef = columns[i].second;
-    	int position = binary_search(columns, rhs, coef, sumNegCoefs, cliqueStart, nElements - 1);
+        double partialLHS = sumNegCoefs - min(0.0, coef) + coef;
+
+    	int position = binary_search(columns, partialLHS, rhs, cliqueStart, nElements - 1);
 
 		if(position < nElements) //clique was found
 		{
@@ -1062,127 +609,62 @@ void cliqueDetection(CGraph* cgraph, const vector<pair<int, double> >& columns, 
     #undef FIXED_IN_ZERO
 }
 
-// void cliqueComplementDetection(CGraph* cgraph, const vector<pair<int, double> >& columns, const double sumNegCoefs, const double rhs)
-// {
-//     int nElements = (int)columns.size(), cliqueCompStart = -1;
-//     double maxLHS; //minLHS = lower bound for LHS when the two variaveis with smallest coefficients are deactivated.
-//     int cliqueCompSize = 0;
-
-//     maxLHS = sumNegCoefs - min(0.0, columns[1].second) - min(0.0, columns[0].second);
-
-//     if(maxLHS <= rhs) return; //there is no clique involving the complement of variables in this constraint.
-
-//     for(int i = nElements - 1; i > 0; i--)
-//     {
-//         double D = sumNegCoefs - min(0.0, columns[i].second) - min(0.0, columns[i-1].second);
-
-//         if(D > rhs + 0.001)
-//         {
-//             cliqueCompStart = i;
-//             break;
-//         }
-//     }
-
-//     assert(cliqueCompStart > 0 && cliqueCompStart < nElements);
-//     int n = cliqueCompStart + 1, idxs[n];
-//     #define FIXED_IN_ZERO( idx ) ( (fabs(colLb[idx])<EPS) && (fabs(colUb[idx])<EPS) )
-//     for(int i = 0; i < n; i++)
-//     {
-//         if (FIXED_IN_ZERO(columns[i].first))
-//             continue;
-//         idxs[i] = columns[i].first + nCols; //binary complement
-//         cliqueCompSize++;
-//     }
-
-//     //process the first clique found
-//     processClique( cliqueCompSize, (const int *)idxs, cgraph, colLb, colUb );
-
-//     //now we have to check the variables that are outside of the clique found.
-//     for(int i = cliqueCompStart + 1; i < nElements; i++)
-//     {
-//     	printf("\n");
-//     	int idx = columns[i].first;
-//     	double coef = columns[i].second;
-//     	int position = binary_search_complement(columns, rhs, coef, sumNegCoefs, 0, cliqueCompStart);
-
-//     	printf("idx=%d coef=%.2lf position=%d\n", idx, coef, position);
-
-// 		if(position <= cliqueCompStart)//clique was found
-// 		{
-// 			int n = position + 2, idxs[n];
-// 			cliqueCompSize = 1;
-// 			idxs[0] = idx + nCols;
-// 		    for(int i = 0, j = 1; i <= position; i++)
-// 		    {
-// 		        if (FIXED_IN_ZERO(columns[i].first))
-// 		            continue;
-// 		        idxs[j++] = columns[i].first + nCols;
-// 		        cliqueCompSize++;
-// 		    }
-// 		    processClique( cliqueCompSize, (const int *)idxs, cgraph, colLb, colUb );
-// 		}
-// 		else break;
-//     }
-
-//     #undef FIXED_IN_ZERO
-// }
-
 void cliqueComplementDetection(CGraph* cgraph, const vector<pair<int, double> >& columns, const double sumNegCoefs, const double rhs)
 {
     int nElements = (int)columns.size(), cliqueCompStart = -1;
     double maxLHS; //minLHS = lower bound for LHS when the two variaveis with smallest coefficients are deactivated.
     int cliqueCompSize = 0;
-    vector<pair<int, double> > columnsInv(nElements);
-    for(int i = 0; i < nElements; i++) columnsInv[i] = columns[nElements-i-1];
 
-    maxLHS = sumNegCoefs - min(0.0, columnsInv[nElements-2].second) - min(0.0, columnsInv[nElements-1].second);
+    maxLHS = sumNegCoefs - min(0.0, columns[1].second) - min(0.0, columns[0].second);
 
-    if(maxLHS <= rhs + EPS) return; //there is no clique involving activation of variables in this constraint.
+    if(maxLHS <= rhs) return; //there is no clique involving the complement of variables in this constraint.
 
-    for(int i = 0; i < nElements - 1; i++)
+    for(int i = nElements - 1; i > 0; i--)
     {
-        double LHS = sumNegCoefs - min(0.0, columnsInv[i].second) - min(0.0, columnsInv[i+1].second);
+        double D = sumNegCoefs - min(0.0, columns[i].second) - min(0.0, columns[i-1].second);
 
-        if(LHS > rhs + EPS)
+        if(D > rhs + EPS)
         {
             cliqueCompStart = i;
             break;
         }
     }
 
-    assert(cliqueCompStart >= 0 && cliqueCompStart < nElements - 1);
-    int n = nElements - cliqueCompStart, idxs[n];
+    assert(cliqueCompStart > 0 && cliqueCompStart < nElements);
+    int n = cliqueCompStart + 1, idxs[n];
     #define FIXED_IN_ZERO( idx ) ( (fabs(colLb[idx])<EPS) && (fabs(colUb[idx])<EPS) )
-    for(int i = cliqueCompStart, j = 0; i < nElements; i++)
+    for(int i = 0; i < n; i++)
     {
-        if (FIXED_IN_ZERO(columnsInv[i].first))
+        if (FIXED_IN_ZERO(columns[i].first))
             continue;
-        idxs[j++] = columnsInv[i].first+nCols;
+        idxs[i] = columns[i].first + nCols; //binary complement
         cliqueCompSize++;
     }
+
     //process the first clique found
     processClique( cliqueCompSize, (const int *)idxs, cgraph, colLb, colUb );
 
     //now we have to check the variables that are outside of the clique found.
-    for(int i = cliqueCompStart - 1; i >= 0; i--)
+    for(int i = cliqueCompStart + 1; i < nElements; i++)
     {
-    	int idx = columnsInv[i].first;
-    	double coef = columnsInv[i].second;
-    	int position = binary_search_complement(columnsInv, rhs, coef, sumNegCoefs, cliqueCompStart, nElements - 1);
+    	int idx = columns[i].first;
+    	double coef = columns[i].second;
+        double partialLHS = sumNegCoefs - min(0.0, coef);
+    	int position = binary_search_complement(columns, partialLHS, rhs, 0, cliqueCompStart);
 
-		if(position < nElements) //clique was found
+		if(position >= 0) //clique was found
 		{
-			int n = nElements - position + 1, idxs[n];
+			int n = position + 2, idxs[n];
 			cliqueCompSize = 1;
-			idxs[0] = idx+nCols;
-		    for(int i = position, j = 1; i < nElements; i++)
+			idxs[0] = idx + nCols;
+		    for(int i = 0, j = 1; i <= position; i++)
 		    {
-		        if (FIXED_IN_ZERO(columnsInv[i].first))
+		        if (FIXED_IN_ZERO(columns[i].first))
 		            continue;
-		        idxs[j++] = columnsInv[i].first+nCols;
+		        idxs[j++] = columns[i].first + nCols;
 		        cliqueCompSize++;
 		    }
-		    processClique( cliqueCompSize, (const int *)idxs, cgraph, colLb, colUb );								
+		    processClique( cliqueCompSize, (const int *)idxs, cgraph, colLb, colUb );
 		}
 		else break;
     }
