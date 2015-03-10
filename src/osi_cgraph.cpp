@@ -20,7 +20,7 @@ extern "C"
 
 using namespace std;
 
-#define EPS 1e-6
+#define EPS 1e-8
 
 /* mininum size for a row to be considered a clique row */
 #define MIN_CLIQUE_ROW 250
@@ -118,13 +118,13 @@ int binary_search(const vector< pair<int, double> >& columns, double partialLHS,
 int binary_search_complement(const vector< pair<int, double> >& columns, double partialLHS, double rhs, int colStart, int colEnd);
 
 /* Searches for cliques involving the activation of variables in this constraint. */
-void cliqueDetection(CGraph* cgraph, const vector<pair<int, double> >& columns, const double sumNegCoefs, const double rhs);
+void cliqueDetection(CGraph* cgraph, const vector<pair<int, double> >& columns, double sumNegCoefs, double rhs);
 
 /* Searches for cliques involving the complement of variables in this constraint. */
-void cliqueComplementDetection(CGraph* cgraph, const vector<pair<int, double> >& columns, const double sumNegCoefs, const double rhs);
+void cliqueComplementDetection(CGraph* cgraph, const vector<pair<int, double> >& columns, double sumNegCoefs, double rhs);
 
 /* Searches for cliques involving variables and complements of variables in this constraint. */
-void mixedCliqueDetection(CGraph* cgraph, const vector<pair<int, double> >& columns, const double sumNegCoefs, const double rhs);
+void mixedCliqueDetection(CGraph* cgraph, const vector<pair<int, double> >& columns, double sumNegCoefs, double rhs);
 
 CGraph *osi_build_cgraph_pairwise( void *_lp )
 {
@@ -406,13 +406,14 @@ int binary_search_complement(const vector< pair<int, double> >& columns, double 
     {
         mid = (colStart + colEnd) / 2;
         double LHS = partialLHS - min(0.0, columns[mid].second);
-        if(rhs + EPS <= LHS)
-            colStart = mid + 1;
-        else
+
+        if(rhs + EPS >= LHS)
             colEnd = mid - 1;
+        else
+            colStart = mid + 1;
     }
 
-    return colEnd - 1;
+    return colStart - 1;
 }
 
 CGraph *osi_build_cgraph( void *_lp )
@@ -530,7 +531,7 @@ CGraph *osi_build_cgraph( void *_lp )
     return cgraph;
 }
 
-void cliqueDetection(CGraph* cgraph, const vector<pair<int, double> >& columns, const double sumNegCoefs, const double rhs)
+void cliqueDetection(CGraph* cgraph, const vector<pair<int, double> >& columns, double sumNegCoefs, double rhs)
 {
     int nElements = (int)columns.size(), cliqueStart = -1;
     double maxLHS; //maxLHS = lower bound for LHS when the two variaveis with highest coefficients are activated.
@@ -588,7 +589,7 @@ void cliqueDetection(CGraph* cgraph, const vector<pair<int, double> >& columns, 
     }
 }
 
-void cliqueComplementDetection(CGraph* cgraph, const vector<pair<int, double> >& columns, const double sumNegCoefs, const double rhs)
+void cliqueComplementDetection(CGraph* cgraph, const vector<pair<int, double> >& columns, double sumNegCoefs, double rhs)
 {
     int nElements = (int)columns.size(), cliqueCompStart = -1;
     double maxLHS; //maxLHS = lower bound for LHS when the two variaveis with smallest coefficients are deactivated.
@@ -644,9 +645,10 @@ void cliqueComplementDetection(CGraph* cgraph, const vector<pair<int, double> >&
     }
 }
 
-void mixedCliqueDetection(CGraph* cgraph, const vector<pair<int, double> >& columns, const double sumNegCoefs, const double rhs)
+void mixedCliqueDetection(CGraph* cgraph, const vector<pair<int, double> >& columns, double sumNegCoefs, double rhs)
 {
 	int nElements = (int)columns.size();
+
 	for(int i = nElements - 2; i >= 0; i--)
 	{
 		int idx = columns[i].first;

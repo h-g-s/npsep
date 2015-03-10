@@ -80,8 +80,8 @@ int main( int argc, char **argv )
                 printf("%d %d\n", i, j);
                 printf("%s %s\n", i < solver->getNumCols() ? solver->getColName(i).c_str() : ("¬" + solver->getColName(i - solver->getNumCols())).c_str(),
                                   j < solver->getNumCols() ? solver->getColName(j).c_str() : ("¬" + solver->getColName(j - solver->getNumCols())).c_str() );
-                i = INT_MAX/2;
-                break;
+                //i = INT_MAX/2;
+                //break;
             }
 
 
