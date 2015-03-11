@@ -16,8 +16,6 @@ extern "C"
 #define oo  (INT_MAX/2)
 #define WORST_PRIORITY_ROW 10000   // to be considered
 
-//#define FIXED_IN_ZERO( idx ) ( (fabs(colLb[idx])<EPS) && (fabs(colUb[idx])<EPS) )
-
 using namespace std;
 
 #define EPS 1e-8
@@ -96,9 +94,9 @@ struct sort_columns_reverse
 
 void pairwiseAnalysis(CGraph* cgraph, const vector<pair<int, double> >& columns, const double sumNegCoefs, const double rhs);
 
-void processClique( const int n, const int *idx, CGraph *cgraph, const double *colLb, const double *colUb );
+void processClique( const int n, const int *idx, CGraph *cgraph );
 
-/* if size is large enough fech conflicts */
+/* if size is large enough fetch conflicts */
 void fetchConflicts( const bool lastTime, CGraph *cgraph );
 
 /* returns how much a variable can negatively contribute */
@@ -204,7 +202,7 @@ CGraph *osi_build_cgraph_pairwise( void *_lp )
 		    DBL_EQUAL(minCoef, 1.0) && ((sense[idxRow]=='E') || (sense[idxRow]=='L'))
             && (row.getNumElements() > 3) ) 
 		{
-		    processClique( row.getNumElements(), (const int *)idx, cgraph, colLb, colUb );
+		    processClique( row.getNumElements(), (const int *)idx, cgraph);
 		}
 
 		else
@@ -266,7 +264,7 @@ void pairwiseAnalysis(CGraph* cgraph, const vector<pair<int, double> >& columns,
     }
 }
 
-void processClique( const int n, const int *idx, CGraph *cgraph, const double *colLb, const double *colUb )
+void processClique( const int n, const int *idx, CGraph *cgraph)
 {
     if ( n >= MIN_CLIQUE_ROW )
     {
@@ -282,16 +280,8 @@ void processClique( const int n, const int *idx, CGraph *cgraph, const double *c
         int i1, i2, nm1 = n-1;
 
         for ( i1=0 ; (i1<nm1) ; ++i1 )
-        {
-            if ( fabs( colUb[idx[i1]%nCols] <= EPS ) && fabs( colLb[idx[i1]%nCols] <= EPS ) )
-                continue;
             for ( i2=i1+1 ; (i2<n) ; ++i2 )
-            {
-                if ( fabs( colUb[idx[i2]%nCols] <= EPS ) && fabs( colLb[idx[i2]%nCols] <= EPS ) )
-                    continue;
                 cvec.push_back( pair<int,int>(idx[i1],idx[i2]) );
-            }
-        }
     }
 }
 
@@ -493,7 +483,7 @@ CGraph *osi_build_cgraph( void *_lp )
             DBL_EQUAL(minCoef, 1.0) && ((sense[idxRow]=='E') || (sense[idxRow]=='L'))
             && (row.getNumElements() > 3) ) 
         {
-            processClique( row.getNumElements(), (const int *)idx, cgraph, colLb, colUb );
+            processClique( row.getNumElements(), (const int *)idx, cgraph );
         }
 
         else
@@ -523,8 +513,8 @@ CGraph *osi_build_cgraph( void *_lp )
                 //mixedCliqueDetection(cgraph, newColumns, sumNegCoefs, -1.0 * rhs[idxRow]);
             }
         }
+        fetchConflicts( false, cgraph );
     }
-
     fetchConflicts(true, cgraph);
     cgraph_update_min_max_degree( cgraph );
 
@@ -562,7 +552,7 @@ void cliqueDetection(CGraph* cgraph, const vector<pair<int, double> >& columns, 
         cliqueSize++;
     }
     //process the first clique found
-    processClique( cliqueSize, (const int *)idxs, cgraph, colLb, colUb );
+    processClique( cliqueSize, (const int *)idxs, cgraph );
 
     //now we have to check the variables that are outside of the clique found.
     for(int i = cliqueStart - 1; i >= 0; i--)
@@ -583,7 +573,7 @@ void cliqueDetection(CGraph* cgraph, const vector<pair<int, double> >& columns, 
 		        idxs[j++] = columns[i].first;
 		        cliqueSize++;
 		    }
-		    processClique( cliqueSize, (const int *)idxs, cgraph, colLb, colUb );								
+		    processClique( cliqueSize, (const int *)idxs, cgraph );								
 		}
 		else break;
     }
@@ -619,7 +609,7 @@ void cliqueComplementDetection(CGraph* cgraph, const vector<pair<int, double> >&
     }
 
     //process the first clique found
-    processClique( cliqueCompSize, (const int *)idxs, cgraph, colLb, colUb );
+    processClique( cliqueCompSize, (const int *)idxs, cgraph );
 
     //now we have to check the variables that are outside of the clique found.
     for(int i = cliqueCompStart + 1; i < nElements; i++)
@@ -639,7 +629,7 @@ void cliqueComplementDetection(CGraph* cgraph, const vector<pair<int, double> >&
 		        idxs[j++] = columns[i].first + nCols;
 		        cliqueCompSize++;
 		    }
-		    processClique( cliqueCompSize, (const int *)idxs, cgraph, colLb, colUb );
+		    processClique( cliqueCompSize, (const int *)idxs, cgraph );
 		}
 		else break;
     }
@@ -671,7 +661,7 @@ void mixedCliqueDetection(CGraph* cgraph, const vector<pair<int, double> >& colu
 		        idxs[k++] = columns[j].first;
 		        cliqueSize++;
 		    }
-		    processClique( cliqueSize, (const int *)idxs, cgraph, colLb, colUb );								
+		    processClique( cliqueSize, (const int *)idxs, cgraph );								
 		}
 		else break;
 	}
