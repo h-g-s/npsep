@@ -56,6 +56,7 @@ cbcr_SOURCES=cgraph.c \
 				 clique_separation.c \
 				 node_heap.c \
 				 vint_set.c \
+				 vint_queue.c \
 				 clique_enum.c \
 				 conflict_discover.c \
 				 strUtils.c \
@@ -87,6 +88,7 @@ cbcr_SOURCES=cgraph.c \
 				 node_heap.h \
 				 vectormgm.h \
 				 vint_set.h \
+				 vint_queue.h \
 				 grasp.h \
 				 vnode_degree.h \
 				 BKGraph.hpp \

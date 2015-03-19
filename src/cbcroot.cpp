@@ -26,7 +26,7 @@ extern "C"
 using namespace std;
 
 #define MIN_VIOLATION 0.02
-#define MAX_TIME 300
+#define MAX_TIME 600
 #define EPS 1e-6
 
 /* minimum fractional part to a variable to be considered fractional */
@@ -82,13 +82,13 @@ void decideLpMethod();
 
 bool differentSense( const double v1, const double v2 )
 {
-	if ( (v1>1e-5) && (v2<-1e-5) )
-	return true;
+  if ( (v1>1e-5) && (v2<-1e-5) )
+  return true;
 
-	if ( (v1<-1e-5) && (v2>1e-5) )
-	return true;
+  if ( (v1<-1e-5) && (v2>1e-5) )
+  return true;
 
-	return false;
+  return false;
 
 }
 
@@ -140,8 +140,8 @@ const double abs_mip_gap( const double v1, const double v2 )
 
 map<string, double> getOptimals()
 {
-	map<string, double> optimals;
-	FILE *file = fopen(optFile.c_str(), "r");
+  map<string, double> optimals;
+  FILE *file = fopen(optFile.c_str(), "r");
     if(!file)
     {
         perror("Cant open this file!\n");
@@ -151,16 +151,16 @@ map<string, double> getOptimals()
     char line[128];
     if(fgets(line, 128, file))
     {
-    	while(fgets(line, 128, file) != NULL)
-    	{
-    		char *instance, *cOpt;
-    		instance = strtok(line, ",;\n");
-    		cOpt = strtok(NULL, ",;\n");
+      while(fgets(line, 128, file) != NULL)
+      {
+        char *instance, *cOpt;
+        instance = strtok(line, ",;\n");
+        cOpt = strtok(NULL, ",;\n");
         double opt;
         if(strcmp(cOpt, "Infeasible")==0) opt = DBL_MAX;
         else opt = atof(cOpt);
-    		optimals.insert(pair<string, double>(instance, opt));
-    	}
+        optimals.insert(pair<string, double>(instance, opt));
+      }
     }
 
     fclose(file);
@@ -195,22 +195,11 @@ int main( int argc, char **argv )
 
    //decideLpMethod();
 
-   //printf("cbcroot: root node relaxation and clique cuts\n\n");
+   printf("cbcroot: root node relaxation and clique cuts\n\n");
    char problemName[ 256 ];
    getFileName( problemName, argv[1] );
-   //printf("loaded %s \n", problemName );
-   //printf("\t%d variables (%d integer) %d rows\n\n", numCols, solver->getNumIntegers(), numRows );
-
-
-   map<string, double> optimals = getOptimals();
-   assert(optimals.find(problemName) != optimals.end());
-   double instOpt = optimals[problemName];
-
-   if(instOpt == DBL_MAX)
-   {
-      fprintf( stderr, "This instance do not have a feasible solution!\n" );
-      return 0;
-   }
+   printf("loaded %s \n", problemName );
+   printf("\t%d variables (%d integer) %d rows\n\n", numCols, solver->getNumIntegers(), numRows );
 
    CGraph *cgraph = osi_build_cgraph( solver );
 
@@ -228,9 +217,8 @@ int main( int argc, char **argv )
    vector<double> ones( numCols, 1.0 );
    const CliqueSet *clqSet = NULL;
 
-   //printf(">>> solving relaxation ... ");
+   printf(">>> solving relaxation ... ");
    clock_t start = clock();
-   //solver->setHintParam( OsiDoDualInInitial, true, OsiHintDo );
    solver->initialSolve();
 
    if (!solver->isProvenOptimal())
@@ -271,13 +259,9 @@ int main( int argc, char **argv )
    }
 
    double initialBound = solver->getObjValue();
-
-   //printf("Initial dual bound %g\n", solver->getObjValue() );
    clock_t end = clock();
-   //printf("solved in %.3f\n", ((double)(end-start)) / ((double)CLOCKS_PER_SEC) );
-   printf("%.2lf %d %d %.7lf %.7lf %.7lf\n", ((double)(end-start)) / ((double)CLOCKS_PER_SEC), pass, 0, solver->getObjValue(),
-   												instOpt, abs_mip_gap(solver->getObjValue(), instOpt));
-   //clock_t startSep = 0, endSep;
+   printf("%.2lf %d %d %.7lf\n", ((double)(end-start)) / ((double)CLOCKS_PER_SEC), pass, 0, solver->getObjValue());
+   clock_t startSep = 0, endSep;
    double timeSep;
 
    CliqueSeparation *cs = clq_sep_create( cgraph );
@@ -315,6 +299,11 @@ int main( int argc, char **argv )
                 cliqueGen.setCGraph( cgraph );
                 cliqueGen.setGenOddHoles( true ); //allow inserting odd hole cuts
                 cliqueGen.colNames = &varNames;
+
+                _filename[0] = '\0';
+                char tmp[256];
+                sprintf(tmp, "%s_cut_%d.clqw",problemName, pass+1);
+                strcpy(_filename, tmp);
                 cliqueGen.generateCuts( *solver, cuts, info );
 
                 //removing duplicate cuts (inserted in previous iterations)
@@ -376,16 +365,15 @@ int main( int argc, char **argv )
 
       if ( pTime > MAX_TIME )
       {
-         //printf("time limit reached. discarding cuts.\n");
+         printf("time limit reached. discarding cuts.\n");
          newCuts = 0;
       }
-      //printf( "round %d : %s separated %d cuts in %.4f seconds. dual limit now: %g time: %.3f\n", pass+1, methodName, newCuts, sepTime, solver->getObjValue(), pTime );
 
       if (newCuts<60)
       {
          if (passesGomory<maxGomory)
          {
-            //printf("\n- generating gomory cuts.\n");
+            printf("\n- generating gomory cuts.\n");
             CglGomory cglGomory;
             OsiCuts cuts;
             CglTreeInfo info;
@@ -403,7 +391,7 @@ int main( int argc, char **argv )
          }
          if (passesTwoMir<maxTwoMir)
          {
-            //printf("\n- generating two mir cuts.\n");
+            printf("\n- generating two mir cuts.\n");
             CglTwomir cglTwoMir;
             OsiCuts cuts;
             CglTreeInfo info;
@@ -425,7 +413,6 @@ int main( int argc, char **argv )
 
       if (newCuts)
       {
-         //printf("resolving relaxation ... ");
          fflush( stdout );
          clock_t start = clock();
          solver->resolve();
@@ -466,11 +453,8 @@ int main( int argc, char **argv )
             exit( EXIT_FAILURE );
          }
          clock_t end = clock();
-         //printf("solved in %.3f after adding cuts of pass %d. dual limit now %g\n", ((double)(end-start)) / ((double)CLOCKS_PER_SEC), pass, solver->getObjValue() );
-         //printf("\n");
          fflush( stdout );
-         printf("%.2lf %d %d %.7lf %.7lf %.7lf\n", sepTime, pass, newCuts, solver->getObjValue(),
-         								instOpt, abs_mip_gap(solver->getObjValue(), instOpt));
+         printf("%.2lf %d %d %.7lf\n", sepTime, pass, newCuts, solver->getObjValue());
       }
 
       fflush( stdout );
@@ -480,9 +464,7 @@ int main( int argc, char **argv )
 
    clock_t tend = clock();
    double totalTime = ((double)(tend-start)) / ((double)CLOCKS_PER_SEC);
-   //printf("\nend of root node relaxation. initial dual limit: %.7f final: %.7f time: %.3f total cuts: %d\n", initialBound, solver->getObjValue(), totalTime, totalCuts );
-
-   //printf("min violation: %g\n", cliqueGen.getMinViolation() );
+   printf("\nend of root node relaxation. initial dual limit: %.7f final: %.7f time: %.3f total cuts: %d\n", initialBound, solver->getObjValue(), totalTime, totalCuts );
 
    /*clq_sep_free( &clqSep );*/
    cgraph_free( &cgraph );

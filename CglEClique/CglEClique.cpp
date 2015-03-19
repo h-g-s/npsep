@@ -48,8 +48,7 @@ void fillColSolution(const OsiSolverInterface &si, double colSol[])
    for(int i = 0; i < numCols; i++)
    {
       colSol[i] = origColSol[i];
-      colSol[i+numCols] = 1 - origColSol[i];
-      //colSol[i+numCols] = origColSol[i];
+      colSol[i+numCols] = 1.0 - origColSol[i];
    }
 }
 
