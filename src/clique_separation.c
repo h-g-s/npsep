@@ -207,7 +207,8 @@ void clq_sep_separate( CliqueSeparation *sep, const double x[] )
                 int j, nsize = cgraph_get_all_conflicting(cgraph, i, neighs, csize * 10);
                 double maxViol = x[i];
                 for(j = 0; j < nsize; j++)
-                    maxViol += x[neighs[j]];
+                	if(fracPart(x[neighs[j]]) >= minFrac)
+                    	maxViol += x[neighs[j]];
                 
                 if(maxViol < sep->minViol)
                 {
