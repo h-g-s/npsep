@@ -185,6 +185,7 @@ void clq_sep_separate( CliqueSeparation *sep, const double x[] )
         char inQueue[csize]; //'1' if a vertices is already in queue - '0' otherwise
         neighs = xmalloc(sizeof(int) * csize * 10);
         vint_queue_init(&queue, csize);
+        int deleted = 0;
 
         for(i = 0; i < csize; i++)
         {
@@ -203,10 +204,27 @@ void clq_sep_separate( CliqueSeparation *sep, const double x[] )
 
             else
             {
-                iv[i] = cgraph_degree(cgraph, i);
-                inQueue[i] = '0';
+                int j, nsize = cgraph_get_all_conflicting(cgraph, i, neighs, csize * 10);
+                double maxViol = x[i];
+                for(j = 0; j < nsize; j++)
+                    maxViol += x[neighs[j]];
+                
+                if(maxViol < sep->minViol)
+                {
+                    iv[i] = -1;
+                    vint_queue_push(&queue, i);
+                    inQueue[i] = '1';
+                    deleted++;
+                }
+                else 
+                {
+                    iv[i] = cgraph_degree(cgraph, i);
+                    inQueue[i] = '0';
+                }
             }
         }
+
+        printf("deleted: %d\n", deleted);
 
         while(!vint_queue_is_empty(&queue))
         {
@@ -248,9 +266,10 @@ void clq_sep_separate( CliqueSeparation *sep, const double x[] )
     cgraph_set_low_degree( ppcg, sep->enumUsage );
     clq_sep_update_ppgraph_weights( ppcg, cgraph_size(cgraph), x );
 
-    /* if enumeration is used, iv will be update*/
+    if(cgraph_size(ppcg) > 1)
+        cgraph_save( ppcg, _filename );
 
-    cgraph_save( ppcg, _filename );
+    /* if enumeration is used, iv will be update*/
 
     if (sep->verbose)
         cgraph_print_summary( ppcg, "pre-processed graph - part 1" );

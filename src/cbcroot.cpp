@@ -195,11 +195,11 @@ int main( int argc, char **argv )
 
    //decideLpMethod();
 
-   printf("cbcroot: root node relaxation and clique cuts\n\n");
+   //printf("cbcroot: root node relaxation and clique cuts\n\n");
    char problemName[ 256 ];
    getFileName( problemName, argv[1] );
    printf("loaded %s \n", problemName );
-   printf("\t%d variables (%d integer) %d rows\n\n", numCols, solver->getNumIntegers(), numRows );
+   //printf("\t%d variables (%d integer) %d rows\n\n", numCols, solver->getNumIntegers(), numRows );
 
    CGraph *cgraph = osi_build_cgraph( solver );
 
@@ -217,7 +217,7 @@ int main( int argc, char **argv )
    vector<double> ones( numCols, 1.0 );
    const CliqueSet *clqSet = NULL;
 
-   printf(">>> solving relaxation ... ");
+   //printf(">>> solving relaxation ... ");
    clock_t start = clock();
    solver->initialSolve();
 
@@ -260,7 +260,7 @@ int main( int argc, char **argv )
 
    double initialBound = solver->getObjValue();
    clock_t end = clock();
-   printf("%.2lf %d %d %.7lf\n", ((double)(end-start)) / ((double)CLOCKS_PER_SEC), pass, 0, solver->getObjValue());
+   //printf("%.2lf %d %d %.7lf\n", ((double)(end-start)) / ((double)CLOCKS_PER_SEC), pass, 0, solver->getObjValue());
    clock_t startSep = 0, endSep;
    double timeSep;
 
@@ -294,6 +294,8 @@ int main( int argc, char **argv )
                 info.level = 0;
                 info.pass = 1;
                 vector<string> varNames = getVarNames(solver->getColNames(), numCols);
+
+                printf("pass %d ... ", pass+1);
 
                 cliqueGen.parseParameters( argc, (const char**)argv );
                 cliqueGen.setCGraph( cgraph );
@@ -365,7 +367,7 @@ int main( int argc, char **argv )
 
       if ( pTime > MAX_TIME )
       {
-         printf("time limit reached. discarding cuts.\n");
+         //printf("time limit reached. discarding cuts.\n");
          newCuts = 0;
       }
 
@@ -373,7 +375,7 @@ int main( int argc, char **argv )
       {
          if (passesGomory<maxGomory)
          {
-            printf("\n- generating gomory cuts.\n");
+            //printf("\n- generating gomory cuts.\n");
             CglGomory cglGomory;
             OsiCuts cuts;
             CglTreeInfo info;
@@ -391,7 +393,7 @@ int main( int argc, char **argv )
          }
          if (passesTwoMir<maxTwoMir)
          {
-            printf("\n- generating two mir cuts.\n");
+            //printf("\n- generating two mir cuts.\n");
             CglTwomir cglTwoMir;
             OsiCuts cuts;
             CglTreeInfo info;
@@ -454,7 +456,7 @@ int main( int argc, char **argv )
          }
          clock_t end = clock();
          fflush( stdout );
-         printf("%.2lf %d %d %.7lf\n", sepTime, pass, newCuts, solver->getObjValue());
+         //printf("%.2lf %d %d %.7lf\n", sepTime, pass, newCuts, solver->getObjValue());
       }
 
       fflush( stdout );
@@ -464,7 +466,9 @@ int main( int argc, char **argv )
 
    clock_t tend = clock();
    double totalTime = ((double)(tend-start)) / ((double)CLOCKS_PER_SEC);
-   printf("\nend of root node relaxation. initial dual limit: %.7f final: %.7f time: %.3f total cuts: %d\n", initialBound, solver->getObjValue(), totalTime, totalCuts );
+   //printf("\nend of root node relaxation. initial dual limit: %.7f final: %.7f time: %.3f total cuts: %d\n", initialBound, solver->getObjValue(), totalTime, totalCuts );
+
+   printf("\n");
 
    /*clq_sep_free( &clqSep );*/
    cgraph_free( &cgraph );
