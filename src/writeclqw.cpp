@@ -2,31 +2,17 @@
 #include <cstdio>
 #include <algorithm>
 #include <climits>
-#include <cfloat>
 #include <cstdlib>
 #include <vector>
 #include <OsiClpSolverInterface.hpp>
-#include <CglClique.hpp>
 #include "osi_cgraph.h"
 
 extern "C"
 {
-#include "memory.h"
 #include "strUtils.h"
-#include "cgraph.h"
-#include "conflict_discover.h"
-#include "clique_separation.h"
 }
 
 using namespace std;
-
-#define MIN_VIOLATION 0.02
-
-/* minimum fractional part to a variable to be considered fractional */
-#define MIN_FRAC      0.001
-
-#define MAX( a, b ) ( (a)>(b) ? (a) : (b) )
-#define MIN( a, b ) ( (a)<(b) ? (a) : (b) )
 
 void readLP( const char *fileName, OsiSolverInterface *solver );
 
@@ -55,7 +41,6 @@ int main( int argc, char **argv )
         conflictsClique += cgraph_degree(cgraphClique, i);
     conflictsClique /= 2;
     
-
     start = clock();
     CGraph *cgraphPairwise = osi_build_cgraph_pairwise( solver );
     pairwiseAnalysis = ((double(clock() - start))/((double)CLOCKS_PER_SEC));
