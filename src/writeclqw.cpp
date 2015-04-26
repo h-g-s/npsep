@@ -59,13 +59,13 @@ int main( int argc, char **argv )
     assert(cgraph_size(cgraphClique) == cgraph_size(cgraphPairwise));
     for(int i = 0; i < cgraph_size( cgraphClique ); i++)
         for(int j = i+1; j < cgraph_size( cgraphClique ); j++)
-            if(cgraph_conflicting_nodes(cgraphClique, i, j) != cgraph_conflicting_nodes(cgraphPairwise, i, j))
+            if(cgraph_conflicting_nodes(cgraphPairwise, i, j) != cgraph_conflicting_nodes(cgraphClique, i, j))
             {
-                printf("%d %d\n", cgraph_conflicting_nodes(cgraphClique, i, j), cgraph_conflicting_nodes(cgraphPairwise, i, j));
+                printf("%d %d\n", cgraph_conflicting_nodes(cgraphPairwise, i, j), cgraph_conflicting_nodes(cgraphClique, i, j));
                 printf("%d %d\n", i, j);
                 printf("%s %s\n", i < solver->getNumCols() ? solver->getColName(i).c_str() : ("¬" + solver->getColName(i - solver->getNumCols())).c_str(),
                                   j < solver->getNumCols() ? solver->getColName(j).c_str() : ("¬" + solver->getColName(j - solver->getNumCols())).c_str() );
-                i = INT_MAX/2;
+                i = cgraph_size( cgraphClique );
                 break;
             }
 

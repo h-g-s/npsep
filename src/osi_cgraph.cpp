@@ -28,7 +28,6 @@ using namespace std;
 const double LARGE_CONST = std::min( DBL_MAX/10.0, 1e20 );
 
 vector< pair< int, int > > cvec;/* conflict vector */
-vector< int > neighs;/* used i fetch conflicts */
 
 struct sort_sec_pair
 {
@@ -99,7 +98,6 @@ CGraph *osi_build_cgraph_pairwise( void *_lp )
     int nRows = lp->getNumRows();
     int idxRow;
     cvec.reserve( CVEC_CAP );
-    neighs.reserve( 8192 );
 
     for(idxRow = 0; idxRow < nRows; idxRow++)
     {
@@ -237,6 +235,7 @@ void processClique( const int n, const int *idx, CGraph *cgraph)
         for ( i1=0 ; (i1<nm1) ; ++i1 )
             for ( i2=i1+1 ; (i2<n) ; ++i2 )
                 cvec.push_back( pair<int,int>(idx[i1],idx[i2]) );
+        fetchConflicts(false, cgraph);
     }
 }
 
@@ -250,10 +249,11 @@ void fetchConflicts( const bool lastTime, CGraph *cgraph )
     pair< int, int > last;
     int currNode;
     vector< pair<int,int> >::const_iterator vIt;
+    vector< int > neighs;
+    neighs.reserve( 8192 );
 
     cvec.push_back( pair<int,int>( INT_MAX, INT_MAX ) );
 
-    neighs.clear();
     sort( cvec.begin(), cvec.end() );
     currNode = cvec.begin()->first;
     last = pair< int,int >( -1, -1 );
@@ -352,7 +352,6 @@ CGraph *osi_build_cgraph( void *_lp )
     int nRows = lp->getNumRows();
     int idxRow;
     cvec.reserve( CVEC_CAP );
-    neighs.reserve( 8192 );
 
     for(idxRow = 0; idxRow < nRows; idxRow++)
     {
@@ -440,7 +439,6 @@ CGraph *osi_build_cgraph( void *_lp )
                 mixedCliqueDetection(cgraph, newColumns, sumNegCoefs, -1.0 * rhs[idxRow]);
             }
         }
-        fetchConflicts( false, cgraph );
     }
     fetchConflicts(true, cgraph);
     cgraph_update_min_max_degree( cgraph );
@@ -455,7 +453,7 @@ void cliqueDetection(CGraph* cgraph, const vector<pair<int, double> >& columns, 
     int cliqueSize = 0;
 
     maxLHS = sumNegCoefs - min(0.0, columns[nElements-2].second) - min(0.0, columns[nElements-1].second)
-          + columns[nElements-2].second + columns[nElements-1].second;
+             + columns[nElements-2].second + columns[nElements-1].second;
 
     if(maxLHS <= rhs + EPS) return; //there is no clique involving activation of variables in this constraint.
 
@@ -488,21 +486,24 @@ void cliqueDetection(CGraph* cgraph, const vector<pair<int, double> >& columns, 
     	double coef = columns[i].second;
         double partialLHS = sumNegCoefs - min(0.0, coef) + coef;
 
+        maxLHS = sumNegCoefs - min(0.0, columns[i].second) - min(0.0, columns[nElements-1].second)
+                 + columns[i].second + columns[nElements-1].second;
+
+        if(maxLHS <= rhs + EPS) return;
+
     	int position = binary_search(columns, partialLHS, rhs, cliqueStart, nElements - 1);
 
-		if(position < nElements) //clique was found
-		{
-			int n = nElements - position + 1, idxs[n];
-			cliqueSize = 1;
-			idxs[0] = idx;
-		    for(int i = position, j = 1; i < nElements; i++)
-		    {
-		        idxs[j++] = columns[i].first;
-		        cliqueSize++;
-		    }
-		    processClique( cliqueSize, (const int *)idxs, cgraph );								
-		}
-		else break;
+    	assert(position >= 0 && position < nElements);
+
+		int n = nElements - position + 1, idxs[n];
+		cliqueSize = 1;
+		idxs[0] = idx;
+	    for(int i = position, j = 1; i < nElements; i++)
+	    {
+	        idxs[j++] = columns[i].first;
+	        cliqueSize++;
+	    }
+	    processClique( cliqueSize, (const int *)idxs, cgraph );
     }
 }
 
@@ -545,21 +546,24 @@ void cliqueComplementDetection(CGraph* cgraph, const vector<pair<int, double> >&
     	int idx = columns[i].first;
     	double coef = columns[i].second;
         double partialLHS = sumNegCoefs - min(0.0, coef);
+
+        maxLHS = sumNegCoefs - min(0.0, columns[i].second) - min(0.0, columns[0].second);
+
+        if(maxLHS <= rhs + EPS) return;
+
     	int position = binary_search_complement(columns, partialLHS, rhs, 0, cliqueCompStart);
 
-		if(position >= 0) //clique was found
-		{
-			int n = position + 2, idxs[n];
-			cliqueCompSize = 1;
-			idxs[0] = idx + nCols;
-		    for(int i = 0, j = 1; i <= position; i++)
-		    {
-		        idxs[j++] = columns[i].first + nCols;
-		        cliqueCompSize++;
-		    }
-		    processClique( cliqueCompSize, (const int *)idxs, cgraph );
-		}
-		else break;
+    	assert(position >=0 && position < nElements);
+		
+		int n = position + 2, idxs[n];
+		cliqueCompSize = 1;
+		idxs[0] = idx + nCols;
+	    for(int i = 0, j = 1; i <= position; i++)
+	    {
+	        idxs[j++] = columns[i].first + nCols;
+	        cliqueCompSize++;
+	    }
+	    processClique( cliqueCompSize, (const int *)idxs, cgraph );
     }
 }
 
@@ -568,27 +572,46 @@ void mixedCliqueDetection(CGraph* cgraph, const vector<pair<int, double> >& colu
 	int nElements = (int)columns.size();
 	int nCols = cgraph_size(cgraph) / 2;
 
-	for(int i = nElements - 2; i >= 0; i--)
-	{
-		int idx = columns[i].first;
-    	double coef = columns[i].second;
-		double maxLHS = sumNegCoefs - min(0.0, columns[i].second) - min(0.0, columns[nElements-1].second)
-						+ columns[nElements-1].second;
+	//Looking for conflicts like (x = 0, y = 1)
+    for(int i = 0; i < nElements - 1; i++)
+    {
+        int idx = columns[i].first;
+        double coef = columns[i].second;
+        double maxLHS = sumNegCoefs - min(0.0, coef) - min(0.0, columns[nElements-1].second) + columns[nElements-1].second;
 
-	    if(maxLHS <= rhs + EPS) continue; //there are no conflicts here
+        if(maxLHS <= rhs + EPS) break; //there are no conflicts here
 
-	    double partialLHS = sumNegCoefs - min(0.0, coef);
-    	int position = binary_search(columns, partialLHS, rhs, i+1, nElements - 1);
+        double partialLHS = sumNegCoefs - min(0.0, coef);
+        int position = binary_search(columns, partialLHS, rhs, i+1, nElements - 1);
 
-		if(position < nElements) //Conflicts between the variable with index idx and
-		{						//all the variables with indexes in the range [position, nElements-1]
-		
-			for(int j = position; j < nElements; j++)
-		        cvec.push_back( pair<int,int>(idx+nCols, columns[j].first) );
-	        fetchConflicts(false, cgraph);
-		}
-		else break;
-	}
+        assert(position >= i+1 && position < nElements);
 
-	fetchConflicts(true, cgraph);
+        //Conflicts between the complement of variable with index idx and
+        //all the variables with indexes in the range [position, nElements-1]
+        for(int j = position; j < nElements; j++)
+        	cvec.push_back( pair<int,int>(idx + nCols, columns[j].first) );
+        fetchConflicts(false, cgraph);
+    }
+
+    //Looking for conflicts like (x = 1, y = 0)
+    for(int i = nElements - 2; i >= 0; i--)
+    {
+        int idx = columns[i].first;
+        double coef = columns[i].second;
+
+        double maxLHS = sumNegCoefs - min(0.0, coef) - min(0.0, columns[i+1].second) + coef;
+
+        if(maxLHS <= rhs + EPS) break; //there are no conflicts here
+
+        double partialLHS = sumNegCoefs - min(0.0, coef) + coef;
+        int position = binary_search_complement(columns, partialLHS, rhs, i+1, nElements - 1);
+
+        assert(position >= i+1 && position < nElements);
+
+        //Conflicts between the variable with index idx and
+        //all the complements of variables with indexes in the range [i+1, position]
+        for(int j = i+1; j <= position; j++)
+            cvec.push_back( pair<int,int>(idx, columns[j].first + nCols) );
+        fetchConflicts(false, cgraph);
+    }
 }
