@@ -364,7 +364,7 @@ void clq_set_save( const CGraph *cgraph, const CliqueSet *clqSet, const char *fi
       for ( j=0 ; (j<size) ; ++j )
       {
          fprintf( f, " %d", elements[j]+1 );
-         if (strlen(cgraph_get_node_name( cgraph, elements[j]))>0)
+         if(cgraph_get_node_name( cgraph, elements[j]))
             fprintf( f, "(%s)", cgraph_get_node_name( cgraph, elements[j]) );
          fprintf( f, " " );
       }

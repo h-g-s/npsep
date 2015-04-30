@@ -44,8 +44,8 @@ void printGraphSummary( CGraph *cgraph, const char *graphName );
 
 typedef enum
 {
-   Default,   /* our new clique separation implementation */
-   CglSepM
+    Default,   /* our new clique separation implementation */
+    CglSepM
 } SeparationMethod;
 
 SeparationMethod sepMethod = Default;
@@ -53,16 +53,17 @@ char methodName[256];
 int maxTwoMir = 0;
 int maxGomory = 0;
 string optFile;
+map<string, double> optimals;
 
 void help()
 {
-   printf("usage:\n");
-   printf("cbcroot problem [-cgl]\n");
-   printf("\t-cgl changes separation routine to CGL\n");
-   printf("\t-mtm=int max two mir passes for when no clique cuts are found\n");
-   printf("\t-mgm=int max gomory passes for when no clique cuts are found\n");
-   printf("\t-allint  considers that all variables are integers\n");
-   clq_sep_params_help_cmd_line();
+    printf("usage:\n");
+    printf("cbcroot problem [-cgl]\n");
+    printf("\t-cgl changes separation routine to CGL\n");
+    printf("\t-mtm=int max two mir passes for when no clique cuts are found\n");
+    printf("\t-mgm=int max gomory passes for when no clique cuts are found\n");
+    printf("\t-allint  considers that all variables are integers\n");
+    clq_sep_params_help_cmd_line();
 }
 
 static bool transformInPI = false;
@@ -82,13 +83,13 @@ void decideLpMethod();
 
 bool differentSense( const double v1, const double v2 )
 {
-  if ( (v1>1e-5) && (v2<-1e-5) )
-  return true;
+    if ( (v1>1e-5) && (v2<-1e-5) )
+        return true;
 
-  if ( (v1<-1e-5) && (v2>1e-5) )
-  return true;
+    if ( (v1<-1e-5) && (v2>1e-5) )
+        return true;
 
-  return false;
+    return false;
 
 }
 
@@ -138,10 +139,9 @@ const double abs_mip_gap( const double v1, const double v2 )
     return result;
 }
 
-map<string, double> getOptimals()
+void getOptimals()
 {
-  map<string, double> optimals;
-  FILE *file = fopen(optFile.c_str(), "r");
+    FILE *file = fopen(optFile.c_str(), "r");
     if(!file)
     {
         perror("Cant open this file!\n");
@@ -151,524 +151,534 @@ map<string, double> getOptimals()
     char line[128];
     if(fgets(line, 128, file))
     {
-      while(fgets(line, 128, file) != NULL)
-      {
-        char *instance, *cOpt;
-        instance = strtok(line, ",;\n");
-        cOpt = strtok(NULL, ",;\n");
-        double opt;
-        if(strcmp(cOpt, "Infeasible")==0) opt = DBL_MAX;
-        else opt = atof(cOpt);
-        optimals.insert(pair<string, double>(instance, opt));
-      }
+        while(fgets(line, 128, file) != NULL)
+        {
+            char *instance, *cOpt;
+            instance = strtok(line, ",;\n");
+            cOpt = strtok(NULL, ",;\n");
+            double opt;
+            if(strcmp(cOpt, "Infeasible")==0) opt = DBL_MAX;
+            else opt = atof(cOpt);
+            optimals.insert(pair<string, double>(instance, opt));
+        }
     }
 
     fclose(file);
-    return optimals;
 }
 
 int main( int argc, char **argv )
 {
-   if ( argc < 2 )
-   {
-      help();
-      exit( EXIT_FAILURE );
-   }
+    if ( argc < 2 )
+    {
+        help();
+        exit( EXIT_FAILURE );
+    }
 
-   realSolver = new OsiClpSolverInterface();
-   /* makes CLP faster for hard instances */
-   realSolver->getModelPtr()->setPerturbation(50);
+    realSolver = new OsiClpSolverInterface();
+    /* makes CLP faster for hard instances */
+    realSolver->getModelPtr()->setPerturbation(50);
 
-   solver = (OsiSolverInterface*) realSolver;
-   parseParameters( argc, argv );
+    solver = (OsiSolverInterface*) realSolver;
+    parseParameters( argc, argv );
 
-   readLP( argv[1] );
+    readLP( argv[1] );
 
-   if (transformInPI)
-   {
-      vector< int > ints( solver->getNumCols() );
-      for ( int i=0 ; (i<solver->getNumCols()) ; ++i ) ints[i] = i;
-      solver->setInteger( &ints[0], solver->getNumCols() );
-   }
- 
-   const int numCols = solver->getNumCols(), numRows = solver->getNumRows();
+    if (transformInPI)
+    {
+        vector< int > ints( solver->getNumCols() );
+        for ( int i=0 ; (i<solver->getNumCols()) ; ++i ) ints[i] = i;
+        solver->setInteger( &ints[0], solver->getNumCols() );
+    }
 
-   //decideLpMethod();
+    const int numCols = solver->getNumCols(), numRows = solver->getNumRows();
 
-   //printf("cbcroot: root node relaxation and clique cuts\n\n");
-   char problemName[ 256 ];
-   getFileName( problemName, argv[1] );
-   printf("loaded %s \n", problemName );
-   //printf("\t%d variables (%d integer) %d rows\n\n", numCols, solver->getNumIntegers(), numRows );
+    //decideLpMethod();
 
-   CGraph *cgraph = osi_build_cgraph( solver );
+    //printf("cbcroot: root node relaxation and clique cuts\n\n");
+    char problemName[ 256 ];
+    getFileName( problemName, argv[1] );
+    //printf("loaded %s \n", problemName );
+    //printf("\t%d variables (%d integer) %d rows\n\n", numCols, solver->getNumIntegers(), numRows );
 
-   {
-      CliqueSeparation *clqSep = clq_sep_create( cgraph );
-      //clq_sep_set_verbose( clqSep, 1 );
-      clq_sep_set_params_parse_cmd_line( clqSep, argc, (const char**)argv );
-      //clq_sep_params_print( clqSep );
-      clq_sep_free( &clqSep );
-   }
-   CliqueSeparation *clqSep = NULL;
+    CGraph *cgraph = osi_build_cgraph( solver );
 
-   int pass = 0;
-   int newCuts = 0, totalCuts = 0;
-   vector<double> ones( numCols, 1.0 );
-   const CliqueSet *clqSet = NULL;
+    {
+        CliqueSeparation *clqSep = clq_sep_create( cgraph );
+        //clq_sep_set_verbose( clqSep, 1 );
+        clq_sep_set_params_parse_cmd_line( clqSep, argc, (const char**)argv );
+        //clq_sep_params_print( clqSep );
+        clq_sep_free( &clqSep );
+    }
+    CliqueSeparation *clqSep = NULL;
 
-   //printf(">>> solving relaxation ... ");
-   clock_t start = clock();
-   solver->initialSolve();
+    int pass = 0;
+    int newCuts = 0, totalCuts = 0;
+    vector<double> ones( numCols, 1.0 );
+    const CliqueSet *clqSet = NULL;
 
-   if (!solver->isProvenOptimal())
-   {
-      if (solver->isAbandoned())
-      {
-         fprintf( stderr, "LP solver abandoned due to numerical dificulties.\n" );
-         exit( EXIT_FAILURE );
-      }
-      if (solver->isProvenPrimalInfeasible())
-      {
-         fprintf( stderr, "LP solver says PRIMAL INFEASIBLE.\n" );
-         exit( EXIT_FAILURE );
-      }
-      if (solver->isProvenDualInfeasible())
-      {
-         fprintf( stderr, "LP solver says DUAL INFEASIBLE.\n" );
-         exit( EXIT_FAILURE );
-      }
-      if (solver->isPrimalObjectiveLimitReached())
-      {
-         fprintf( stderr, "LP solver says isPrimalObjectiveLimitReached.\n" );
-         exit( EXIT_FAILURE );
-      }
-      if (solver->isDualObjectiveLimitReached())
-      {
-         fprintf( stderr, "LP solver says isDualObjectiveLimitReached.\n" );
-         exit( EXIT_FAILURE );
-      }
-      if (solver->isIterationLimitReached())
-      {
-         fprintf( stderr, "LP solver says isIterationLimitReached.\n" );
-         exit( EXIT_FAILURE );
-      }
+    //printf(">>> solving relaxation ... ");
+    clock_t start = clock();
+    solver->initialSolve();
 
-      fprintf( stderr, "ERROR: Could not solve LP relaxation to optimality. Checking status...\n" );
-      exit( EXIT_FAILURE );
-   }
+    if (!solver->isProvenOptimal())
+    {
+        if (solver->isAbandoned())
+        {
+            fprintf( stderr, "LP solver abandoned due to numerical dificulties.\n" );
+            exit( EXIT_FAILURE );
+        }
+        if (solver->isProvenPrimalInfeasible())
+        {
+            fprintf( stderr, "LP solver says PRIMAL INFEASIBLE.\n" );
+            exit( EXIT_FAILURE );
+        }
+        if (solver->isProvenDualInfeasible())
+        {
+            fprintf( stderr, "LP solver says DUAL INFEASIBLE.\n" );
+            exit( EXIT_FAILURE );
+        }
+        if (solver->isPrimalObjectiveLimitReached())
+        {
+            fprintf( stderr, "LP solver says isPrimalObjectiveLimitReached.\n" );
+            exit( EXIT_FAILURE );
+        }
+        if (solver->isDualObjectiveLimitReached())
+        {
+            fprintf( stderr, "LP solver says isDualObjectiveLimitReached.\n" );
+            exit( EXIT_FAILURE );
+        }
+        if (solver->isIterationLimitReached())
+        {
+            fprintf( stderr, "LP solver says isIterationLimitReached.\n" );
+            exit( EXIT_FAILURE );
+        }
 
-   double initialBound = solver->getObjValue();
-   clock_t end = clock();
-   //printf("%.2lf %d %d %.7lf\n", ((double)(end-start)) / ((double)CLOCKS_PER_SEC), pass, 0, solver->getObjValue());
-   clock_t startSep = 0, endSep;
-   double timeSep;
+        fprintf( stderr, "ERROR: Could not solve LP relaxation to optimality. Checking status...\n" );
+        exit( EXIT_FAILURE );
+    }
 
-   CliqueSeparation *cs = clq_sep_create( cgraph );
-   clq_sep_set_params_parse_cmd_line( cs, argc, (const char**)argv );
-   const int maxPasses = clq_sep_get_max_passes(cs);
-   clq_sep_free( &cs );
+    double opt;
+    if(!optFile.empty())
+    {
+        getOptimals();
+        if(optimals.find(problemName) == optimals.end())
+        {
+        	fprintf(stderr, "ERROR: optimal value not found!\n");
+        	exit(EXIT_FAILURE);
+        }
+        opt = optimals[problemName];
+    }
 
-   int passesGomory = 0;
-   int passesTwoMir = 0;
+    double initialBound = solver->getObjValue();
+    clock_t end = clock();
+    printf("%.2lf %d %d %.7lf", ((double)(end-start)) / ((double)CLOCKS_PER_SEC), pass, 0, solver->getObjValue());
+    if(!optFile.empty())
+    {
+    	printf(" %.7lf %.7lf", opt, abs_mip_gap(solver->getObjValue(), opt));
+    }
+    printf("\n");
+    clock_t startSep = 0, endSep;
+    double timeSep;
 
-   OsiCuts allCuts; //to avoid inserting cuts already inserted in previous iterations
-   CoinAbsFltEq equal(1.0e-12);
+    CliqueSeparation *cs = clq_sep_create( cgraph );
+    clq_sep_set_params_parse_cmd_line( cs, argc, (const char**)argv );
+    const int maxPasses = clq_sep_get_max_passes(cs);
+    clq_sep_free( &cs );
 
-   do
-   {
-      newCuts = 0;
+    int passesGomory = 0;
+    int passesTwoMir = 0;
 
-      //const double *x = solver->getColSolution();
+    OsiCuts allCuts; //to avoid inserting cuts already inserted in previous iterations
+    CoinAbsFltEq equal(1.0e-12);
 
-      clock_t startSep = clock();
+    do
+    {
+        newCuts = 0;
 
-      switch (sepMethod)
-      {
-         case Default :
+        //const double *x = solver->getColSolution();
+
+        clock_t startSep = clock();
+
+        switch (sepMethod)
+        {
+        case Default :
             /* updating reduced costs */
+        {
+            CglEClique cliqueGen;
+            OsiCuts cuts;
+            CglTreeInfo info;
+            info.level = 0;
+            info.pass = 1;
+            vector<string> varNames = getVarNames(solver->getColNames(), numCols);
+
+            cliqueGen.parseParameters( argc, (const char**)argv );
+            cliqueGen.setCGraph( cgraph );
+            cliqueGen.setGenOddHoles( true ); //allow inserting odd hole cuts
+            cliqueGen.colNames = &varNames;
+            cliqueGen.generateCuts( *solver, cuts, info );
+
+            //removing duplicate cuts (inserted in previous iterations)
+            bool cutsToRemove[cuts.sizeRowCuts()];
+            fill(cutsToRemove, cutsToRemove + cuts.sizeRowCuts(), false);
+            for(int i = 0; i < cuts.sizeRowCuts(); i++)
             {
-                CglEClique cliqueGen;
+                const OsiRowCut &newOrc = cuts.rowCut(i);
+                for(int j = 0; j < allCuts.sizeRowCuts(); j++)
+                {
+                    const OsiRowCut &orc = allCuts.rowCut(j);
+                    if(newOrc == orc)
+                    {
+                        //printf("A duplicate cut has been detected!\n");
+                        cutsToRemove[i] = true;
+                        break;
+                    }
+                }
+            }
+            for(int i = 0; i < cuts.sizeRowCuts(); i++)
+            {
+                if(!cutsToRemove[i]) //if cut i was not inserted in allCuts we have to insert it
+                    allCuts.insertIfNotDuplicate(cuts.rowCut(i), equal);
+                else cuts.eraseRowCut(i);
+            }
+
+            newCuts = cuts.sizeCuts();
+            solver->applyCuts( cuts );
+        }
+
+
+        break;
+        case CglSepM :
+        {
+            CglClique cliqueGen;
+            OsiCuts cuts;
+            CglTreeInfo info;
+            info.level = 0;
+            info.pass = 1;
+            cliqueGen.setMinViolation( MIN_VIOLATION );
+            cliqueGen.setStarCliqueReport(false);
+            cliqueGen.setRowCliqueReport(false);
+            cliqueGen.generateCuts( *solver, cuts, info );
+            newCuts = cuts.sizeCuts();
+
+            solver->applyCuts( cuts );
+
+        }
+
+        break;
+        }
+
+        totalCuts += newCuts;
+
+        clock_t pend = clock();
+        double pTime = ((double)(pend-start)) / ((double)CLOCKS_PER_SEC);
+        double sepTime = ((double)(pend-startSep)) / ((double)CLOCKS_PER_SEC);
+
+
+        if ( pTime > MAX_TIME )
+        {
+            //printf("time limit reached. discarding cuts.\n");
+            newCuts = 0;
+        }
+
+        if (newCuts<60)
+        {
+            if (passesGomory<maxGomory)
+            {
+                //printf("\n- generating gomory cuts.\n");
+                CglGomory cglGomory;
                 OsiCuts cuts;
                 CglTreeInfo info;
                 info.level = 0;
                 info.pass = 1;
-                vector<string> varNames = getVarNames(solver->getColNames(), numCols);
+                //            cglGomory.setMinViolation( MIN_VIOLATION );
 
-                printf("pass %d ... ", pass+1);
-
-                cliqueGen.parseParameters( argc, (const char**)argv );
-                cliqueGen.setCGraph( cgraph );
-                cliqueGen.setGenOddHoles( true ); //allow inserting odd hole cuts
-                cliqueGen.colNames = &varNames;
-
-                _filename[0] = '\0';
-                char tmp[256];
-                sprintf(tmp, "%s_cut_%d.clqw",problemName, pass+1);
-                strcpy(_filename, tmp);
-                cliqueGen.generateCuts( *solver, cuts, info );
-
-                //removing duplicate cuts (inserted in previous iterations)
-                bool cutsToRemove[cuts.sizeRowCuts()];
-                fill(cutsToRemove, cutsToRemove + cuts.sizeRowCuts(), false);
-                for(int i = 0; i < cuts.sizeRowCuts(); i++)
-                {
-                    const OsiRowCut &newOrc = cuts.rowCut(i);
-                    for(int j = 0; j < allCuts.sizeRowCuts(); j++)
-                    {
-                        const OsiRowCut &orc = allCuts.rowCut(j);
-                        if(newOrc == orc)
-                        {
-                            //printf("A duplicate cut has been detected!\n");
-                            cutsToRemove[i] = true;
-                            break;
-                        }
-                    }
-                }
-                for(int i = 0; i < cuts.sizeRowCuts(); i++)
-                {
-                    if(!cutsToRemove[i]) //if cut i was not inserted in allCuts we have to insert it
-                        allCuts.insertIfNotDuplicate(cuts.rowCut(i), equal);
-                    else cuts.eraseRowCut(i);
-                }
-
+                cglGomory.generateCuts( *solver, cuts, info );
                 newCuts = cuts.sizeCuts();
+
+                newCuts += cuts.sizeCuts();
+
                 solver->applyCuts( cuts );
+                ++passesGomory;
             }
-
-
-            break;
-         case CglSepM :
+            if (passesTwoMir<maxTwoMir)
             {
-               CglClique cliqueGen;
-               OsiCuts cuts;
-               CglTreeInfo info;
-               info.level = 0;
-               info.pass = 1;
-               cliqueGen.setMinViolation( MIN_VIOLATION );
-               cliqueGen.setStarCliqueReport(false);
-               cliqueGen.setRowCliqueReport(false);
-               cliqueGen.generateCuts( *solver, cuts, info );
-               newCuts = cuts.sizeCuts();
+                //printf("\n- generating two mir cuts.\n");
+                CglTwomir cglTwoMir;
+                OsiCuts cuts;
+                CglTreeInfo info;
+                info.level = 0;
+                info.pass = 1;
+                //            cglTwoMir.setMinViolation( MIN_VIOLATION );
 
-               solver->applyCuts( cuts );
+                cglTwoMir.generateCuts( *solver, cuts, info );
+                newCuts = cuts.sizeCuts();
 
+                solver->applyCuts( cuts );
+                newCuts += cuts.sizeCuts();
+
+                ++passesTwoMir;
             }
+        }
 
-            break;
-      }
+        ++pass;
 
-      totalCuts += newCuts;
-
-      clock_t pend = clock();
-      double pTime = ((double)(pend-start)) / ((double)CLOCKS_PER_SEC);
-      double sepTime = ((double)(pend-startSep)) / ((double)CLOCKS_PER_SEC);
-
-
-      if ( pTime > MAX_TIME )
-      {
-         //printf("time limit reached. discarding cuts.\n");
-         newCuts = 0;
-      }
-
-      if (newCuts<60)
-      {
-         if (passesGomory<maxGomory)
-         {
-            //printf("\n- generating gomory cuts.\n");
-            CglGomory cglGomory;
-            OsiCuts cuts;
-            CglTreeInfo info;
-            info.level = 0;
-            info.pass = 1;
-            //            cglGomory.setMinViolation( MIN_VIOLATION );
-
-            cglGomory.generateCuts( *solver, cuts, info );
-            newCuts = cuts.sizeCuts();
-
-            newCuts += cuts.sizeCuts();
-
-            solver->applyCuts( cuts );
-            ++passesGomory;
-         }
-         if (passesTwoMir<maxTwoMir)
-         {
-            //printf("\n- generating two mir cuts.\n");
-            CglTwomir cglTwoMir;
-            OsiCuts cuts;
-            CglTreeInfo info;
-            info.level = 0;
-            info.pass = 1;
-            //            cglTwoMir.setMinViolation( MIN_VIOLATION );
-
-            cglTwoMir.generateCuts( *solver, cuts, info );
-            newCuts = cuts.sizeCuts();
-
-            solver->applyCuts( cuts );
-            newCuts += cuts.sizeCuts();
-
-            ++passesTwoMir;
-         }
-      }
-
-      ++pass;
-
-      if (newCuts)
-      {
-         fflush( stdout );
-         clock_t start = clock();
-         solver->resolve();
-         if (!solver->isProvenOptimal())
-         {
-            if (solver->isAbandoned())
+        if (newCuts)
+        {
+            fflush( stdout );
+            clock_t start = clock();
+            solver->resolve();
+            if (!solver->isProvenOptimal())
             {
-               fprintf( stderr, "LP solver abandoned due to numerical dificulties.\n" );
-               exit( EXIT_FAILURE );
+                if (solver->isAbandoned())
+                {
+                    fprintf( stderr, "LP solver abandoned due to numerical dificulties.\n" );
+                    exit( EXIT_FAILURE );
+                }
+                if (solver->isProvenPrimalInfeasible())
+                {
+                    fprintf( stderr, "LP solver says PRIMAL INFEASIBLE.\n" );
+                    exit( EXIT_FAILURE );
+                }
+                if (solver->isProvenDualInfeasible())
+                {
+                    fprintf( stderr, "LP solver says DUAL INFEASIBLE.\n" );
+                    exit( EXIT_FAILURE );
+                }
+                if (solver->isPrimalObjectiveLimitReached())
+                {
+                    fprintf( stderr, "LP solver says isPrimalObjectiveLimitReached.\n" );
+                    exit( EXIT_FAILURE );
+                }
+                if (solver->isDualObjectiveLimitReached())
+                {
+                    fprintf( stderr, "LP solver says isDualObjectiveLimitReached.\n" );
+                    exit( EXIT_FAILURE );
+                }
+                if (solver->isIterationLimitReached())
+                {
+                    fprintf( stderr, "LP solver says isIterationLimitReached.\n" );
+                    exit( EXIT_FAILURE );
+                }
+
+                fprintf( stderr, "ERROR: Could not solve LP relaxation. Exiting.\n" );
+                exit( EXIT_FAILURE );
             }
-            if (solver->isProvenPrimalInfeasible())
-            {
-               fprintf( stderr, "LP solver says PRIMAL INFEASIBLE.\n" );
-               exit( EXIT_FAILURE );
-            }
-            if (solver->isProvenDualInfeasible())
-            {
-               fprintf( stderr, "LP solver says DUAL INFEASIBLE.\n" );
-               exit( EXIT_FAILURE );
-            }
-            if (solver->isPrimalObjectiveLimitReached())
-            {
-               fprintf( stderr, "LP solver says isPrimalObjectiveLimitReached.\n" );
-               exit( EXIT_FAILURE );
-            }
-            if (solver->isDualObjectiveLimitReached())
-            {
-               fprintf( stderr, "LP solver says isDualObjectiveLimitReached.\n" );
-               exit( EXIT_FAILURE );
-            }
-            if (solver->isIterationLimitReached())
-            {
-               fprintf( stderr, "LP solver says isIterationLimitReached.\n" );
-               exit( EXIT_FAILURE );
-            }
+            clock_t end = clock();
+            fflush( stdout );
+            printf("%.2lf %d %d %.7lf", sepTime, pass, newCuts, solver->getObjValue());
+            if(!optFile.empty())
+            	printf(" %.7lf %.7lf", opt, abs_mip_gap(solver->getObjValue(), opt));
+            printf("\n");
+        }
 
-            fprintf( stderr, "ERROR: Could not solve LP relaxation. Exiting.\n" );
-            exit( EXIT_FAILURE );
-         }
-         clock_t end = clock();
-         fflush( stdout );
-         //printf("%.2lf %d %d %.7lf\n", sepTime, pass, newCuts, solver->getObjValue());
-      }
+        fflush( stdout );
 
-      fflush( stdout );
+    }
+    while ( (newCuts>0) && (pass<maxPasses) ) ;
 
-   }
-   while ( (newCuts>0) && (pass<maxPasses) ) ;
+    clock_t tend = clock();
+    double totalTime = ((double)(tend-start)) / ((double)CLOCKS_PER_SEC);
+    //printf("\nend of root node relaxation. initial dual limit: %.7f final: %.7f time: %.3f total cuts: %d\n", initialBound, solver->getObjValue(), totalTime, totalCuts );
 
-   clock_t tend = clock();
-   double totalTime = ((double)(tend-start)) / ((double)CLOCKS_PER_SEC);
-   //printf("\nend of root node relaxation. initial dual limit: %.7f final: %.7f time: %.3f total cuts: %d\n", initialBound, solver->getObjValue(), totalTime, totalCuts );
+    /*clq_sep_free( &clqSep );*/
+    cgraph_free( &cgraph );
 
-   printf("\n");
+    //strcat(problemName, "CUT");
+    //solver->writeMps(problemName);
 
-   /*clq_sep_free( &clqSep );*/
-   cgraph_free( &cgraph );
+    delete realSolver;
 
-   //strcat(problemName, "CUT");
-   //solver->writeMps(problemName);
-
-   delete realSolver;
-
-   return EXIT_SUCCESS;
+    return EXIT_SUCCESS;
 }
 
 void readLP( const char *fileName )
 {
-   solver->setIntParam(OsiNameDiscipline, 2);
-   solver->messageHandler()->setLogLevel(1);
-   solver->setHintParam(OsiDoReducePrint,true,OsiHintTry);
+    solver->setIntParam(OsiNameDiscipline, 2);
+    solver->messageHandler()->setLogLevel(1);
+    solver->setHintParam(OsiDoReducePrint,true,OsiHintTry);
 
-   if ( strstr( fileName, ".lp" ) || strstr( fileName, ".LP" ) )
-       solver->readLp( fileName );
+    if ( strstr( fileName, ".lp" ) || strstr( fileName, ".LP" ) )
+        solver->readLp( fileName );
     else
-       solver->readMps( fileName );
+        solver->readMps( fileName );
 }
 
 void printGraphSummary( CGraph *cgraph, const char *graphName )
 {
-   vector< int > neighs;
-   neighs.reserve( cgraph_size(cgraph)*100 );
-   printf("\n");
-   printf("Summary for graph: %s\n", graphName );
+    vector< int > neighs;
+    neighs.reserve( cgraph_size(cgraph)*100 );
+    printf("\n");
+    printf("Summary for graph: %s\n", graphName );
 
-   int minD = INT_MAX;
-   int maxD = -1;
-   double minF = DBL_MAX;
-   double maxF = -1;
-   double mostF = 0.0;
-   const int numCol = solver->getNumCols();
-   int nEdges = 0;
-   for ( int i=0 ; (i<cgraph_size(cgraph)) ; ++i )
-   {
-      int nConf = cgraph_get_all_conflicting( cgraph, i, &(neighs[0]), numCol*100 );
-      nEdges += nConf;
+    int minD = INT_MAX;
+    int maxD = -1;
+    double minF = DBL_MAX;
+    double maxF = -1;
+    double mostF = 0.0;
+    const int numCol = solver->getNumCols();
+    int nEdges = 0;
+    for ( int i=0 ; (i<cgraph_size(cgraph)) ; ++i )
+    {
+        int nConf = cgraph_get_all_conflicting( cgraph, i, &(neighs[0]), numCol*100 );
+        nEdges += nConf;
 
-      if ( nConf > maxD )
-         maxD = nConf;
-      if ( nConf < minD )
-         minD = nConf;
+        if ( nConf > maxD )
+            maxD = nConf;
+        if ( nConf < minD )
+            minD = nConf;
 
-      double f = ((double)cgraph_get_node_weight(cgraph,i)) / 1000.0;
+        double f = ((double)cgraph_get_node_weight(cgraph,i)) / 1000.0;
 
-      if ( f < minF )
-         minF = f;
-      if ( f > maxF )
-         maxF = f;
+        if ( f < minF )
+            minF = f;
+        if ( f > maxF )
+            maxF = f;
 
-      //const double *lb = solver->getColLower();
-      //const double *ub = solver->getColUpper();
-      if ( solver->isBinary(cgraph_get_original_node_index(cgraph, i)) )
-      {
-         double fracPart = std::min( 1.0-f, f );
-         if ( fracPart > mostF )
-            mostF = fracPart;
-      }
+        //const double *lb = solver->getColLower();
+        //const double *ub = solver->getColUpper();
+        if ( solver->isBinary(cgraph_get_original_node_index(cgraph, i)) )
+        {
+            double fracPart = std::min( 1.0-f, f );
+            if ( fracPart > mostF )
+                mostF = fracPart;
+        }
 
-   }
-   nEdges /= 2;
+    }
+    nEdges /= 2;
 
-   printf("\tnodes : %d\n", cgraph_size(cgraph) );
-   printf("\tedges : %d\n", nEdges );
-   printf("\tminimum degree: %d\n", minD);
-   printf("\tmaximum degree: %d\n", maxD);
-   printf("\tminF: %.4f\n", minF);
-   printf("\tmaxF: %.4f\n", maxF);
-   printf("\tmostF: %.4f\n", mostF);
-   printf("\n");
+    printf("\tnodes : %d\n", cgraph_size(cgraph) );
+    printf("\tedges : %d\n", nEdges );
+    printf("\tminimum degree: %d\n", minD);
+    printf("\tmaximum degree: %d\n", maxD);
+    printf("\tminF: %.4f\n", minF);
+    printf("\tmaxF: %.4f\n", maxF);
+    printf("\tmostF: %.4f\n", mostF);
+    printf("\n");
 }
 
 double fracPart( const double x )
 {
-   double nextInteger = ceil( x );
-   double previousInteger = floor( x );
+    double nextInteger = ceil( x );
+    double previousInteger = floor( x );
 
-   return std::min( nextInteger-x, x-previousInteger );
+    return std::min( nextInteger-x, x-previousInteger );
 }
 
 void parseParameters( int argc, char **argv )
 {
-   int i;
-   sprintf( methodName, "def" );
-   for ( i=1 ; (i<argc) ; ++i )
-   {
-      if (strstr( argv[i], "-cgl"))
-      {
-         //printf("Using COIN CGL separation.\n");
-         sprintf( methodName, "cgl" );
-         sepMethod = CglSepM;
-         continue;
-      }
+    int i;
+    sprintf( methodName, "def" );
+    for ( i=1 ; (i<argc) ; ++i )
+    {
+        if (strstr( argv[i], "-cgl"))
+        {
+            //printf("Using COIN CGL separation.\n");
+            sprintf( methodName, "cgl" );
+            sepMethod = CglSepM;
+            continue;
+        }
 
-      if (strcmp( argv[i], "-allint" )==0)
-          transformInPI = true;
+        if (strcmp( argv[i], "-allint" )==0)
+            transformInPI = true;
 
-      char pName[256];
-      char pValue[256];
-      getParamName( pName, argv[i] );
-      getParamValue( pValue, argv[i] );
+        char pName[256];
+        char pValue[256];
+        getParamName( pName, argv[i] );
+        getParamValue( pValue, argv[i] );
 
 
-      if (strcmp( pName, "mtm" )==0)
-      {
-         maxTwoMir = atoi( pValue );
-         printf("using at max %d two mir passes.\n", maxTwoMir );
-         continue;
-      }
+        if (strcmp( pName, "mtm" )==0)
+        {
+            maxTwoMir = atoi( pValue );
+            printf("using at max %d two mir passes.\n", maxTwoMir );
+            continue;
+        }
 
-      if (strcmp( pName, "mgm" )==0)
-      {
-         maxGomory = atoi( pValue );
-         printf("using at max %d gomory passes.\n", maxGomory );
-         continue;
-      }
+        if (strcmp( pName, "mgm" )==0)
+        {
+            maxGomory = atoi( pValue );
+            printf("using at max %d gomory passes.\n", maxGomory );
+            continue;
+        }
 
-      if (strcmp( pName, "optFile" )==0)
-      {
-         optFile = pValue;
-         continue;
-      }
+        if (strcmp( pName, "optFile" )==0)
+        {
+            optFile = pValue;
+            continue;
+        }
 
-   }
+    }
 }
 
 int addOddHoles( OsiSolverInterface *solver, OddHoleSep *oddhs )
 {
-   int r = 0;
-   const int numCol = solver->getNumCols();
-   vector< double > row( numCol, 1.0);
-   OsiCuts oc;
-   for ( int i=0; (i<oddhs_get_odd_hole_count(oddhs)) ; i++ )
-   {
-      const int *s = oddhs_get_odd_hole( oddhs, i );
-      const int *e = oddhs_get_odd_hole( oddhs, i+1 );
-      const int size = e-s;
+    int r = 0;
+    const int numCol = solver->getNumCols();
+    vector< double > row( numCol, 1.0);
+    OsiCuts oc;
+    for ( int i=0; (i<oddhs_get_odd_hole_count(oddhs)) ; i++ )
+    {
+        const int *s = oddhs_get_odd_hole( oddhs, i );
+        const int *e = oddhs_get_odd_hole( oddhs, i+1 );
+        const int size = e-s;
 
-      double lhs = 0.0;
-      for ( int j=0; (j<size) ; j++ )
-         lhs +=  solver->getColSolution()[s[j]];
+        double lhs = 0.0;
+        for ( int j=0; (j<size) ; j++ )
+            lhs +=  solver->getColSolution()[s[j]];
 
-      const double viol = lhs - ((double)(size/2));
-      if (viol < 1e-5)
-         continue;
+        const double viol = lhs - ((double)(size/2));
+        if (viol < 1e-5)
+            continue;
 
-      //printf("lhs %g viol %g rhs %g\n", lhs, viol, (double)(size/2) );
+        //printf("lhs %g viol %g rhs %g\n", lhs, viol, (double)(size/2) );
 
-      OsiRowCut orc;
-      orc.setRow( size, s, &row[0] );
-      orc.setUb( ((double)(size/2)) );
-      orc.setLb( -COIN_DBL_MIN );
-      orc.setGloballyValid( true );
+        OsiRowCut orc;
+        orc.setRow( size, s, &row[0] );
+        orc.setUb( ((double)(size/2)) );
+        orc.setLb( -COIN_DBL_MIN );
+        orc.setGloballyValid( true );
 
-      oc.insertIfNotDuplicate( orc );
-      r++;
-   }
+        oc.insertIfNotDuplicate( orc );
+        r++;
+    }
 
-   solver->applyCuts( oc );
+    solver->applyCuts( oc );
 
-   return r;
+    return r;
 }
 
 void decideLpMethod()
 {
-   if ( realSolver->getNumRows() > 100000 )
-   {
-      ClpSolve::SolveType method = ClpSolve::useBarrier;
-      ClpSolve::PresolveType presolveType = ClpSolve::presolveOn;
-      int numberPasses = 5;
+    if ( realSolver->getNumRows() > 100000 )
+    {
+        ClpSolve::SolveType method = ClpSolve::useBarrier;
+        ClpSolve::PresolveType presolveType = ClpSolve::presolveOn;
+        int numberPasses = 5;
 #ifndef UFL_BARRIER
-      int options[] = {0,0,0,0,0,0};
+        int options[] = {0,0,0,0,0,0};
 #else
-      // we can use UFL code
-      int options[] = {0,0,0,0,4,0};
+        // we can use UFL code
+        int options[] = {0,0,0,0,4,0};
 #endif
-      int extraInfo[] = {-1,-1,-1,-1,-1,-1};
-      int independentOptions[] = {0,0,3};
-      ClpSolve clpSolve(method,presolveType,numberPasses,
-            options,extraInfo,independentOptions);
-      // =======================
-      // now pass options in
-      realSolver->setSolveOptions(clpSolve);
-   }
+        int extraInfo[] = {-1,-1,-1,-1,-1,-1};
+        int independentOptions[] = {0,0,3};
+        ClpSolve clpSolve(method,presolveType,numberPasses,
+                          options,extraInfo,independentOptions);
+        // =======================
+        // now pass options in
+        realSolver->setSolveOptions(clpSolve);
+    }
 }
 
 vector<string> getVarNames(const vector<string> &colNames, int numCols)
 {
-   vector<string> varNames(numCols * 2);
+    vector<string> varNames(numCols * 2);
 
-   for(int i = 0; i < numCols; i++)
-   {
-      varNames[i] = colNames[i];
-      varNames[i+numCols] = "¬" + colNames[i];
-   }
+    for(int i = 0; i < numCols; i++)
+    {
+        varNames[i] = colNames[i];
+        varNames[i+numCols] = "¬" + colNames[i];
+    }
 
-   return varNames;
+    return varNames;
 }

@@ -6,8 +6,6 @@ typedef struct _CliqueSeparation CliqueSeparation;
 #include "cgraph.h"
 #include "clique.h"
 
-extern char _filename[256];
-
 /* origGraph is the original conflict graph,
    containing all nodes. separation will always
    process a subset of these nodes */

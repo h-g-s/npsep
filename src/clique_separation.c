@@ -37,9 +37,6 @@
 #define CLQ_SEP_STR_ENUM        "enumM"
 #define CLQ_SEP_STR_VERBOSE     "verbose"
 
-char _filename[256];
-
-
 double fracPart( const double x );
 
 struct _CliqueSeparation
@@ -163,7 +160,6 @@ void clq_sep_update_ppgraph_weights( CGraph *ppcg, const int cols, const double 
 
 void clq_sep_separate( CliqueSeparation *sep, const double x[] )
 {
-    //printf("verbose mode now %d.\n", ((int)sep->verbose) );
     const CGraph *cgraph = sep->cgraph;
 
     clq_set_clear( sep->clqSet );
@@ -204,7 +200,11 @@ void clq_sep_separate( CliqueSeparation *sep, const double x[] )
 
             else
             {
-                int j, nsize = cgraph_get_all_conflicting(cgraph, i, neighs, csize * 10);
+                iv[i] = cgraph_degree(cgraph, i);
+                inQueue[i] = '0';
+
+                //trying to delete variables that do not forms a violated clique:
+                /*int j, nsize = cgraph_get_all_conflicting(cgraph, i, neighs, csize * 10);
                 double maxViol = x[i];
                 for(j = 0; j < nsize; j++)
                 	if(fracPart(x[neighs[j]]) >= minFrac)
@@ -217,15 +217,13 @@ void clq_sep_separate( CliqueSeparation *sep, const double x[] )
                     inQueue[i] = '1';
                     deleted++;
                 }
-                else 
+                else
                 {
                     iv[i] = cgraph_degree(cgraph, i);
                     inQueue[i] = '0';
-                }
+                }*/
             }
         }
-
-        printf("deleted: %d\n", deleted);
 
         while(!vint_queue_is_empty(&queue))
         {
@@ -257,7 +255,8 @@ void clq_sep_separate( CliqueSeparation *sep, const double x[] )
 
         int idx = 0;
         for(i = 0; i < csize; i++)
-            if(iv[i] > 0) iv[i] = idx++;
+            if(iv[i] > 0)
+                iv[i] = idx++;
 
         free(neighs);
         vint_queue_clean(&queue);
@@ -266,9 +265,6 @@ void clq_sep_separate( CliqueSeparation *sep, const double x[] )
     CGraph *ppcg = cgraph_create_induced_subgraph( cgraph, iv );
     cgraph_set_low_degree( ppcg, sep->enumUsage );
     clq_sep_update_ppgraph_weights( ppcg, cgraph_size(cgraph), x );
-
-    if(cgraph_size(ppcg) > 1)
-        cgraph_save( ppcg, _filename );
 
     /* if enumeration is used, iv will be update*/
 
