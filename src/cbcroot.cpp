@@ -29,6 +29,9 @@ using namespace std;
 #define MAX_TIME 600
 #define EPS 1e-6
 
+//It removes constraints dominated by clique cuts
+void removeDominatedConstraints(OsiSolverInterface *solver, const int origNumRows, char *problemName);
+
 /* minimum fractional part to a variable to be considered fractional */
 #define MIN_FRAC      0.001
 
@@ -270,13 +273,13 @@ int main( int argc, char **argv )
     }
 
     double initialBound = solver->getObjValue();
-    clock_t end = clock();
+    /*clock_t end = clock();
     printf("%.2lf %d %d %.7lf", ((double)(end-start)) / ((double)CLOCKS_PER_SEC), pass, 0, solver->getObjValue());
     if(!optFile.empty())
     {
     	printf(" %.7lf %.7lf", opt, abs_mip_gap(solver->getObjValue(), opt));
     }
-    printf("\n");
+    printf("\n");*/
     clock_t startSep = 0, endSep;
     double timeSep;
 
@@ -302,7 +305,6 @@ int main( int argc, char **argv )
         switch (sepMethod)
         {
         case Default :
-            /* updating reduced costs */
         {
             CglEClique cliqueGen;
             OsiCuts cuts;
@@ -313,12 +315,12 @@ int main( int argc, char **argv )
 
             cliqueGen.parseParameters( argc, (const char**)argv );
             cliqueGen.setCGraph( cgraph );
-            cliqueGen.setGenOddHoles( true ); //allow inserting odd hole cuts
+            cliqueGen.setGenOddHoles( false ); //allow (or not) inserting odd hole cuts
             cliqueGen.colNames = &varNames;
             cliqueGen.generateCuts( *solver, cuts, info );
 
             //removing duplicate cuts (inserted in previous iterations)
-            bool cutsToRemove[cuts.sizeRowCuts()];
+            /*bool cutsToRemove[cuts.sizeRowCuts()];
             fill(cutsToRemove, cutsToRemove + cuts.sizeRowCuts(), false);
             for(int i = 0; i < cuts.sizeRowCuts(); i++)
             {
@@ -328,7 +330,7 @@ int main( int argc, char **argv )
                     const OsiRowCut &orc = allCuts.rowCut(j);
                     if(newOrc == orc)
                     {
-                        //printf("A duplicate cut has been detected!\n");
+                        printf("A duplicate cut has been detected!\n");
                         cutsToRemove[i] = true;
                         break;
                     }
@@ -339,7 +341,7 @@ int main( int argc, char **argv )
                 if(!cutsToRemove[i]) //if cut i was not inserted in allCuts we have to insert it
                     allCuts.insertIfNotDuplicate(cuts.rowCut(i), equal);
                 else cuts.eraseRowCut(i);
-            }
+            }*/
 
             newCuts = cuts.sizeCuts();
             solver->applyCuts( cuts );
@@ -463,12 +465,12 @@ int main( int argc, char **argv )
                 fprintf( stderr, "ERROR: Could not solve LP relaxation. Exiting.\n" );
                 exit( EXIT_FAILURE );
             }
-            clock_t end = clock();
+            /*clock_t end = clock();
             fflush( stdout );
             printf("%.2lf %d %d %.7lf", sepTime, pass, newCuts, solver->getObjValue());
             if(!optFile.empty())
             	printf(" %.7lf %.7lf", opt, abs_mip_gap(solver->getObjValue(), opt));
-            printf("\n");
+            printf("\n");*/
         }
 
         fflush( stdout );
@@ -480,12 +482,10 @@ int main( int argc, char **argv )
     double totalTime = ((double)(tend-start)) / ((double)CLOCKS_PER_SEC);
     //printf("\nend of root node relaxation. initial dual limit: %.7f final: %.7f time: %.3f total cuts: %d\n", initialBound, solver->getObjValue(), totalTime, totalCuts );
 
+    removeDominatedConstraints(solver, numRows, problemName);
+
     /*clq_sep_free( &clqSep );*/
     cgraph_free( &cgraph );
-
-    //strcat(problemName, "CUT");
-    //solver->writeMps(problemName);
-
     delete realSolver;
 
     return EXIT_SUCCESS;
@@ -681,4 +681,90 @@ vector<string> getVarNames(const vector<string> &colNames, int numCols)
     }
 
     return varNames;
+}
+
+//It removes constraints dominated by clique cuts
+void removeDominatedConstraints(OsiSolverInterface *solver, const int origNumRows, char *problemName)
+{
+	clock_t start = clock();
+    const CoinPackedMatrix *matrixRow = solver->getMatrixByRow();
+    const double *rhs = solver->getRightHandSide();
+    const char *sense = solver->getRowSense();
+    const int numCols = solver->getNumCols();
+    const int numCliques = solver->getNumRows() - origNumRows;
+    const char *ctype = solver->getColType();
+    vector<int> toRemove;
+    vector<vector<int> > varCliques(numCols); //stores the index of the clique cuts which each variable appears
+    vector<int> tmp(2 * numCliques);
+
+    for(int idxRow = origNumRows; idxRow < solver->getNumRows(); idxRow++)
+    {
+        const CoinShallowPackedVector &row = matrixRow->getVector(idxRow);
+        const int nElements = row.getNumElements();
+        const int *idxs = row.getIndices();
+
+        for(int i = 0; i < nElements; i++)
+        {
+            const int idx = idxs[i];
+            varCliques[idx].push_back(idxRow);
+        }
+    }
+
+    for(int idxRow = 0; idxRow < origNumRows; idxRow++)
+    {
+    	//just analyzes GUB constraints
+        if(sense[idxRow] == 'R' || sense[idxRow] == 'E' || sense[idxRow] == 'G')
+            continue;
+
+    	const CoinShallowPackedVector &row = matrixRow->getVector(idxRow);
+        const int nElements = row.getNumElements();
+        const int *idxs = row.getIndices();
+        const double *coefs = row.getElements();
+        bool isToRemove = true;
+        vector<int> intersect = varCliques[idxs[0]];
+
+        //just analyzes GUB constraints
+        if(varCliques[idxs[0]].empty() || ctype[idxs[0]] != 1 || fabs(coefs[0] - 1.0) > EPS)
+            continue;
+
+        for(int i = 1; i < nElements; i++)
+        {
+            const int idx = idxs[i];
+
+            if(varCliques[idx].empty() || ctype[idx] != 1 || fabs(coefs[i] - 1.0) > EPS)
+            {
+                isToRemove = false;
+                break;
+            }
+
+            vector<int>::iterator it = set_intersection(intersect.begin(), intersect.end(),
+                                                        varCliques[idx].begin(), varCliques[idx].end(), tmp.begin());
+            tmp.resize(it - tmp.begin());
+            intersect = tmp;
+            if(intersect.empty())
+            {
+            	isToRemove = false;
+                break;
+            }
+        }
+
+        if(isToRemove)
+        	toRemove.push_back(idxRow);
+    }
+
+    //remove dominated constraints
+    if(!toRemove.empty())
+    {
+    	clock_t end = clock();
+    	solver->deleteRows((int)toRemove.size(), &toRemove[0]);
+    	printf("%.2lf %d %d %d\n", ((double)(end-start)) / ((double)CLOCKS_PER_SEC), origNumRows, numCliques, (int)toRemove.size());
+    	strcat(problemName, "CUT");
+   		solver->writeMps(problemName);
+    }
+
+    else
+    {
+    	clock_t end = clock();
+    	printf("%.2lf %d %d %d\n", ((double)(end-start)) / ((double)CLOCKS_PER_SEC), origNumRows, numCliques, 0);
+    }
 }

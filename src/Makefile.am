@@ -10,8 +10,19 @@ INCLUDES = \
 AM_CFLAGS=
 AM_CXXFLAGS=
 
-bin_PROGRAMS=cbcr writeclqw
+bin_PROGRAMS=cbcr writeclqw cptest
 #bin_PROGRAMS=grasp cbcr writeclqw bk
+
+
+cptest_SOURCES= cgraph.c\
+				vint_set.c\
+				memory.c\
+				clique.c\
+				vectormgm.c\
+				strUtils.c\
+				constraint_propagation.cpp\
+				osi_cgraph.cpp\
+				cp_test.cpp
 
 
 #grasp_SOURCES=cgraph.c\
@@ -38,7 +49,8 @@ writeclqw_SOURCES=clique.c\
 	cbc_hooks.cpp\
 	osi_cgraph.cpp \
 	node_heap.c \
-	cgraph.c  
+	cgraph.c \
+	constraint_propagation.cpp
 	
 
 #dijkstra_SOURCES=dijkstra.c\
@@ -110,6 +122,8 @@ cbcr_SOURCES=cgraph.c \
 cbcr_LDADD=-lz -ldl -lrt -lm  ${cbc_LIBS}
 
 writeclqw_LDADD=-lz -ldl -lrt -lm  ${cbc_LIBS}
+
+cptest_LDADD=-lz -ldl -lrt -lm  ${cbc_LIBS}
 
 #writeclqw_LDADD=-lOsiClp -lOsi -lClp -lCoinUtils -lcoinmumps -lcoinlapack -lcoinblas -lgfortran -lz -ldl -lrt -lm
 #writeclqw_LDADD=-lz -ldl -lrt -lm `pkg-config --libs cbc`
