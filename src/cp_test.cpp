@@ -37,7 +37,7 @@ int main( int argc, char **argv )
 	readLP( argv[1], solver );
 	cpropagation = cpropagation_create(solver);
 
-	test(cpropagation);
+	test(cpropagation, solver);
 
     delete solver;
     cpropagation_free(cpropagation);

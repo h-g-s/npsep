@@ -1,8 +1,10 @@
 #include "constraint_propagation.h"
 #include <limits>
 #include <cfloat>
-#include <vector>
 #include <cmath>
+#include <vector>
+#include <set>
+#include <queue>
 
 extern "C"
 {
@@ -19,6 +21,19 @@ using namespace std;
 #define FIXATION 4
 #define NOIMPLICATION 5
 
+typedef struct Fixation
+{
+	int idxVar;
+	double valueToFix;
+} Fixation;
+
+inline bool operator<(const Fixation &f1, const Fixation &f2)
+{
+	if(f1.idxVar != f2.idxVar)
+		return f1.idxVar < f2.idxVar;
+	return f1.valueToFix < f2.valueToFix;
+}
+
 /* stores constraints which have only binary variables */
 struct _CPropagation
 {
@@ -30,7 +45,7 @@ struct _CPropagation
 	vector<double> rhs; /* right-hand side for each constraint */
 	vector<double> constrBound; /* lower bound for LHS of each constraint */
 	vector<int> unfixedVarsByRow; /* number of unfixed variables for each constraint */
-	int fixedVars; /* number of fixed variables */
+	int binaryVars, unfixedVars; /* number of binary variables and number of unfixed variables */
 	int maxDepth;
 
     /* nogoods discovered in backtracking */
@@ -49,7 +64,7 @@ void fillMatrices(const OsiSolverInterface *solver, CPropagation *cp);
 
 char evaluateBound(const CPropagation *cp, const pair<int, double> &var, int constraint);
 
-char constraintPropagation(CPropagation *cp, int idxVar, char *varBounds);
+char constraintPropagation(CPropagation *cp, int var, double value, vector<Fixation> &fixations);
 
 void fixVariable(CPropagation *cp, int idx, double value);
 
@@ -66,7 +81,6 @@ CPropagation *cpropagation_create(const OsiSolverInterface *solver)
     fillMatrices(solver, cp);
 	assert(cp->matrixByRow.size() == cp->rhs.size());
 
-	cp->fixedVars = 0;
 	cp->maxDepth = 2;
     cp->numCols = solver->getNumCols();
 	cp->numRows = (int)cp->matrixByRow.size();
@@ -75,6 +89,7 @@ CPropagation *cpropagation_create(const OsiSolverInterface *solver)
     cp->colLb = new double[cp->numCols];
     cp->colUb = new double[cp->numCols];
     cp->varIsBinary = new char[cp->numCols];
+    cp->binaryVars = 0;
 
     for(int i = 0; i < cp->numCols; i++)
     {
@@ -82,15 +97,19 @@ CPropagation *cpropagation_create(const OsiSolverInterface *solver)
     	cp->colUb[i] = colUb[i];
 
         if(cp->colLb[i] == 0.0 && cp->colUb[i] == 1.0)
+        {
             cp->varIsBinary[i] = 1;
+            cp->binaryVars++;
+        }
         else cp->varIsBinary[i] = 0;
     }
+    cp->unfixedVars = cp->binaryVars;
 
     /* calculating the initial lower bound for each constraint */
     for(int i = 0; i < cp->numRows; i++)
     {
         cp->constrBound[i] = cp->rhs[i];
-        cp->unfixedVarsByRow[i] = 0;
+        cp->unfixedVarsByRow[i] = (int)cp->matrixByRow[i].size();
 
         for(int j = 0; j < (int)cp->matrixByRow[i].size(); j++)
         {
@@ -192,26 +211,50 @@ char evaluateBound(const CPropagation *cp, const pair<int, double> &var, int con
     return NOIMPLICATION; /* just to avoid errors */
 }
 
-char constraintPropagation(CPropagation *cp, int idxVar, char *varBounds)
+char constraintPropagation(CPropagation *cp, int var, double value, vector<Fixation> &fixations)
 {
+	assert(value == 0.0 || value == 1.0);
+	assert(var >= 0 && var < cp->numCols);
+	assert(cp->colLb[var] != cp->colUb[var]);
+
 	char status = NOIMPLICATION;
 	vector<int> C;
+	Fixation tmp;
+	vector<char> rowIsInQueue(cp->numRows, 0);
 
-	for(int i = 0; i < cp->numCols; i++)
-		varBounds[i] = UNFIXED;
+	C.reserve(cp->numRows);
 
-	for(int i = 0; i < (int)cp->matrixByCol[idxVar].size(); i++)
+	fixations.clear(); //cleaning old fixations
+	fixations.reserve(cp->numCols);
+
+	fixVariable(cp, var, value);
+
+	char varBounds[cp->numCols];
+	for(int i = 0; i < cp->numCols; i++) varBounds[i] = UNFIXED;
+
+	for(int i = 0; i < (int)cp->matrixByCol[var].size(); i++)
 	{
-		const pair<int, double> constraint = cp->matrixByCol[idxVar][i];
-		const int idx = constraint.first;
-		C.push_back(idx);
+		const pair<int, double> constraint = cp->matrixByCol[var][i];
+		const int idxRow = constraint.first;
+		const double coef = constraint.second;
+
+		if((cp->unfixedVarsByRow[idxRow] > 0) && (value == 1.0 && coef > 0.0) || (value == 0.0 && coef < 0.0))
+		{
+			C.push_back(idxRow);
+			rowIsInQueue[idxRow] = 1;
+		}
 	}
+
+	if(C.empty())
+		return status;
 
 	do {
 		char newImplication = 0;
+		vector<Fixation> currFixations;
 		for(int i = 0; i < (int)C.size(); i++)
 		{
 			const int row = C[i];
+			rowIsInQueue[row] = 0;
 
 			for(int j = 0; j < (int)cp->matrixByRow[row].size(); j++)
 			{
@@ -222,21 +265,27 @@ char constraintPropagation(CPropagation *cp, int idxVar, char *varBounds)
 	            if(cp->colLb[idx] == cp->colUb[idx]) continue;
 
 	            char eval = evaluateBound(cp, var, row);
-
-	            if(eval == DEACTIVATE)
+            	
+	            if(eval == DEACTIVATE && varBounds[idx] != DEACTIVATE)
 	            {
 	            	if(varBounds[idx] == ACTIVATE)
 	            		return CONFLICT;
-	            	newImplication = 1;
+	            	tmp.idxVar = idx;
+	            	tmp.valueToFix = 0.0;
 	            	varBounds[idx] = DEACTIVATE;
+	            	currFixations.push_back(tmp);
+	            	newImplication = 1;
 	            	status = FIXATION;
 	            }
-	            else if(eval == ACTIVATE)
+	            else if(eval == ACTIVATE && varBounds[idx] != ACTIVATE)
 	            {
 	            	if(varBounds[idx] == DEACTIVATE)
-		            	return CONFLICT;
-	            	newImplication = 1;
+	            		return CONFLICT;
+	            	tmp.idxVar = idx;
+	            	tmp.valueToFix = 1.0;
 	            	varBounds[idx] = ACTIVATE;
+	            	currFixations.push_back(tmp);
+	            	newImplication = 1;
 	            	status = FIXATION;
 	            }
 	            else if(eval == CONFLICT)
@@ -244,51 +293,161 @@ char constraintPropagation(CPropagation *cp, int idxVar, char *varBounds)
 			}
 		}
 
-		C.clear();
-
 		if(!newImplication)
 			return status;
 
-		/* fixing values */
-		for(int i = 0; i < cp->numCols; i++)
+		C.clear();
+
+		for(int i = 0; i < (int)currFixations.size(); i++)
 		{
-            if(cp->colLb[i] == cp->colUb[i]) continue;
+			const int idxVar = currFixations[i].idxVar;
+			const double valueToFix = currFixations[i].valueToFix;
 
-            if(varBounds[i] == ACTIVATE || varBounds[i] == DEACTIVATE)
+			assert(cp->colLb[idxVar] != cp->colUb[idxVar]);
+
+			cp->unfixedVars--;
+            cp->colLb[idxVar] = valueToFix;
+            cp->colUb[idxVar] = valueToFix;
+            fixations.push_back(currFixations[i]);
+
+            for(int j = 0; j < (int)cp->matrixByCol[idxVar].size(); j++)
             {
-            	cp->fixedVars++;
-                cp->colLb[i] = varBounds[i];
-                cp->colUb[i] = varBounds[i];
+                const pair<int, double> constraint = cp->matrixByCol[idxVar][j];
+                const int idxRow = constraint.first;
+                const double coef = constraint.second;
 
-                for(int j = 0; j < (int)cp->matrixByCol[i].size(); j++)
+                cp->unfixedVarsByRow[idxRow]--;
+
+                if(valueToFix == 1.0 && coef > 0.0)
                 {
-                    const pair<int, double> constraint = cp->matrixByCol[i][j];
-                    const int idxRow = constraint.first;
-                    const double coef = constraint.second;
-
-                    cp->unfixedVarsByRow[idxRow]--;
-
-                    if(cp->unfixedVarsByRow[idxRow] > 0)
-                        C.push_back(idxRow);
-
-                    if(varBounds[i] == ACTIVATE && coef > 0.0)
-                        cp->constrBound[idxRow] -= coef;
-                    else if(varBounds[i] == DEACTIVATE && coef < 0.0)
-                        cp->constrBound[idxRow] += coef;
+                    cp->constrBound[idxRow] -= coef;
+                    if(cp->unfixedVarsByRow[idxRow] > 0 && !rowIsInQueue[idxRow])
+                    {
+                    	C.push_back(idxRow);
+                    	rowIsInQueue[idxRow] = 1;
+                    }
                 }
+                else if(valueToFix == 0.0 && coef < 0.0)
+                {
+                    cp->constrBound[idxRow] += coef;
+                    if(cp->unfixedVarsByRow[idxRow] > 0 && !rowIsInQueue[idxRow])
+                    {
+                    	C.push_back(idxRow);
+                    	rowIsInQueue[idxRow] = 1;
+                    }
+                }
+                
+                if(cp->unfixedVarsByRow[idxRow] == 0 && cp->constrBound[idxRow] < 0.0)
+                	status = CONFLICT; //nao posso retornar direto pq tenho q atualizar os bounds das retricoes
             }
 		}
+		if(status == CONFLICT)
+			return CONFLICT;
 	} while(!C.empty());
 
 	return status;
 }
+
+/*char constraintPropagation(CPropagation *cp, int var, double value, vector<Fixation> &fixations)
+{
+	assert(value == 0.0 || value == 1.0);
+	assert(var >= 0 && var < cp->numCols);
+	assert(cp->colLb[var] != cp->colUb[var]);
+	fixations.clear(); fixations.reserve(cp->numCols); //cleaning old fixations and reserving memory
+
+	char status = NOIMPLICATION;
+	queue<int> C;
+	Fixation tmp;
+	vector<char> rowIsInQueue(cp->numRows, 0);
+
+	fixVariable(cp, var, value);
+
+	for(int i = 0; i < (int)cp->matrixByCol[var].size(); i++)
+	{
+		const pair<int, double> constraint = cp->matrixByCol[var][i];
+		const int idxRow = constraint.first;
+		const double coef = constraint.second;
+
+		if((cp->unfixedVarsByRow[idxRow] > 0) && (value == 1.0 && coef > 0.0) || (value == 0.0 && coef < 0.0))
+		{
+			C.push(idxRow);
+			rowIsInQueue[idxRow] = 1;
+		}
+	}
+
+	while(!C.empty())
+	{
+		const int idxRow = C.front();
+		C.pop();
+		rowIsInQueue[idxRow] = 0;
+
+		for(int i = 0; i < (int)cp->matrixByRow[idxRow].size(); i++)
+		{
+			const pair<int, double> var = cp->matrixByRow[idxRow][i];
+			const int idxVar = var.first;
+			const double coef = var.second;
+
+			if(cp->colLb[idxVar] == cp->colUb[idxVar])
+				continue;
+
+			char eval = evaluateBound(cp, var, idxRow);
+
+            if(eval == ACTIVATE || eval == DEACTIVATE)
+            {
+            	assert(cp->colLb[idxVar] != cp->colUb[idxVar]);
+            	tmp.idxVar = idxVar;
+            	tmp.valueToFix = eval;
+            	fixations.push_back(tmp);
+            	status = FIXATION;
+				cp->unfixedVars--;
+	            cp->colLb[idxVar] = cp->colUb[idxVar] = eval;
+
+	            for(int j = 0; j < (int)cp->matrixByCol[idxVar].size(); j++)
+	            {
+	                const pair<int, double> constraint = cp->matrixByCol[idxVar][j];
+	                const int idxRow2 = constraint.first;
+	                const double coef2 = constraint.second;
+
+	                cp->unfixedVarsByRow[idxRow2]--;
+
+	                if(eval == ACTIVATE && coef2 > 0.0)
+	                {
+	                    cp->constrBound[idxRow2] -= coef2;
+	                    if(cp->unfixedVarsByRow[idxRow2] > 0 && !rowIsInQueue[idxRow2])
+	                    {
+	                    	C.push(idxRow2);
+	                    	rowIsInQueue[idxRow2] = 1;
+	                    }
+	                }
+	                else if(eval == DEACTIVATE && coef2 < 0.0)
+	                {
+	                    cp->constrBound[idxRow2] += coef2;
+	                    if(cp->unfixedVarsByRow[idxRow2] > 0 && !rowIsInQueue[idxRow2])
+	                    {
+	                    	C.push(idxRow2);
+	                    	rowIsInQueue[idxRow2] = 1;
+	                    }
+	                }
+                    
+                    if(cp->unfixedVarsByRow[idxRow2] == 0 && cp->constrBound[idxRow2] < 0.0)
+                    	status = CONFLICT; //nao posso retornar direto pq tenho q atualizar os bounds das retricoes
+	            }
+	            if(status == CONFLICT)
+	            	return CONFLICT;
+        	}
+            else if(eval == CONFLICT)
+            	return CONFLICT;
+		}
+	}
+	return status;
+}*/
 
 void fixVariable(CPropagation *cp, int idx, double value)
 {
 	assert(value == 0.0 || value == 1.0);
 	assert(idx >= 0 && idx < cp->numCols);
 
-	cp->fixedVars++;
+	cp->unfixedVars--;
 	cp->colLb[idx] = value;
 	cp->colUb[idx] = value;
 
@@ -309,8 +468,7 @@ void fixVariable(CPropagation *cp, int idx, double value)
 
 void unfixVariable(CPropagation *cp, int idx)
 {
-    if(cp->colLb[idx] == 0.0 && cp->colUb[idx] == 1.0)
-        return;
+    assert(cp->colLb[idx] == cp->colUb[idx]);
 
     for(int j = 0; j < (int)cp->matrixByCol[idx].size(); j++)
     {
@@ -326,7 +484,7 @@ void unfixVariable(CPropagation *cp, int idx)
             cp->constrBound[idxRow] -= coef;
     }
 
-    cp->fixedVars--;
+    cp->unfixedVars++;
     cp->colLb[idx] = 0.0;
     cp->colUb[idx] = 1.0;
 }
@@ -336,30 +494,27 @@ void backtrack(CPropagation *cp, int idxVar, double valueToFix, int currDepth, v
 	if(currDepth > cp->maxDepth) //explores untill maxDepth
 		return;
 
-	fixVariable(cp, idxVar, valueToFix);
+	char status;
+	vector<Fixation> fixations;
+	status = constraintPropagation(cp, idxVar, valueToFix, fixations);
 	if(valueToFix == 1.0)
 		confs.push_back(idxVar);
 	else confs.push_back(idxVar+cp->numCols);
-
-	char status, varBounds[cp->numCols];
-	status = constraintPropagation(cp, idxVar, varBounds);
 
 	if(status == CONFLICT)
 	{
 		cp->nogoods.push_back(confs);
 		unfixVariable(cp, idxVar);
-		for(int i = 0; i < cp->numCols; i++)
-			if(varBounds[i] == ACTIVATE || varBounds[i] == DEACTIVATE)
-				unfixVariable(cp, i);
+		for(int i = 0; i < (int)fixations.size(); i++)
+			unfixVariable(cp, fixations[i].idxVar);
 		return;
 	}
 
-	if(cp->fixedVars == cp->numCols) //all variables were fixed
+	if(cp->unfixedVars == 0) //all variables were fixed
 	{
 		unfixVariable(cp, idxVar);
-		for(int i = 0; i < cp->numCols; i++)
-			if(varBounds[i] == ACTIVATE || varBounds[i] == DEACTIVATE)
-				unfixVariable(cp, i);
+		for(int i = 0; i < (int)fixations.size(); i++)
+			unfixVariable(cp, fixations[i].idxVar);
 		return;
 	}
 
@@ -375,126 +530,96 @@ void backtrack(CPropagation *cp, int idxVar, double valueToFix, int currDepth, v
 	}
 
 	unfixVariable(cp, idxVar);
-	for(int i = 0; i < cp->numCols; i++)
-		if(varBounds[i] == ACTIVATE || varBounds[i] == DEACTIVATE)
-			unfixVariable(cp, i);
+	for(int i = 0; i < (int)fixations.size(); i++)
+			unfixVariable(cp, fixations[i].idxVar);
 }
 
 void discoverConflicts(CPropagation *cp)
 {
-    char status, varBounds1[cp->numCols], varBounds2[cp->numCols];
+    char status;
+    vector<Fixation> fixations1, fixations2;
 
     for(int i = 0; i < cp->numCols; i++)
     {
         if(!cp->varIsBinary[i]) continue;
-        assert(cp->fixedVars == 0);
-        fixVariable(cp, i, 0.0);
-        status = constraintPropagation(cp, i, varBounds1);
+        assert(cp->unfixedVars == cp->binaryVars);
+        status = constraintPropagation(cp, i, 0.0, fixations1);
         if(status == CONFLICT)
             cp->varsToRemove.push_back(i+cp->numCols);
-        else
+        /*else
         {
             for(int j = i + 1; j < cp->numCols; j++)
             {
                 if(!cp->varIsBinary[j] || (cp->colLb[j] == cp->colUb[j]))
                     continue;
 
-                fixVariable(cp, j, 0.0);
-                status = constraintPropagation(cp, j, varBounds2);
+                status = constraintPropagation(cp, j, 0.0, fixations2);
                 if(status == CONFLICT)
                     cp->newConflicts.push_back(pair<int, int>(i+cp->numCols, j+cp->numCols));
                 unfixVariable(cp, j);
-                for(int k = 0; k < cp->numCols; k++)
-                    if(varBounds2[k] == ACTIVATE || varBounds2[k] == DEACTIVATE)
-                        unfixVariable(cp, k);
+                for(int k = 0; k < (int)fixations2.size(); k++)
+					unfixVariable(cp, fixations2[k].idxVar);
 
-                fixVariable(cp, j, 1.0);
-                status = constraintPropagation(cp, j, varBounds2);
+                status = constraintPropagation(cp, j, 1.0, fixations2);
                 if(status == CONFLICT)
                     cp->newConflicts.push_back(pair<int, int>(i+cp->numCols, j));
                 unfixVariable(cp, j);
-                for(int k = 0; k < cp->numCols; k++)
-                    if(varBounds2[k] == ACTIVATE || varBounds2[k] == DEACTIVATE)
-                        unfixVariable(cp, k);
+                for(int k = 0; k < (int)fixations2.size(); k++)
+					unfixVariable(cp, fixations2[k].idxVar);
             }
-        }
+        }*/
         unfixVariable(cp, i);
-        for(int j = 0; j < cp->numCols; j++)
-            if(varBounds1[j] == ACTIVATE || varBounds1[j] == DEACTIVATE)
-                unfixVariable(cp, j);
-        assert(cp->fixedVars == 0);
+        for(int j = 0; j < (int)fixations1.size(); j++)
+			unfixVariable(cp, fixations1[j].idxVar);
+        assert(cp->unfixedVars == cp->binaryVars);
 
-        fixVariable(cp, i, 1.0);
-        status = constraintPropagation(cp, i, varBounds1);
+        status = constraintPropagation(cp, i, 1.0, fixations1);
         if(status == CONFLICT)
             cp->varsToRemove.push_back(i);
-        else
+        /*else
         {
             for(int j = i + 1; j < cp->numCols; j++)
             {
                 if(!cp->varIsBinary[j] || (cp->colLb[j] == cp->colUb[j]))
                     continue;
 
-                fixVariable(cp, j, 0.0);
-                status = constraintPropagation(cp, j, varBounds2);
+                status = constraintPropagation(cp, j, 0.0, fixations2);
                 if(status == CONFLICT)
                     cp->newConflicts.push_back(pair<int, int>(i, j+cp->numCols));
                 unfixVariable(cp, j);
-                for(int k = 0; k < cp->numCols; k++)
-                    if(varBounds2[k] == ACTIVATE || varBounds2[k] == DEACTIVATE)
-                        unfixVariable(cp, k);
+                for(int k = 0; k < (int)fixations2.size(); k++)
+					unfixVariable(cp, fixations2[k].idxVar);
 
-                fixVariable(cp, j, 1.0);
-                status = constraintPropagation(cp, j, varBounds2);
+                status = constraintPropagation(cp, j, 1.0, fixations2);
                 if(status == CONFLICT)
                     cp->newConflicts.push_back(pair<int, int>(i, j));
                 unfixVariable(cp, j);
-                for(int k = 0; k < cp->numCols; k++)
-                    if(varBounds2[k] == ACTIVATE || varBounds2[k] == DEACTIVATE)
-                        unfixVariable(cp, k);
+                for(int k = 0; k < (int)fixations2.size(); k++)
+					unfixVariable(cp, fixations2[k].idxVar);
             }
-        }
+        }*/
         unfixVariable(cp, i);
-        for(int j = 0; j < cp->numCols; j++)
-            if(varBounds1[j] == ACTIVATE || varBounds1[j] == DEACTIVATE)
-                unfixVariable(cp, j);
-        assert(cp->fixedVars == 0);
+        for(int j = 0; j < (int)fixations1.size(); j++)
+			unfixVariable(cp, fixations1[j].idxVar);
+        assert(cp->unfixedVars == cp->binaryVars);
     }
 }
 
-void test(CPropagation *cp)
+void test(CPropagation *cp, OsiSolverInterface *solver)
 {
-	/*clock_t start = clock();
-	cp->maxDepth = 1;
-	for(int i = 0; i < cp->numCols; i++)
-	{
-		vector<int> confs;
-		assert(cp->fixedVars == 0);
-		backtrack(cp, i, 0.0, 1, confs);
-		confs.clear();
-		assert(cp->fixedVars == 0);
-		backtrack(cp, i, 1.0, 1, confs);
-		assert(cp->fixedVars == 0);
-	}
-	printf("Time elapsed in backtracking: %.2lf seconds.\n", (double(clock() - start))/((double)CLOCKS_PER_SEC));
-	for(int i = 0; i < (int)cp->nogoods.size(); i++)
-	{
-		for(int j = 0; j < (int)cp->nogoods[i].size(); j++)
-			printf("%d ", cp->nogoods[i][j]);
-		printf("\n");
-	}*/
-
     clock_t start = clock();
     discoverConflicts(cp);
     printf("Time elapsed: %.2lf seconds.\n", (double(clock() - start))/((double)CLOCKS_PER_SEC));
-
     printf("Variables to remove: ");
     for(int i = 0; i < (int)cp->varsToRemove.size(); i++)
         printf("%d ", cp->varsToRemove[i]);
     printf("\n\n");
 
-    printf("New pairs of conflicts:\n");
-    for(int i = 0; i < (int)cp->newConflicts.size(); i++)
-        printf("(%d, %d) ", cp->newConflicts[i].first, cp->newConflicts[i].second);
-    printf("\n");
+	/*for(int i = 0; i < (int)cp->varsToRemove.size(); i++)
+	{
+		solver->setColBounds(cp->varsToRemove[i], 1.0, 1.0);
+		solver->initialSolve();
+		assert(!solver->isProvenOptimal());
+	    solver->setColBounds(cp->varsToRemove[i], 0.0, 1.0);
+	}*/
 }

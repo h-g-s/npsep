@@ -13,6 +13,6 @@ typedef struct _CPropagation CPropagation;
 CPropagation *cpropagation_create(const OsiSolverInterface *solver);
 void cpropagation_free(CPropagation *cp);
 
-void test(CPropagation *cp);
+void test(CPropagation *cp, OsiSolverInterface *solver);
 
 #endif
