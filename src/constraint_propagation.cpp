@@ -419,6 +419,9 @@ OsiSolverInterface* cpropagation_preProcess(CPropagation *cp, int nindexes[])
         {
             preProcSolver->addCol(0, NULL, NULL, colLb[i], colUb[i], objCoef[i]);
             preProcSolver->setColName(j, cp->solver->getColName(i));
+            if(ctype[i] == 1 || ctype[i] == 2)
+            	preProcSolver->setInteger(j);
+            else preProcSolver->setContinuous(j);
             nindexes[i] = j++;
         }
         else if(cp->isToFix[i] == ACTIVATE)
@@ -428,6 +431,7 @@ OsiSolverInterface* cpropagation_preProcess(CPropagation *cp, int nindexes[])
     /* adding a variable with cost equals to the sum of all coefficients of variables fixed to 1 */
     preProcSolver->addCol(0, NULL, NULL, 1.0, 1.0, sumFixedObj);
     preProcSolver->setColName(preProcSolver->getNumCols()-1, "sumFixedObj");
+    preProcSolver->setInteger(preProcSolver->getNumCols()-1);
 
     for(int idxRow = 0; idxRow < cp->solver->getNumRows(); idxRow++)
     {

@@ -38,7 +38,10 @@ int main( int argc, char **argv )
     int nindexes[solver->getNumCols()];
     OsiSolverInterface* preProcSolver = cpropagation_preProcess(cp, nindexes);
 
-    //preProcSolver->writeLp("test");
+    /* saving preprocessed lp */
+    char output[256];
+    sprintf(output, "%s_PP", problemName);
+    preProcSolver->writeLp(output);
 
     delete solver;
     cpropagation_free(cp);
