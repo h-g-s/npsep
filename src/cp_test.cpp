@@ -11,10 +11,9 @@ using namespace std;
 
 void readLP( const char *fileName, OsiSolverInterface *solver )
 {
+    solver->setIntParam(OsiNameDiscipline, 2);
     solver->messageHandler()->setLogLevel(0);
-    solver->setIntParam(OsiNameDiscipline, 2);
     solver->setHintParam(OsiDoReducePrint,true,OsiHintTry);
-    solver->setIntParam(OsiNameDiscipline, 2);
     
     if(strstr(fileName, ".mps") != NULL)
         solver->readMps( fileName );
@@ -31,16 +30,18 @@ int main( int argc, char **argv )
 {
 	char problemName[ 256 ];
 	OsiSolverInterface *solver = new OsiClpSolverInterface();
-	CPropagation *cpropagation;
 	
 	getFileName( problemName, argv[1] );
 	readLP( argv[1], solver );
-	cpropagation = cpropagation_create(solver);
 
-	test(cpropagation, solver);
+	CPropagation *cp = cpropagation_create(solver);
+    int nindexes[solver->getNumCols()];
+    OsiSolverInterface* preProcSolver = cpropagation_preProcess(cp, nindexes);
+
+    //preProcSolver->writeLp("test");
 
     delete solver;
-    cpropagation_free(cpropagation);
+    cpropagation_free(cp);
 
 	return EXIT_SUCCESS;
 }
