@@ -7,6 +7,7 @@
 #include <queue>
 #include <OsiClpSolverInterface.hpp>
 #include <CoinBuild.hpp>
+#include <omp.h>
 
 extern "C"
 {
@@ -43,15 +44,12 @@ inline bool operator<(const Fixation &f1, const Fixation &f2)
 struct _CPropagation
 {
 	int numCols, numRows;
-	double *colLb, *colUb; /* bounds of all variables */
 	char *varIsBinary; /* for each variable, stores 1 if variable is binary and 0 otherwise */
 
 	vector<vector<pair<int, double> > > matrixByRow; /* matrix of indexes and coefficients by row */
     vector<vector<pair<int, double> > > matrixByCol; /* matrix of indexes and coefficients by column */
 	vector<double> rhs; /* right-hand side for each constraint */
-	vector<double> constrBound; /* lower bound for LHS of each constraint */
-	vector<int> unfixedVarsByRow; /* number of unfixed variables for each constraint */
-	int binaryVars, unfixedVars; /* number of binary variables and number of unfixed binary variables */
+	int binaryVars; /* number of binary variables and number of unfixed binary variables */
 
 	/* Used for preprocess module. For each variable:
 		0 - if variable must be fixed to 0
@@ -66,9 +64,11 @@ struct _CPropagation
 
 void fillMatrices(const OsiSolverInterface *solver, CPropagation *cp);
 
-void fixVariable(CPropagation *cp, int idx, double value);
+void fixVariable(CPropagation *cp, int idx, double value, int &unfixedVars, double *colLb, double *colUb, double *constrBound,
+                    int *unfixedVarsByRow);
 
-void unfixVariable(CPropagation *cp, int idx);
+void unfixVariable(CPropagation *cp, int idx, int &unfixedVars, double *colLb, double *colUb, double *constrBound,
+                    int *unfixedVarsByRow);
 
 CPropagation *cpropagation_create(const OsiSolverInterface *solver)
 {
@@ -82,10 +82,6 @@ CPropagation *cpropagation_create(const OsiSolverInterface *solver)
 
     cp->numCols = solver->getNumCols();
 	cp->numRows = (int)cp->matrixByRow.size();
-    cp->constrBound.resize(cp->numRows);
-    cp->unfixedVarsByRow.resize(cp->numRows);
-    cp->colLb = new double[cp->numCols];
-    cp->colUb = new double[cp->numCols];
     cp->varIsBinary = new char[cp->numCols];
     cp->isToFix = new char[cp->numCols];
     cp->binaryVars = 0;
@@ -93,33 +89,14 @@ CPropagation *cpropagation_create(const OsiSolverInterface *solver)
 
     for(int i = 0; i < cp->numCols; i++)
     {
-    	cp->colLb[i] = colLb[i];
-    	cp->colUb[i] = colUb[i];
         cp->isToFix[i] = UNFIXED;
 
-        if(cp->colLb[i] == 0.0 && cp->colUb[i] == 1.0)
+        if(colLb[i] == 0.0 && colUb[i] == 1.0)
         {
             cp->varIsBinary[i] = 1;
             cp->binaryVars++;
         }
         else cp->varIsBinary[i] = 0;
-    }
-    cp->unfixedVars = cp->binaryVars;
-
-    /* calculating the initial lower bound for each constraint */
-    for(int i = 0; i < cp->numRows; i++)
-    {
-        cp->constrBound[i] = cp->rhs[i];
-        cp->unfixedVarsByRow[i] = (int)cp->matrixByRow[i].size();
-
-        for(int j = 0; j < (int)cp->matrixByRow[i].size(); j++)
-        {
-            const int idx = cp->matrixByRow[i][j].first;
-            const double coef = cp->matrixByRow[i][j].second;
-
-            if(coef > 0.0) cp->constrBound[i] -= (coef * cp->colLb[idx]);
-            else cp->constrBound[i] -= (coef * cp->colUb[idx]);
-        }
     }
 
 	return cp;
@@ -127,8 +104,6 @@ CPropagation *cpropagation_create(const OsiSolverInterface *solver)
 
 void cpropagation_free(CPropagation *cp)
 {
-	delete[] cp->colLb;
-	delete[] cp->colUb;
     delete[] cp->varIsBinary;
     delete[] cp->isToFix;
 
@@ -189,9 +164,9 @@ void fillMatrices(const OsiSolverInterface *solver, CPropagation *cp)
         }
 }
 
-char evaluateBound(const CPropagation *cp, const pair<int, double> &var, int constraint)
+char evaluateBound(const CPropagation *cp, const pair<int, double> &var, int constraint, double *constrBound)
 {
-    const double bound = cp->constrBound[constraint];
+    const double bound = constrBound[constraint];
 
     if(var.second > 0.0) /* positive coefficient */
     {
@@ -214,11 +189,12 @@ char evaluateBound(const CPropagation *cp, const pair<int, double> &var, int con
     return NOIMPLICATION; /* just to avoid errors */
 }
 
-char constraintPropagation(CPropagation *cp, int var, double value, vector<Fixation> &fixations)
+char constraintPropagation(CPropagation *cp, int var, double value, vector<Fixation> &fixations,
+                            int &unfixedVars, double *colLb, double *colUb, double *constrBound, int *unfixedVarsByRow)
 {
 	assert(value == 0.0 || value == 1.0);
 	assert(var >= 0 && var < cp->numCols);
-	assert(cp->colLb[var] != cp->colUb[var]);
+	assert(colLb[var] != colUb[var]);
 	fixations.clear(); fixations.reserve(cp->numCols); //cleaning old fixations and reserving memory
 
 	char status = NOIMPLICATION;
@@ -226,7 +202,7 @@ char constraintPropagation(CPropagation *cp, int var, double value, vector<Fixat
 	Fixation tmp;
 	vector<char> rowIsInQueue(cp->numRows, 0);
 
-	fixVariable(cp, var, value);
+	fixVariable(cp, var, value, unfixedVars, colLb, colUb, constrBound, unfixedVarsByRow);
 
 	for(int i = 0; i < (int)cp->matrixByCol[var].size(); i++)
 	{
@@ -234,7 +210,7 @@ char constraintPropagation(CPropagation *cp, int var, double value, vector<Fixat
 		const int idxRow = constraint.first;
 		const double coef = constraint.second;
 
-		if((cp->unfixedVarsByRow[idxRow] > 0) && (value == 1.0 && coef > 0.0) || (value == 0.0 && coef < 0.0))
+		if((unfixedVarsByRow[idxRow] > 0) && (value == 1.0 && coef > 0.0) || (value == 0.0 && coef < 0.0))
 		{
 			C.push(idxRow);
 			rowIsInQueue[idxRow] = 1;
@@ -253,20 +229,20 @@ char constraintPropagation(CPropagation *cp, int var, double value, vector<Fixat
 			const int idxVar = var.first;
 			const double coef = var.second;
 
-			if(cp->colLb[idxVar] == cp->colUb[idxVar])
+			if(colLb[idxVar] == colUb[idxVar])
 				continue;
 
-			char eval = evaluateBound(cp, var, idxRow);
+			char eval = evaluateBound(cp, var, idxRow, constrBound);
 
             if(eval == ACTIVATE || eval == DEACTIVATE)
             {
-            	assert(cp->colLb[idxVar] != cp->colUb[idxVar]);
+            	assert(colLb[idxVar] != colUb[idxVar]);
             	tmp.idxVar = idxVar;
             	tmp.valueToFix = eval;
             	fixations.push_back(tmp);
             	status = FIXATION;
-				cp->unfixedVars--;
-	            cp->colLb[idxVar] = cp->colUb[idxVar] = eval;
+				unfixedVars--;
+	            colLb[idxVar] = colUb[idxVar] = eval;
 
 	            for(int j = 0; j < (int)cp->matrixByCol[idxVar].size(); j++)
 	            {
@@ -274,12 +250,12 @@ char constraintPropagation(CPropagation *cp, int var, double value, vector<Fixat
 	                const int idxRow2 = constraint.first;
 	                const double coef2 = constraint.second;
 
-	                cp->unfixedVarsByRow[idxRow2]--;
+	                unfixedVarsByRow[idxRow2]--;
 
 	                if(eval == ACTIVATE && coef2 > 0.0)
 	                {
-	                    cp->constrBound[idxRow2] -= coef2;
-	                    if(cp->unfixedVarsByRow[idxRow2] > 0 && !rowIsInQueue[idxRow2])
+	                    constrBound[idxRow2] -= coef2;
+	                    if(unfixedVarsByRow[idxRow2] > 0 && !rowIsInQueue[idxRow2])
 	                    {
 	                    	C.push(idxRow2);
 	                    	rowIsInQueue[idxRow2] = 1;
@@ -287,15 +263,15 @@ char constraintPropagation(CPropagation *cp, int var, double value, vector<Fixat
 	                }
 	                else if(eval == DEACTIVATE && coef2 < 0.0)
 	                {
-	                    cp->constrBound[idxRow2] += coef2;
-	                    if(cp->unfixedVarsByRow[idxRow2] > 0 && !rowIsInQueue[idxRow2])
+	                    constrBound[idxRow2] += coef2;
+	                    if(unfixedVarsByRow[idxRow2] > 0 && !rowIsInQueue[idxRow2])
 	                    {
 	                    	C.push(idxRow2);
 	                    	rowIsInQueue[idxRow2] = 1;
 	                    }
 	                }
                     
-                    if(cp->unfixedVarsByRow[idxRow2] == 0 && cp->constrBound[idxRow2] < 0.0)
+                    if(unfixedVarsByRow[idxRow2] == 0 && constrBound[idxRow2] < 0.0)
                     	status = CONFLICT; //nao posso retornar direto pq tenho q atualizar os bounds das retricoes
 	            }
 	            if(status == CONFLICT)
@@ -308,14 +284,15 @@ char constraintPropagation(CPropagation *cp, int var, double value, vector<Fixat
 	return status;
 }
 
-void fixVariable(CPropagation *cp, int idx, double value)
+void fixVariable(CPropagation *cp, int idx, double value, int &unfixedVars, double *colLb, double *colUb, double *constrBound,
+                    int *unfixedVarsByRow)
 {
 	assert(value == 0.0 || value == 1.0);
 	assert(idx >= 0 && idx < cp->numCols);
+	assert(colLb[idx] == 0.0 && colUb[idx] == 1.0);
 
-	cp->unfixedVars--;
-	cp->colLb[idx] = value;
-	cp->colUb[idx] = value;
+	unfixedVars--;
+	colLb[idx] = colUb[idx] = value;
 
 	for(int j = 0; j < (int)cp->matrixByCol[idx].size(); j++)
 	{
@@ -323,18 +300,19 @@ void fixVariable(CPropagation *cp, int idx, double value)
 		const int idxRow = constraint.first;
 		const double coef = constraint.second;
 
-		cp->unfixedVarsByRow[idxRow]--;
+		unfixedVarsByRow[idxRow]--;
 
 		if(value == 1.0 && coef > 0.0)
-			cp->constrBound[idxRow] -= coef;
+			constrBound[idxRow] -= coef;
 		else if(value == 0.0 && coef < 0.0)
-			cp->constrBound[idxRow] += coef;
+			constrBound[idxRow] += coef;
 	}
 }
 
-void unfixVariable(CPropagation *cp, int idx)
+void unfixVariable(CPropagation *cp, int idx, int &unfixedVars, double *colLb, double *colUb, double *constrBound,
+                    int *unfixedVarsByRow)
 {
-    assert(cp->colLb[idx] == cp->colUb[idx]);
+    assert(colLb[idx] == colUb[idx]);
 
     for(int j = 0; j < (int)cp->matrixByCol[idx].size(); j++)
     {
@@ -342,57 +320,86 @@ void unfixVariable(CPropagation *cp, int idx)
         const int idxRow = constraint.first;
         const double coef = constraint.second;
 
-        cp->unfixedVarsByRow[idxRow]++;
+        unfixedVarsByRow[idxRow]++;
 
-        if(cp->colLb[idx] == 1.0 && coef > 0.0) //fixed in 1
-            cp->constrBound[idxRow] += coef;
-        else if(cp->colUb[idx] == 0.0 && coef < 0.0) //fixex in 0
-            cp->constrBound[idxRow] -= coef;
+        if(colLb[idx] == 1.0 && coef > 0.0) //fixed in 1
+            constrBound[idxRow] += coef;
+        else if(colUb[idx] == 0.0 && coef < 0.0) //fixex in 0
+            constrBound[idxRow] -= coef;
     }
 
-    cp->unfixedVars++;
-    cp->colLb[idx] = 0.0;
-    cp->colUb[idx] = 1.0;
+    unfixedVars++;
+    colLb[idx] = 0.0;
+    colUb[idx] = 1.0;
 }
 
-void getVariablesToFix(CPropagation *cp)
+void cpropagation_get_vars_to_fix(CPropagation *cp)
 {
     char status;
     vector<Fixation> fixations;
+    const double *lb = cp->solver->getColLower(), *ub = cp->solver->getColUpper();
+    double colLb[cp->numCols], colUb[cp->numCols];
+    double constrBound[cp->numRows];
+    int unfixedVars = cp->binaryVars, unfixedVarsByRow[cp->numRows];
 
     for(int i = 0; i < cp->numCols; i++)
     {
-        if(!cp->varIsBinary[i]) continue;
-
-        status = constraintPropagation(cp, i, 0.0, fixations);
-        if(status == CONFLICT)
-        {
-            cp->isToFix[i] = ACTIVATE;
-            cp->varsToFix++;
-        }
-        unfixVariable(cp, i);
-        for(int j = 0; j < (int)fixations.size(); j++)
-			unfixVariable(cp, fixations[j].idxVar);
-
-        status = constraintPropagation(cp, i, 1.0, fixations);
-        if(status == CONFLICT)
-        {
-            cp->isToFix[i] = DEACTIVATE;
-            cp->varsToFix++;
-        }
-        unfixVariable(cp, i);
-        for(int j = 0; j < (int)fixations.size(); j++)
-			unfixVariable(cp, fixations[j].idxVar);
+        colLb[i] = lb[i];
+        colUb[i] = ub[i];
     }
+
+    /* calculating the initial lower bound for each constraint */
+    for(int i = 0; i < cp->numRows; i++)
+    {
+        constrBound[i] = cp->rhs[i];
+        unfixedVarsByRow[i] = (int)cp->matrixByRow[i].size();
+
+        for(int j = 0; j < (int)cp->matrixByRow[i].size(); j++)
+        {
+            const int idx = cp->matrixByRow[i][j].first;
+            const double coef = cp->matrixByRow[i][j].second;
+
+            if(coef > 0.0) constrBound[i] -= (coef * colLb[idx]);
+            else constrBound[i] -= (coef * colUb[idx]);
+        }
+    }
+
+    #pragma omp parallel for shared(cp) \
+    						 firstprivate(colLb, colUb, constrBound, unfixedVarsByRow, unfixedVars) \
+    						 private(status, fixations)
+        for(int i = 0; i < cp->numCols; i++)
+        {
+            if(!cp->varIsBinary[i]) continue;
+
+            status = constraintPropagation(cp, i, 0.0, fixations, unfixedVars, colLb, colUb, constrBound, unfixedVarsByRow);
+            if(status == CONFLICT)
+            {
+                cp->isToFix[i] = ACTIVATE;
+                #pragma omp atomic
+                	cp->varsToFix++;
+            }
+            unfixVariable(cp, i, unfixedVars, colLb, colUb, constrBound, unfixedVarsByRow);
+            for(int j = 0; j < (int)fixations.size(); j++)
+    			unfixVariable(cp, fixations[j].idxVar, unfixedVars, colLb, colUb, constrBound, unfixedVarsByRow);
+
+            status = constraintPropagation(cp, i, 1.0, fixations, unfixedVars, colLb, colUb, constrBound, unfixedVarsByRow);
+            if(status == CONFLICT)
+            {
+                cp->isToFix[i] = DEACTIVATE;
+                #pragma omp atomic
+                	cp->varsToFix++;
+            }
+            unfixVariable(cp, i, unfixedVars, colLb, colUb, constrBound, unfixedVarsByRow);
+            for(int j = 0; j < (int)fixations.size(); j++)
+    			unfixVariable(cp, fixations[j].idxVar, unfixedVars, colLb, colUb, constrBound, unfixedVarsByRow);
+        }
 }
 
-OsiSolverInterface* cpropagation_preProcess(CPropagation *cp, int nindexes[])
+OsiSolverInterface* cpropagation_preprocess(CPropagation *cp, int nindexes[])
 {
-    getVariablesToFix(cp);
-
     if(cp->varsToFix == 0)
     {
-        printf("There are no variables to remove from the problem!\n");
+        /* printf("There are no variables to remove from the problem!\n"); */
         return cp->solver; /* returns a pointer to original solver */
     }
 
@@ -487,3 +494,5 @@ OsiSolverInterface* cpropagation_preProcess(CPropagation *cp, int nindexes[])
 
     return preProcSolver;
 }
+
+int cpropagation_get_num_vars_to_fix(CPropagation *cp) { return cp->varsToFix; }

@@ -7,8 +7,8 @@ INCLUDES = \
 # Possible directives:
 #    -DDEBUG_CONF -DCONSIDER_BINARY_COMPLEMENT
 
-AM_CFLAGS=
-AM_CXXFLAGS=
+AM_CFLAGS= -fopenmp
+AM_CXXFLAGS= -fopenmp
 
 bin_PROGRAMS=cbcr writeclqw cptest
 #bin_PROGRAMS=grasp cbcr writeclqw bk

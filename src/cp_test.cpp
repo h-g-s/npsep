@@ -1,6 +1,7 @@
-#include "constraint_propagation.h"
+#include <omp.h>
 #include <OsiClpSolverInterface.hpp>
 #include "osi_cgraph.h"
+#include "constraint_propagation.h"
 
 extern "C"
 {
@@ -34,14 +35,18 @@ int main( int argc, char **argv )
 	getFileName( problemName, argv[1] );
 	readLP( argv[1], solver );
 
+	double start = omp_get_wtime();
 	CPropagation *cp = cpropagation_create(solver);
     int nindexes[solver->getNumCols()];
-    OsiSolverInterface* preProcSolver = cpropagation_preProcess(cp, nindexes);
-
-    /* saving preprocessed lp */
-    char output[256];
+    cpropagation_get_vars_to_fix(cp);
+    
+    /* preprocessing and saving preprocessed lp */
+    /* char output[256];
     sprintf(output, "%s_PP", problemName);
-    preProcSolver->writeLp(output);
+    OsiSolverInterface* preProcSolver = cpropagation_preprocess(cp, nindexes);
+    preProcSolver->writeLp(output); */
+
+    printf("%s %d %.2lf\n", problemName, cpropagation_get_num_vars_to_fix(cp), omp_get_wtime() - start);
 
     delete solver;
     cpropagation_free(cp);
