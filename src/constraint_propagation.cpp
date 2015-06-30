@@ -195,7 +195,7 @@ char constraintPropagation(CPropagation *cp, int var, double value, vector<Fixat
 	assert(value == 0.0 || value == 1.0);
 	assert(var >= 0 && var < cp->numCols);
 	assert(colLb[var] != colUb[var]);
-	fixations.clear(); fixations.reserve(cp->numCols); //cleaning old fixations and reserving memory
+	assert(fixations.empty());
 
 	char status = NOIMPLICATION;
 	queue<int> C;
@@ -335,11 +335,8 @@ void unfixVariable(CPropagation *cp, int idx, int &unfixedVars, double *colLb, d
 
 void cpropagation_get_vars_to_fix(CPropagation *cp)
 {
-    char status;
-    vector<Fixation> fixations;
     const double *lb = cp->solver->getColLower(), *ub = cp->solver->getColUpper();
-    double colLb[cp->numCols], colUb[cp->numCols];
-    double constrBound[cp->numRows];
+    double colLb[cp->numCols], colUb[cp->numCols], constrBound[cp->numRows];
     int unfixedVars = cp->binaryVars, unfixedVarsByRow[cp->numRows];
 
     for(int i = 0; i < cp->numCols; i++)
@@ -364,14 +361,13 @@ void cpropagation_get_vars_to_fix(CPropagation *cp)
         }
     }
 
-    #pragma omp parallel for shared(cp) \
-    						 firstprivate(colLb, colUb, constrBound, unfixedVarsByRow, unfixedVars) \
-    						 private(status, fixations)
+    #pragma omp parallel for shared(cp) firstprivate(colLb, colUb, constrBound, unfixedVarsByRow, unfixedVars)
         for(int i = 0; i < cp->numCols; i++)
         {
             if(!cp->varIsBinary[i]) continue;
 
-            status = constraintPropagation(cp, i, 0.0, fixations, unfixedVars, colLb, colUb, constrBound, unfixedVarsByRow);
+            vector<Fixation> fixations; fixations.reserve(cp->numCols);
+            char status = constraintPropagation(cp, i, 0.0, fixations, unfixedVars, colLb, colUb, constrBound, unfixedVarsByRow);
             if(status == CONFLICT)
             {
                 cp->isToFix[i] = ACTIVATE;
@@ -381,6 +377,7 @@ void cpropagation_get_vars_to_fix(CPropagation *cp)
             unfixVariable(cp, i, unfixedVars, colLb, colUb, constrBound, unfixedVarsByRow);
             for(int j = 0; j < (int)fixations.size(); j++)
     			unfixVariable(cp, fixations[j].idxVar, unfixedVars, colLb, colUb, constrBound, unfixedVarsByRow);
+    		fixations.clear(); fixations.reserve(cp->numCols);
 
             status = constraintPropagation(cp, i, 1.0, fixations, unfixedVars, colLb, colUb, constrBound, unfixedVarsByRow);
             if(status == CONFLICT)
