@@ -87,17 +87,21 @@ CPropagation *cpropagation_create(const OsiSolverInterface *solver)
     cp->binaryVars = 0;
     cp->varsToFix = 0;
 
-    for(int i = 0; i < cp->numCols; i++)
-    {
-        cp->isToFix[i] = UNFIXED;
-
-        if(colLb[i] == 0.0 && colUb[i] == 1.0)
+    int numThreads = omp_get_max_threads();
+    int chunk = max(1, cp->numCols/numThreads);
+    #pragma omp parallel for shared(cp, colLb, colUb) num_threads(numThreads) schedule(static, chunk)
+        for(int i = 0; i < cp->numCols; i++)
         {
-            cp->varIsBinary[i] = 1;
-            cp->binaryVars++;
+            cp->isToFix[i] = UNFIXED;
+
+            if(colLb[i] == 0.0 && colUb[i] == 1.0)
+            {
+                cp->varIsBinary[i] = 1;
+                #pragma omp atomic
+                	cp->binaryVars++;
+            }
+            else cp->varIsBinary[i] = 0;
         }
-        else cp->varIsBinary[i] = 0;
-    }
 
 	return cp;
 }
@@ -294,19 +298,23 @@ void fixVariable(CPropagation *cp, int idx, double value, int &unfixedVars, doub
 	unfixedVars--;
 	colLb[idx] = colUb[idx] = value;
 
-	for(int j = 0; j < (int)cp->matrixByCol[idx].size(); j++)
-	{
-		const pair<int, double> constraint = cp->matrixByCol[idx][j];
-		const int idxRow = constraint.first;
-		const double coef = constraint.second;
+    int numThreads = omp_get_max_threads();
+    int chunk = max(1, (int)cp->matrixByCol[idx].size()/numThreads);
+    #pragma omp parallel for shared(cp, colLb, colUb, unfixedVarsByRow, constrBound) num_threads(numThreads) \
+                         schedule(static, chunk)
+    	for(int j = 0; j < (int)cp->matrixByCol[idx].size(); j++)
+    	{
+    		const pair<int, double> constraint = cp->matrixByCol[idx][j];
+    		const int idxRow = constraint.first;
+    		const double coef = constraint.second;
 
-		unfixedVarsByRow[idxRow]--;
+    		unfixedVarsByRow[idxRow]--;
 
-		if(value == 1.0 && coef > 0.0)
-			constrBound[idxRow] -= coef;
-		else if(value == 0.0 && coef < 0.0)
-			constrBound[idxRow] += coef;
-	}
+    		if(value == 1.0 && coef > 0.0)
+    			constrBound[idxRow] -= coef;
+    		else if(value == 0.0 && coef < 0.0)
+    			constrBound[idxRow] += coef;
+    	}
 }
 
 void unfixVariable(CPropagation *cp, int idx, int &unfixedVars, double *colLb, double *colUb, double *constrBound,
@@ -314,19 +322,23 @@ void unfixVariable(CPropagation *cp, int idx, int &unfixedVars, double *colLb, d
 {
     assert(colLb[idx] == colUb[idx]);
 
-    for(int j = 0; j < (int)cp->matrixByCol[idx].size(); j++)
-    {
-        const pair<int, double> constraint = cp->matrixByCol[idx][j];
-        const int idxRow = constraint.first;
-        const double coef = constraint.second;
+    int numThreads = omp_get_max_threads();
+    int chunk = max(1, (int)cp->matrixByCol[idx].size()/numThreads);
+    #pragma omp parallel for shared(cp, colLb, colUb, unfixedVarsByRow, constrBound) num_threads(numThreads) \
+                         schedule(static, chunk)
+        for(int j = 0; j < (int)cp->matrixByCol[idx].size(); j++)
+        {
+            const pair<int, double> constraint = cp->matrixByCol[idx][j];
+            const int idxRow = constraint.first;
+            const double coef = constraint.second;
 
-        unfixedVarsByRow[idxRow]++;
+            unfixedVarsByRow[idxRow]++;
 
-        if(colLb[idx] == 1.0 && coef > 0.0) //fixed in 1
-            constrBound[idxRow] += coef;
-        else if(colUb[idx] == 0.0 && coef < 0.0) //fixex in 0
-            constrBound[idxRow] -= coef;
-    }
+            if(colLb[idx] == 1.0 && coef > 0.0) //fixed in 1
+                constrBound[idxRow] += coef;
+            else if(colUb[idx] == 0.0 && coef < 0.0) //fixex in 0
+                constrBound[idxRow] -= coef;
+        }
 
     unfixedVars++;
     colLb[idx] = 0.0;
@@ -339,29 +351,36 @@ void cpropagation_get_vars_to_fix(CPropagation *cp)
     double colLb[cp->numCols], colUb[cp->numCols], constrBound[cp->numRows];
     int unfixedVars = cp->binaryVars, unfixedVarsByRow[cp->numRows];
 
-    for(int i = 0; i < cp->numCols; i++)
-    {
-        colLb[i] = lb[i];
-        colUb[i] = ub[i];
-    }
+    int numThreads = omp_get_max_threads();
+    int chunk = max(1, cp->numCols/numThreads);
+
+    #pragma omp parallel for shared(colLb, colUb, lb, ub) num_threads(numThreads) schedule(static, chunk)
+        for(int i = 0; i < cp->numCols; i++)
+        {
+            colLb[i] = lb[i];
+            colUb[i] = ub[i];
+        }
 
     /* calculating the initial lower bound for each constraint */
-    for(int i = 0; i < cp->numRows; i++)
-    {
-        constrBound[i] = cp->rhs[i];
-        unfixedVarsByRow[i] = (int)cp->matrixByRow[i].size();
+    #pragma omp parallel for shared(colLb, colUb, constrBound, cp, unfixedVarsByRow) num_threads(numThreads) \
+                             schedule(dynamic)
+	    for(int i = 0; i < cp->numRows; i++)
+	    {
+	        constrBound[i] = cp->rhs[i];
+	        unfixedVarsByRow[i] = (int)cp->matrixByRow[i].size();
 
-        for(int j = 0; j < (int)cp->matrixByRow[i].size(); j++)
-        {
-            const int idx = cp->matrixByRow[i][j].first;
-            const double coef = cp->matrixByRow[i][j].second;
+	        for(int j = 0; j < (int)cp->matrixByRow[i].size(); j++)
+	        {
+	            const int idx = cp->matrixByRow[i][j].first;
+	            const double coef = cp->matrixByRow[i][j].second;
 
-            if(coef > 0.0) constrBound[i] -= (coef * colLb[idx]);
-            else constrBound[i] -= (coef * colUb[idx]);
-        }
-    }
+	            if(coef > 0.0) constrBound[i] -= (coef * colLb[idx]);
+	            else constrBound[i] -= (coef * colUb[idx]);
+	        }
+	    }
 
-    #pragma omp parallel for shared(cp) firstprivate(colLb, colUb, constrBound, unfixedVarsByRow, unfixedVars)
+    #pragma omp parallel for shared(cp) firstprivate(colLb, colUb, constrBound, unfixedVarsByRow, unfixedVars) \
+    						 num_threads(numThreads) schedule(dynamic)
         for(int i = 0; i < cp->numCols; i++)
         {
             if(!cp->varIsBinary[i]) continue;
