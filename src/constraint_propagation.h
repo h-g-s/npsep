@@ -16,4 +16,6 @@ void cpropagation_get_vars_to_fix(CPropagation *cp);
 int cpropagation_get_num_vars_to_fix(CPropagation *cp);
 OsiSolverInterface* cpropagation_preprocess(CPropagation *cp, int nindexes[]);
 
+int cpropagation_get_num_skipped(CPropagation *cp);
+
 #endif

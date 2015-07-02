@@ -46,7 +46,7 @@ int main( int argc, char **argv )
     OsiSolverInterface* preProcSolver = cpropagation_preprocess(cp, nindexes);
     preProcSolver->writeLp(output); */
 
-    printf("%s %d %.2lf\n", problemName, cpropagation_get_num_vars_to_fix(cp), omp_get_wtime() - start);
+    printf("%s %d %d %.2lf\n", problemName, cpropagation_get_num_vars_to_fix(cp), cpropagation_get_num_skipped(cp), omp_get_wtime() - start);
 
     delete solver;
     cpropagation_free(cp);
