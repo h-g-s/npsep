@@ -60,10 +60,6 @@ struct _CPropagation
 
 	/* a pointer to original problem */
 	OsiSolverInterface *solver;
-
-	/* used to skip some variables in preprocessing step */
-	int *Cj;
-	int skipped;
 };
 
 void fillMatrices(const OsiSolverInterface *solver, CPropagation *cp);
@@ -90,7 +86,6 @@ CPropagation *cpropagation_create(const OsiSolverInterface *solver)
 	cp->numRows = (int)cp->matrixByRow.size();
     cp->varIsBinary = new char[cp->numCols];
     cp->isToFix = new char[cp->numCols];
-    cp->Cj = new int[cp->numCols]; cp->skipped = 0;
     cp->binaryVars = 0;
     cp->varsToFix = 0;
 
@@ -100,7 +95,6 @@ CPropagation *cpropagation_create(const OsiSolverInterface *solver)
         for(int i = 0; i < cp->numCols; i++)
         {
             cp->isToFix[i] = UNFIXED;
-            cp->Cj[i] = 0;
 
             if(colLb[i] == 0.0 && colUb[i] == 1.0)
             {
@@ -118,7 +112,6 @@ void cpropagation_free(CPropagation *cp)
 {
     delete[] cp->varIsBinary;
     delete[] cp->isToFix;
-    delete[] cp->Cj;
 
 	delete cp;
 }
@@ -388,19 +381,11 @@ void cpropagation_get_vars_to_fix(CPropagation *cp)
 	        }
 	    }
 
-	calculateCj(cp);
-
     #pragma omp parallel for shared(cp) firstprivate(colLb, colUb, constrBound, unfixedVarsByRow, unfixedVars) \
     						 num_threads(numThreads) schedule(dynamic)
         for(int i = 0; i < cp->numCols; i++)
         {
             if(!cp->varIsBinary[i]) continue;
-
-            if(cp->Cj[i] == 0)
-            {
-            	cp->skipped++;
-            	continue;
-            }
 
             vector<Fixation> fixations; fixations.reserve(cp->numCols);
             char status = constraintPropagation(cp, i, 0.0, fixations, unfixedVars, colLb, colUb, constrBound, unfixedVarsByRow);
@@ -529,39 +514,3 @@ OsiSolverInterface* cpropagation_preprocess(CPropagation *cp, int nindexes[])
 }
 
 int cpropagation_get_num_vars_to_fix(CPropagation *cp) { return cp->varsToFix; }
-
-void calculateCj(CPropagation *cp)
-{
-	for(int i = 0; i < (int)cp->matrixByRow.size(); i++)
-	{
-		map<double, vector<int> > Oik;
-
-        for(int j = 0; j < (int)cp->matrixByRow[i].size(); j++)
-        {
-            const int var = cp->matrixByRow[i][j].first;
-            const double coef = cp->matrixByRow[i][j].second;
-
-            Oik[coef].push_back(var);
-        }
-
-        int Zi = (int)cp->matrixByRow[i].size();
-		int Di = (int)Oik.size();
-
-        if( (Zi <= 3) || (((double)Zi / (double)Di) >= 3.0) )
-        	for(int j = 0; j < (int)cp->matrixByRow[i].size(); j++)
-        	{
-        		const int var = cp->matrixByRow[i][j].first;
-        		cp->Cj[var]++;
-        	}
-        else
-        {
-        	for(map<double, vector<int> >::iterator it = Oik.begin(); it != Oik.end(); ++it)
-        		if((int)it->second.size() <= 2)
-        			for(int j = 0; j < (int)it->second.size(); j++)
-        				cp->Cj[it->second[j]]++;
-        }
-
-    }
-}
-
-int cpropagation_get_num_skipped(CPropagation *cp) { return cp->skipped; }

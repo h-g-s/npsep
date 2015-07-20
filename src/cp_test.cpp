@@ -39,14 +39,16 @@ int main( int argc, char **argv )
 	CPropagation *cp = cpropagation_create(solver);
     int nindexes[solver->getNumCols()];
     cpropagation_get_vars_to_fix(cp);
+
+
+    printf("%s %d %d %d %d %.2lf\n", problemName, solver->getNumCols(), solver->getNumRows(), solver->getNumElements(),
+                                     cpropagation_get_num_vars_to_fix(cp), omp_get_wtime() - start);
     
     /* preprocessing and saving preprocessed lp */
     /* char output[256];
     sprintf(output, "%s_PP", problemName);
     OsiSolverInterface* preProcSolver = cpropagation_preprocess(cp, nindexes);
     preProcSolver->writeLp(output); */
-
-    printf("%s %d %d %.2lf\n", problemName, cpropagation_get_num_vars_to_fix(cp), cpropagation_get_num_skipped(cp), omp_get_wtime() - start);
 
     delete solver;
     cpropagation_free(cp);
