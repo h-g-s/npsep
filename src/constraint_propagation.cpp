@@ -347,7 +347,7 @@ void unfixVariable(CPropagation *cp, int idx, int &unfixedVars, double *colLb, d
     colUb[idx] = 1.0;
 }
 
-void cpropagation_get_vars_to_fix(CPropagation *cp)
+void cpropagation_get_vars_to_fix(CPropagation *cp, const CGraph* cgraph)
 {
     const double *lb = cp->solver->getColLower(), *ub = cp->solver->getColUpper();
     double colLb[cp->numCols], colUb[cp->numCols], constrBound[cp->numRows];
@@ -388,28 +388,36 @@ void cpropagation_get_vars_to_fix(CPropagation *cp)
             if(!cp->varIsBinary[i]) continue;
 
             vector<Fixation> fixations; fixations.reserve(cp->numCols);
-            char status = constraintPropagation(cp, i, 0.0, fixations, unfixedVars, colLb, colUb, constrBound, unfixedVarsByRow);
-            if(status == CONFLICT)
-            {
-                cp->isToFix[i] = ACTIVATE;
-                #pragma omp atomic
-                	cp->varsToFix++;
-            }
-            unfixVariable(cp, i, unfixedVars, colLb, colUb, constrBound, unfixedVarsByRow);
-            for(int j = 0; j < (int)fixations.size(); j++)
-    			unfixVariable(cp, fixations[j].idxVar, unfixedVars, colLb, colUb, constrBound, unfixedVarsByRow);
-    		fixations.clear(); fixations.reserve(cp->numCols);
+            char status;
 
-            status = constraintPropagation(cp, i, 1.0, fixations, unfixedVars, colLb, colUb, constrBound, unfixedVarsByRow);
-            if(status == CONFLICT)
+            if(cgraph_degree(cgraph, cp->numCols + i) > 1)
             {
-                cp->isToFix[i] = DEACTIVATE;
-                #pragma omp atomic
-                	cp->varsToFix++;
-            }
-            unfixVariable(cp, i, unfixedVars, colLb, colUb, constrBound, unfixedVarsByRow);
-            for(int j = 0; j < (int)fixations.size(); j++)
-    			unfixVariable(cp, fixations[j].idxVar, unfixedVars, colLb, colUb, constrBound, unfixedVarsByRow);
+	            status = constraintPropagation(cp, i, 0.0, fixations, unfixedVars, colLb, colUb, constrBound, unfixedVarsByRow);
+	            if(status == CONFLICT)
+	            {
+	                cp->isToFix[i] = ACTIVATE;
+	                #pragma omp atomic
+	                	cp->varsToFix++;
+	            }
+	            unfixVariable(cp, i, unfixedVars, colLb, colUb, constrBound, unfixedVarsByRow);
+	            for(int j = 0; j < (int)fixations.size(); j++)
+	    			unfixVariable(cp, fixations[j].idxVar, unfixedVars, colLb, colUb, constrBound, unfixedVarsByRow);
+	    		fixations.clear(); fixations.reserve(cp->numCols);
+	    	}
+
+	    	if(cgraph_degree(cgraph, i) > 1)
+	    	{
+	            status = constraintPropagation(cp, i, 1.0, fixations, unfixedVars, colLb, colUb, constrBound, unfixedVarsByRow);
+	            if(status == CONFLICT)
+	            {
+	                cp->isToFix[i] = DEACTIVATE;
+	                #pragma omp atomic
+	                	cp->varsToFix++;
+	            }
+	            unfixVariable(cp, i, unfixedVars, colLb, colUb, constrBound, unfixedVarsByRow);
+	            for(int j = 0; j < (int)fixations.size(); j++)
+	    			unfixVariable(cp, fixations[j].idxVar, unfixedVars, colLb, colUb, constrBound, unfixedVarsByRow);
+	    	}
         }
 }
 

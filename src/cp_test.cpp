@@ -35,10 +35,14 @@ int main( int argc, char **argv )
 	getFileName( problemName, argv[1] );
 	readLP( argv[1], solver );
 
+	CGraph *cgraph = osi_build_cgraph( solver );
+
 	double start = omp_get_wtime();
 	CPropagation *cp = cpropagation_create(solver);
     int nindexes[solver->getNumCols()];
-    cpropagation_get_vars_to_fix(cp);
+    cpropagation_get_vars_to_fix(cp, cgraph);
+
+    printf("min %d max %d\n", cgraph_min_degree(cgraph), cgraph_max_degree(cgraph));
 
 
     printf("%s %d %d %d %d %.2lf\n", problemName, solver->getNumCols(), solver->getNumRows(), solver->getNumElements(),

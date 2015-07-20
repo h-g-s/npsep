@@ -12,7 +12,7 @@ typedef struct _CPropagation CPropagation;
 
 CPropagation *cpropagation_create(const OsiSolverInterface *solver);
 void cpropagation_free(CPropagation *cp);
-void cpropagation_get_vars_to_fix(CPropagation *cp);
+void cpropagation_get_vars_to_fix(CPropagation *cp, const CGraph* cgraph);
 int cpropagation_get_num_vars_to_fix(CPropagation *cp);
 OsiSolverInterface* cpropagation_preprocess(CPropagation *cp, int nindexes[]);
 
