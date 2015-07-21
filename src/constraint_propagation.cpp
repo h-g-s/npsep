@@ -96,7 +96,7 @@ CPropagation *cpropagation_create(const OsiSolverInterface *solver)
         {
             cp->isToFix[i] = UNFIXED;
 
-            if(colLb[i] == 0.0 && colUb[i] == 1.0)
+            if(solver->isBinary(i))
             {
                 cp->varIsBinary[i] = 1;
                 #pragma omp atomic
@@ -121,7 +121,6 @@ void fillMatrices(const OsiSolverInterface *solver, CPropagation *cp)
     const CoinPackedMatrix *M = solver->getMatrixByRow();
     const double *rhs = solver->getRightHandSide();
     const char *sense = solver->getRowSense();
-    const char *ctype = solver->getColType();
 
     for(int idxRow = 0; idxRow < solver->getNumRows(); idxRow++)
     {
@@ -136,10 +135,12 @@ void fillMatrices(const OsiSolverInterface *solver, CPropagation *cp)
         vector<pair<int, double> > constraint(nElements);
         bool allBinaries = true;
 
+        const char *ctype = solver->getColType();
+
         for(int i = 0; i < nElements; i++)
         {
             constraint[i] = pair<int, double> (idxs[i], mult * coefs[i]);
-            if(ctype[idxs[i]] != 1)
+            if(!solver->isBinary(idxs[i]))
             {
                 allBinaries = false;
                 break;
@@ -387,6 +388,12 @@ void cpropagation_get_vars_to_fix(CPropagation *cp, const CGraph* cgraph)
         {
             if(!cp->varIsBinary[i]) continue;
 
+            if(colLb[i] == colUb[i])
+            {
+                cp->isToFix[i] = (int)colLb[i];
+                continue;
+            }
+
             vector<Fixation> fixations; fixations.reserve(cp->numCols);
             char status;
 
@@ -452,9 +459,10 @@ OsiSolverInterface* cpropagation_preprocess(CPropagation *cp, int nindexes[])
         {
             preProcSolver->addCol(0, NULL, NULL, colLb[i], colUb[i], objCoef[i]);
             preProcSolver->setColName(j, cp->solver->getColName(i));
-            if(ctype[i] == 1 || ctype[i] == 2)
-            	preProcSolver->setInteger(j);
-            else preProcSolver->setContinuous(j);
+            if(cp->solver->isContinuous(j))
+                preProcSolver->setContinuous(j);
+            else 
+                preProcSolver->setInteger(j);
             nindexes[i] = j++;
         }
         else if(cp->isToFix[i] == ACTIVATE)

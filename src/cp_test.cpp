@@ -42,9 +42,6 @@ int main( int argc, char **argv )
     int nindexes[solver->getNumCols()];
     cpropagation_get_vars_to_fix(cp, cgraph);
 
-    printf("min %d max %d\n", cgraph_min_degree(cgraph), cgraph_max_degree(cgraph));
-
-
     printf("%s %d %d %d %d %.2lf\n", problemName, solver->getNumCols(), solver->getNumRows(), solver->getNumElements(),
                                      cpropagation_get_num_vars_to_fix(cp), omp_get_wtime() - start);
     

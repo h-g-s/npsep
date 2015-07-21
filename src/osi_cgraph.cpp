@@ -146,7 +146,7 @@ CGraph *osi_build_cgraph_pairwise( void *_lp )
         }
 
         /* considering just constraints which have only binary variables */
-        if(nBools < nElements || (nPos == nElements && fabs(rhs[idxRow]) <= EPS))
+        if(nBools < nElements)
             continue;
 
       	/* special case: GUB constraints */
@@ -400,8 +400,7 @@ CGraph *osi_build_cgraph( void *_lp )
             cvec.push_back( pair<int, int>(cidx, cidx + nCols) );
         }
 
-        /* considering just constraints which have only binary variables */
-        if(nBools < nElements || (nPos == nElements && fabs(rhs[idxRow]) <= EPS))
+        if(nBools < nElements)
             continue;
 
         /* special case: GUB constraints */
