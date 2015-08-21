@@ -469,10 +469,13 @@ OsiSolverInterface* cpropagation_preprocess(CPropagation *cp, int nindexes[])
             sumFixedObj += objCoef[i];
     }
 
-    /* adding a variable with cost equals to the sum of all coefficients of variables fixed to 1 */
-    preProcSolver->addCol(0, NULL, NULL, 1.0, 1.0, sumFixedObj);
-    preProcSolver->setColName(preProcSolver->getNumCols()-1, "sumFixedObj");
-    preProcSolver->setInteger(preProcSolver->getNumCols()-1);
+    if(sumFixedObj != 0.0)
+    {
+        /* adding a variable with cost equals to the sum of all coefficients of variables fixed to 1 */
+        preProcSolver->addCol(0, NULL, NULL, 1.0, 1.0, sumFixedObj);
+        preProcSolver->setColName(preProcSolver->getNumCols()-1, "sumFixedObj");
+        preProcSolver->setInteger(preProcSolver->getNumCols()-1);
+    }
 
     for(int idxRow = 0; idxRow < cp->solver->getNumRows(); idxRow++)
     {
@@ -493,7 +496,7 @@ OsiSolverInterface* cpropagation_preprocess(CPropagation *cp, int nindexes[])
                 vcoef.push_back(coefs[i]);
             }
             else if(cp->isToFix[idxs[i]] == ACTIVATE)
-            	activeCoefs += objCoef[idxs[i]];
+            	activeCoefs += coefs[i];
         }
 
         if(!vidx.empty())

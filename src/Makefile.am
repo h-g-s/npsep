@@ -22,6 +22,8 @@ cptest_SOURCES= cgraph.c\
 				strUtils.c\
 				constraint_propagation.cpp\
 				osi_cgraph.cpp\
+				preprocess.cpp\
+				problem.cpp\
 				cp_test.cpp
 
 

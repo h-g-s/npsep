@@ -1,6 +1,7 @@
-#include <omp.h>
 #include <OsiClpSolverInterface.hpp>
 #include "osi_cgraph.h"
+#include "problem.h"
+#include "preprocess.h"
 #include "constraint_propagation.h"
 
 extern "C"
@@ -35,15 +36,26 @@ int main( int argc, char **argv )
 	getFileName( problemName, argv[1] );
 	readLP( argv[1], solver );
 
-	CGraph *cgraph = osi_build_cgraph( solver );
+    printf("%s ", problemName);
 
-	double start = omp_get_wtime();
+    Problem *p = problem_create(solver);
+    Preprocess *preproc = preprocess_create(p);
+    preprocess_initial_preprocessing(preproc);
+    preprocess_free(&preproc);
+    problem_free(&p);
+
+	//CGraph *cgraph = osi_build_cgraph( solver );
+
+	/*Preprocess *preproc = preprocess_create(solver);
+	preprocess_initial_preprocessing(preproc);*/
+
+	/*double start = omp_get_wtime();
 	CPropagation *cp = cpropagation_create(solver);
     int nindexes[solver->getNumCols()];
     cpropagation_get_vars_to_fix(cp, cgraph);
 
     printf("%s %d %d %d %d %.2lf\n", problemName, solver->getNumCols(), solver->getNumRows(), solver->getNumElements(),
-                                     cpropagation_get_num_vars_to_fix(cp), omp_get_wtime() - start);
+                                     cpropagation_get_num_vars_to_fix(cp), omp_get_wtime() - start);*/
     
     /* preprocessing and saving preprocessed lp */
     /* char output[256];
@@ -52,7 +64,7 @@ int main( int argc, char **argv )
     preProcSolver->writeLp(output); */
 
     delete solver;
-    cpropagation_free(cp);
+    //cpropagation_free(cp);
 
 	return EXIT_SUCCESS;
 }
