@@ -36,13 +36,27 @@ int main( int argc, char **argv )
 	getFileName( problemName, argv[1] );
 	readLP( argv[1], solver );
 
-    printf("%s ", problemName);
 
-    Problem *p = problem_create(solver);
+	printf("%s ", problemName);
+	clock_t start = clock();
+    
+    Problem *p = problem_create_using_osi(solver);
     Preprocess *preproc = preprocess_create(p);
-    preprocess_initial_preprocessing(preproc);
+    Problem *preProcProblem = preprocess_basic_preprocessing(preproc);
+    OsiSolverInterface* preProcSolver = problem_convert_to_osi(preProcProblem);
+    
+    clock_t end = clock();
+    printf(" %.2lf\n", ((double)(end-start)) / ((double)CLOCKS_PER_SEC));
+    char output[256];
+    strncpy(output, problemName, 256);
+    strcat(output, "_PP");
+    preProcSolver->writeLp(output);
+    
+    problem_free(&preProcProblem);
     preprocess_free(&preproc);
     problem_free(&p);
+    delete preProcSolver;
+    delete solver;
 
 	//CGraph *cgraph = osi_build_cgraph( solver );
 
@@ -63,7 +77,7 @@ int main( int argc, char **argv )
     OsiSolverInterface* preProcSolver = cpropagation_preprocess(cp, nindexes);
     preProcSolver->writeLp(output); */
 
-    delete solver;
+    //delete solver;
     //cpropagation_free(cp);
 
 	return EXIT_SUCCESS;
