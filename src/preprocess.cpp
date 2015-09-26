@@ -30,7 +30,10 @@ struct _Preprocess
     int boundsImproved; /* number of bounds of variables improved at preprocessing */
 };
 
-void fix_binary_var(Preprocess *pp, int idxVar, double valueToFix);
+void handling_inequality_constraints(Preprocess *pp, int idxRow);
+void handling_equality_constraints(Preprocess *pp, int idxRow);
+void one_element_constraint(Preprocess *pp, int idxRow);
+void fix_var(Preprocess *pp, int idxVar, double valueToFix);
 void improve_lower_bound(Preprocess *pp, int idxVar, double newBound);
 void improve_upper_bound(Preprocess *pp, int idxVar, double newBound);
 void execute_basic_preprocessing(Preprocess *pp);
@@ -64,7 +67,7 @@ Preprocess* preprocess_create(const Problem *problem)
             pp->varsRemoved++;
     }
 
-    double infty = problem_get_infinity(pp->problem);
+    const double infty = problem_get_infinity(pp->problem);
 
     for(i = 0; i < nRows; i++)
     {
@@ -144,75 +147,188 @@ void execute_basic_preprocessing(Preprocess *pp)
     {
         int rowSize = problem_row_size(pp->problem, i);
         const int *idxs = problem_row_idxs(pp->problem, i);
+        char sense = problem_row_sense(pp->problem, i);
+
+        if(sense != 'E' && sense != 'L' && sense != 'G')
+        {
+            fprintf(stderr, "Error: invalid type of constraint!\n");
+            exit(EXIT_FAILURE);
+        }
+
+        if(rowSize == 1)
+        {
+            one_element_constraint(pp, i);
+            continue;
+        }
 
         if(pp->negBounds[i]) continue; /* ignoring rows containing variables with negative bounds */
         if(pp->removeRow[i]) continue; /* ignoring rows already removed */
 
-        /* -------------- Temporarily --------------*/
-        if(problem_row_sense(pp->problem, i) == 'E') continue;
-        assert(problem_row_sense(pp->problem, i) == 'L' || problem_row_sense(pp->problem, i) == 'G');
-        /* ----------------------------------------*/
+        if(sense == 'L' || sense == 'G')
+        	handling_inequality_constraints(pp, i);
+        else
+        	handling_equality_constraints(pp, i);
+    }
+}
 
-        if(pp->countInftyNegBounds[i] == 0 && pp->lhsMin[i] > pp->rhs[i] + EPS)
-        {
-            fprintf(stderr, "Preprocessing says problem is infeasible!\n");
-            exit(EXIT_SUCCESS);
-        }
+void one_element_constraint(Preprocess *pp, int idxRow)
+{
+    char sense = problem_row_sense(pp->problem, idxRow);
+    int idx = (problem_row_idxs(pp->problem, idxRow))[0];
+    double coef = (problem_row_coefs(pp->problem, idxRow))[0], rhs = problem_row_rhs(pp->problem, idxRow);
 
-        if(pp->countInftyPosBounds[i] == 0 && pp->lhsMax[i] <= pp->rhs[i])
-        {
-            pp->removeRow[i] = 1; /* redundant row has been discovered. */
-            pp->rowsRemoved++;
-            continue;
-        }
+    if(coef <= -EPS)
+    {
+        if(sense == 'L') sense = 'G';
+        else if(sense == 'G') sense = 'L';
 
-        for(j = 0; j < rowSize; j++)
-        {
-            const int idx = idxs[j];
-            const double coef = pp->coefficients[i][j];
+        coef = -coef;
+        rhs = -rhs;
+    }
 
-            if(pp->colLb[idx] == pp->colUb[idx]) continue; /* ignoring fixed variables */
-            
-            if(problem_var_is_binary(pp->problem, idx))
+    const double newRhs = (rhs / coef);
+
+    switch(sense)
+    {
+        case 'E':
+            if(pp->colLb[idx] == pp->colUb[idx])
             {
-                double newLhsMin = (coef <= -EPS) ? (pp->lhsMin[i] - (pp->colUb[idx] * coef))
-                                                  : (pp->lhsMin[i] + (pp->colUb[idx] * coef));
-                double newLhsMax = (coef <= -EPS) ? (pp->lhsMax[i] + (pp->colUb[idx] * coef))
-                                                  : (pp->lhsMax[i] - (pp->colUb[idx] * coef));
-
-                if(pp->countInftyNegBounds[i] == 0 && newLhsMin > pp->rhs[i])
+                if(newRhs == pp->colLb[idx])
                 {
-                    double valueToFix = (coef <= -EPS) ? 1.0 : 0.0;
-                    fix_binary_var(pp, idx, valueToFix);
-                    pp->varsRemoved++;
+                    pp->removeRow[idxRow] = 1;
+                    pp->rowsRemoved++;
                 }
-                else if(pp->countInftyPosBounds[i] == 0 && newLhsMax < pp->rhs[i])
+                else
                 {
-                    double delta = pp->rhs[i] - newLhsMax;
-                    double newCoef = coef - delta;
-                    pp->coefficients[i][j] = newCoef;
-                    pp->coefsImproved++;
-                    if(coef > EPS) pp->rhs[i] = pp->rhs[i] - delta;
-                    
-                    /* updating lhsMin e lhsMax */
-                    pp->lhsMin[i] -= (coef <= -EPS) ? ((coef - newCoef) * pp->colUb[idx])
-                                                    : ((coef - newCoef) * pp->colLb[idx]);
-                    pp->lhsMax[i] -= (coef <= -EPS) ? ((coef - newCoef) * pp->colLb[idx])
-                                                    : ((coef - newCoef) * pp->colUb[idx]);
+                    fprintf(stderr, "Error: variable %s has already been fixed!\n", problem_var_name(pp->problem, idx));
+                    exit(EXIT_FAILURE);
                 }
             }
-            
             else
             {
-                int countInftyNegBounds = (coef <= -EPS && pp->colUb[idx] >= infty) ? pp->countInftyNegBounds[i] - 1
-                                                                                    : pp->countInftyNegBounds[i];
+                fix_var(pp, idx, newRhs);
+                pp->varsRemoved++;
+            }
+        break;
 
-                if(countInftyNegBounds != 0) continue;
+        case 'L':
+            if(pp->colUb[idx] > newRhs + EPS)
+            {
+                improve_upper_bound(pp, idx, newRhs);
+                pp->boundsImproved++;
+
+                if(pp->colLb[idx] == pp->colUb[idx])
+                    pp->varsRemoved++;
+            }
+            else
+            {
+                pp->removeRow[idxRow] = 1;
+                pp->rowsRemoved++;
+            }
+        break;
+
+        case 'G':
+            if(pp->colLb[idx] + EPS < newRhs)
+            {
+                improve_lower_bound(pp, idx, newRhs);
+                pp->boundsImproved++;
+
+                if(pp->colLb[idx] == pp->colUb[idx])
+                    pp->varsRemoved++;
+            }
+            else
+            {
+                pp->removeRow[idxRow] = 1;
+                pp->rowsRemoved++;
+            }
+        break;
+
+        default:
+            fprintf(stderr, "Error: invalid type of constraint!\n");
+            exit(EXIT_FAILURE);
+    }
+}
+
+void handling_inequality_constraints(Preprocess *pp, int idxRow)
+{
+    int j, rowSize = problem_row_size(pp->problem, idxRow);
+    char sense = problem_row_sense(pp->problem, idxRow);
+    const double infty = problem_get_infinity(pp->problem);
+    const int *idxs = problem_row_idxs(pp->problem, idxRow);
+
+    if(pp->countInftyNegBounds[idxRow] == 0 && pp->lhsMin[idxRow] > pp->rhs[idxRow] + EPS)
+    {
+        fprintf(stderr, "Preprocessing says problem is infeasible!\n");
+        exit(EXIT_SUCCESS);
+    }
+
+    if(pp->countInftyPosBounds[idxRow] == 0 && pp->lhsMax[idxRow] <= pp->rhs[idxRow])
+    {
+        pp->removeRow[idxRow] = 1; /* redundant row has been discovered. */
+        pp->rowsRemoved++;
+        return;
+    }
+
+    for(j = 0; j < rowSize; j++)
+    {
+        const int idx = idxs[j];
+        const double coef = pp->coefficients[idxRow][j];
+
+        if(pp->colLb[idx] == pp->colUb[idx]) continue; /* ignoring fixed variables */
+        
+        if(problem_var_is_binary(pp->problem, idx))
+        {
+            double newLhsMin = (coef <= -EPS) ? (pp->lhsMin[idxRow] - (pp->colUb[idx] * coef))
+                                              : (pp->lhsMin[idxRow] + (pp->colUb[idx] * coef));
+            double newLhsMax = (coef <= -EPS) ? (pp->lhsMax[idxRow] + (pp->colUb[idx] * coef))
+                                              : (pp->lhsMax[idxRow] - (pp->colUb[idx] * coef));
+
+            if(pp->countInftyNegBounds[idxRow] == 0 && newLhsMin > pp->rhs[idxRow] + EPS)
+            {
+                double valueToFix = (coef <= -EPS) ? 1.0 : 0.0;
+                fix_var(pp, idx, valueToFix);
+                pp->varsRemoved++;
+            }
+            else if(pp->countInftyPosBounds[idxRow] == 0 && newLhsMax + EPS < pp->rhs[idxRow])
+            {
+                double delta = pp->rhs[idxRow] - newLhsMax;
 
                 if(coef <= -EPS)
                 {
-                    double newLhsMin = (pp->colUb[idx] >= infty) ? pp->lhsMin[i] : (pp->lhsMin[i] - (coef * pp->colUb[idx]));
-                    double newBound = ((newLhsMin - pp->rhs[i]) / -coef);
+                	double newCoef = coef + delta;
+                	assert(newCoef > coef + EPS);
+                	pp->coefficients[idxRow][j] = newCoef;
+                	pp->coefsImproved++;
+                	/* updating lhsMin e lhsMax */
+                	pp->lhsMin[idxRow] += ((newCoef - coef) * pp->colUb[idx]);
+                	pp->lhsMax[idxRow] += ((newCoef - coef) * pp->colLb[idx]);
+                }
+                else
+                {
+                	double newCoef = coef - delta;
+                	assert(newCoef + EPS < coef);
+                	pp->coefficients[idxRow][j] = newCoef;
+                	pp->rhs[idxRow] = pp->rhs[idxRow] - delta;
+                	pp->coefsImproved++;
+                	/* updating lhsMin e lhsMax */
+                	pp->lhsMin[idxRow] -= ((coef - newCoef) * pp->colLb[idx]);
+                	pp->lhsMax[idxRow] -= ((coef - newCoef) * pp->colUb[idx]);
+                }
+            }
+        }
+        
+        else
+        {
+            int countInftyNegBounds = (coef <= -EPS && pp->colUb[idx] >= infty) ? pp->countInftyNegBounds[idxRow] - 1
+                                                                                : pp->countInftyNegBounds[idxRow];
+
+            if(countInftyNegBounds == 0)
+            {
+                if(coef <= -EPS)
+                {
+                    double newLhsMin = (pp->colUb[idx] >= infty) ? pp->lhsMin[idxRow]
+                     											 : (pp->lhsMin[idxRow] - (coef * pp->colUb[idx]));
+                    double newBound = ((newLhsMin - pp->rhs[idxRow]) / -coef);
 
                     if(newBound > pp->colLb[idx] + EPS)
                     {
@@ -227,8 +343,8 @@ void execute_basic_preprocessing(Preprocess *pp)
                 }
                 else
                 {
-                    double newLhsMin = pp->lhsMin[i] - (coef * pp->colLb[idx]);
-                    double newBound = ((pp->rhs[i] - newLhsMin) / coef);
+                    double newLhsMin = pp->lhsMin[idxRow] - (coef * pp->colLb[idx]);
+                    double newBound = ((pp->rhs[idxRow] - newLhsMin) / coef);
 
                     if(pp->colUb[idx] > newBound + EPS)
                     {
@@ -240,16 +356,233 @@ void execute_basic_preprocessing(Preprocess *pp)
                     }
                 }
             }
-        }
+    	}
     }
 }
 
-void fix_binary_var(Preprocess *pp, int idxVar, double valueToFix)
+void handling_equality_constraints(Preprocess *pp, int idxRow)
+{
+	int j, rowSize = problem_row_size(pp->problem, idxRow);
+    char sense = problem_row_sense(pp->problem, idxRow);
+    const double infty = problem_get_infinity(pp->problem);
+    const int *idxs = problem_row_idxs(pp->problem, idxRow);
+
+	if(pp->countInftyNegBounds[idxRow] == 0 && pp->lhsMin[idxRow] > pp->rhs[idxRow] + EPS)
+    {
+        fprintf(stderr, "Preprocessing says problem is infeasible!\n");
+        exit(EXIT_SUCCESS);
+    }
+
+    if(pp->countInftyPosBounds[idxRow] == 0 && -pp->lhsMax[idxRow] > -pp->rhs[idxRow] + EPS)
+    {
+        fprintf(stderr, "Preprocessing says problem is infeasible!\n");
+        exit(EXIT_SUCCESS);
+    }
+
+    if( (pp->countInftyPosBounds[idxRow] == 0 && pp->lhsMax[idxRow] <= pp->rhs[idxRow]) &&
+    	(pp->countInftyNegBounds[idxRow] == 0 && -pp->lhsMin[idxRow] <= -pp->rhs[idxRow]) )
+    {
+        pp->removeRow[idxRow] = 1; /* redundant row has been discovered. */
+        pp->rowsRemoved++;
+        return;
+    }
+
+    for(j = 0; j < rowSize; j++)
+    {
+        const int idx = idxs[j];
+        const double coef = pp->coefficients[idxRow][j];
+
+        if(pp->colLb[idx] == pp->colUb[idx]) continue; /* ignoring fixed variables */
+
+        if(pp->countInftyPosBounds[idxRow] == 0 && pp->lhsMax[idxRow] > pp->rhs[idxRow] + EPS)
+        {
+	        if(problem_var_is_binary(pp->problem, idx))
+	        {
+	            double newLhsMin = (coef <= -EPS) ? (pp->lhsMin[idxRow] - (pp->colUb[idx] * coef))
+	                                              : (pp->lhsMin[idxRow] + (pp->colUb[idx] * coef));
+	            double newLhsMax = (coef <= -EPS) ? (pp->lhsMax[idxRow] + (pp->colUb[idx] * coef))
+	                                              : (pp->lhsMax[idxRow] - (pp->colUb[idx] * coef));
+
+	            if(pp->countInftyNegBounds[idxRow] == 0 && newLhsMin > pp->rhs[idxRow] + EPS)
+	            {
+	                double valueToFix = (coef <= -EPS) ? 1.0 : 0.0;
+	                fix_var(pp, idx, valueToFix);
+	                pp->varsRemoved++;
+	            }
+	            else if(pp->countInftyPosBounds[idxRow] == 0 && newLhsMax + EPS < pp->rhs[idxRow])
+	            {
+	                double delta = pp->rhs[idxRow] - newLhsMax;
+
+	                if(coef <= -EPS)
+	                {
+	                	double newCoef = coef + delta;
+	                	assert(newCoef > coef + EPS);
+	                	pp->coefficients[idxRow][j] = newCoef;
+	                	pp->coefsImproved++;
+	                	/* updating lhsMin e lhsMax */
+	                	pp->lhsMin[idxRow] += ((newCoef - coef) * pp->colUb[idx]);
+	                	pp->lhsMax[idxRow] += ((newCoef - coef) * pp->colLb[idx]);
+	                }
+	                else
+	                {
+	                	double newCoef = coef - delta;
+	                	assert(newCoef + EPS < coef);
+	                	pp->coefficients[idxRow][j] = newCoef;
+	                	pp->rhs[idxRow] = pp->rhs[idxRow] - delta;
+	                	pp->coefsImproved++;
+	                	/* updating lhsMin e lhsMax */
+	                	pp->lhsMin[idxRow] -= ((coef - newCoef) * pp->colLb[idx]);
+	                	pp->lhsMax[idxRow] -= ((coef - newCoef) * pp->colUb[idx]);
+	                }
+	            }
+	        }
+	        
+	        else
+	        {
+	            int countInftyNegBounds = (coef <= -EPS && pp->colUb[idx] >= infty) ? pp->countInftyNegBounds[idxRow] - 1
+	                                                                                : pp->countInftyNegBounds[idxRow];
+
+	            if(countInftyNegBounds == 0)
+	            {
+	                if(coef <= -EPS)
+	                {
+	                    double newLhsMin = (pp->colUb[idx] >= infty) ? pp->lhsMin[idxRow]
+	                                                                 : (pp->lhsMin[idxRow] - (coef * pp->colUb[idx]));
+	                    double newBound = ((newLhsMin - pp->rhs[idxRow]) / -coef);
+
+	                    if(newBound > pp->colLb[idx] + EPS)
+	                    {
+	                        improve_lower_bound(pp, idx, newBound);
+	                        pp->boundsImproved++;
+
+	                        assert(pp->colLb[idx] <= pp->colUb[idx]);
+
+	                        if(pp->colLb[idx] == pp->colUb[idx])
+	                            pp->varsRemoved++;
+	                    }
+	                }
+	                else
+	                {
+	                    double newLhsMin = pp->lhsMin[idxRow] - (coef * pp->colLb[idx]);
+	                    double newBound = ((pp->rhs[idxRow] - newLhsMin) / coef);
+
+	                    if(pp->colUb[idx] > newBound + EPS)
+	                    {
+	                        improve_upper_bound(pp, idx, newBound);
+	                        pp->boundsImproved++;
+
+	                        if(pp->colLb[idx] == pp->colUb[idx])
+	                            pp->varsRemoved++;
+	                    }
+	                }
+	            }
+	    	}
+	    }
+
+	    if(pp->countInftyNegBounds[idxRow] == 0 && -pp->lhsMin[idxRow] > -pp->rhs[idxRow] + EPS)
+        {
+	        if(problem_var_is_binary(pp->problem, idx))
+	        {
+	            double newLhsMin = (-coef <= -EPS) ? (-pp->lhsMax[idxRow] + (pp->colUb[idx] * coef))
+	                                               : (-pp->lhsMax[idxRow] - (pp->colUb[idx] * coef));
+	            double newLhsMax = (-coef <= -EPS) ? (-pp->lhsMin[idxRow] - (pp->colUb[idx] * coef))
+	                                               : (-pp->lhsMin[idxRow] + (pp->colUb[idx] * coef));
+
+	            if(pp->countInftyPosBounds[idxRow] == 0 && newLhsMin > -pp->rhs[idxRow] + EPS)
+	            {
+	                double valueToFix = (-coef <= -EPS) ? 1.0 : 0.0;
+
+	                if(pp->colLb[idx] == pp->colUb[idx])
+                    {
+                        if(valueToFix != pp->colLb[idx])
+                        {
+                            fprintf(stderr, "Error: variable %s has already been fixed!\n", problem_var_name(pp->problem, idx));
+                            exit(EXIT_FAILURE);
+                        }
+                    }
+                    else
+                    {
+                        fix_var(pp, idx, valueToFix);
+                        pp->varsRemoved++;
+                    }
+	            }
+	            else if(pp->countInftyNegBounds[idxRow] == 0 && newLhsMax + EPS < -pp->rhs[idxRow])
+	            {
+	                double delta = -pp->rhs[idxRow] - newLhsMax;
+
+	                if(-coef <= -EPS)
+	                {
+	                	double newCoef = -coef + delta;
+	                	assert(newCoef > -coef + EPS);
+	                	pp->coefficients[idxRow][j] = -newCoef;
+	                	pp->coefsImproved++;
+	                	/* updating lhsMin e lhsMax */
+	                	pp->lhsMin[idxRow] += ((-newCoef - coef) * pp->colUb[idx]);
+	                	pp->lhsMax[idxRow] += ((-newCoef - coef) * pp->colLb[idx]);
+	                }
+	                else
+	                {
+	                	double newCoef = -coef - delta;
+	                	assert(newCoef + EPS < -coef);
+	                	pp->coefficients[idxRow][j] = -newCoef;
+	                	pp->rhs[idxRow] = -pp->rhs[idxRow] + delta;
+	                	pp->coefsImproved++;
+	                	/* updating lhsMin e lhsMax */
+	                	pp->lhsMin[idxRow] -= ((coef + newCoef) * pp->colLb[idx]);
+	                	pp->lhsMax[idxRow] -= ((coef + newCoef) * pp->colUb[idx]);
+	                }
+	            }
+	        }
+	        
+	        else
+	        {
+	            int countInftyNegBounds = (-coef <= -EPS && pp->colUb[idx] >= infty) ? pp->countInftyPosBounds[idxRow] - 1
+	                                                                                 : pp->countInftyPosBounds[idxRow];
+
+	            if(countInftyNegBounds == 0)
+	            {
+	                if(-coef <= -EPS)
+	                {
+	                    double newLhsMin = (pp->colUb[idx] >= infty) ? -pp->lhsMax[idxRow]
+	                                                                 : (-pp->lhsMax[idxRow] + (coef * pp->colUb[idx]));
+	                    double newBound = ((newLhsMin + pp->rhs[idxRow]) / coef);
+
+	                    if(newBound > pp->colLb[idx] + EPS)
+	                    {
+	                        improve_lower_bound(pp, idx, newBound);
+	                        pp->boundsImproved++;
+
+	                        assert(pp->colLb[idx] <= pp->colUb[idx]);
+
+	                        if(pp->colLb[idx] == pp->colUb[idx])
+	                            pp->varsRemoved++;
+	                    }
+	                }
+	                else
+	                {
+	                    double newLhsMin = -pp->lhsMax[idxRow] + (coef * pp->colLb[idx]);
+	                    double newBound = ((pp->rhs[idxRow] + newLhsMin) / coef);
+
+	                    if(pp->colUb[idx] > newBound + EPS)
+	                    {
+	                        improve_upper_bound(pp, idx, newBound);
+	                        pp->boundsImproved++;
+
+	                        if(pp->colLb[idx] == pp->colUb[idx])
+	                            pp->varsRemoved++;
+	                    }
+	                }
+	            }
+	    	}
+	    }
+    }
+}
+
+void fix_var(Preprocess *pp, int idxVar, double valueToFix)
 {
     assert(idxVar >= 0 && idxVar < problem_num_cols(pp->problem));
-    assert(problem_var_is_binary(pp->problem, idxVar));
-    assert(valueToFix == 0.0 || valueToFix == 1.0);
-    assert(pp->colLb[idxVar] == 0.0 && pp->colUb[idxVar] == 1.0);
+    assert(pp->colLb[idxVar] != pp->colUb[idxVar]);
+    assert(valueToFix >= pp->colLb[idxVar] && valueToFix <= pp->colUb[idxVar]);
 
     int i;
     int nElements = problem_var_n_rows(pp->problem, idxVar);
@@ -282,8 +615,7 @@ void fix_binary_var(Preprocess *pp, int idxVar, double valueToFix)
 void improve_lower_bound(Preprocess *pp, int idxVar, double newBound)
 {
     assert(idxVar >= 0 && idxVar < problem_num_cols(pp->problem));
-    assert(!problem_var_is_binary(pp->problem, idxVar));
-    assert(newBound > pp->colLb[idxVar]);
+    assert(newBound > pp->colLb[idxVar] + EPS);
 
     int i;
     int nElements = problem_var_n_rows(pp->problem, idxVar);
@@ -310,8 +642,7 @@ void improve_lower_bound(Preprocess *pp, int idxVar, double newBound)
 void improve_upper_bound(Preprocess *pp, int idxVar, double newBound)
 {
     assert(idxVar >= 0 && idxVar < problem_num_cols(pp->problem));
-    assert(!problem_var_is_binary(pp->problem, idxVar));
-    assert(newBound < pp->colUb[idxVar]);
+    assert(newBound + EPS < pp->colUb[idxVar]);
 
     int i;
     int nElements = problem_var_n_rows(pp->problem, idxVar);
@@ -406,6 +737,8 @@ Problem* preprocess_basic_preprocessing(Preprocess *pp)
                 discount += (coef * pp->colLb[idx]);
                 continue;
             }
+
+            if(fabs(coef) < EPS) continue;
 
             newIdxs[newNElements] = pp->nindexes[idx];
             newCoefs[newNElements] = coef;
