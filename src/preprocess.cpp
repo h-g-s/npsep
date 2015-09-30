@@ -181,6 +181,11 @@ void one_element_constraint(Preprocess *pp, int idxRow)
     int idx = (problem_row_idxs(pp->problem, idxRow))[0];
     double coef = (problem_row_coefs(pp->problem, idxRow))[0], rhs = problem_row_rhs(pp->problem, idxRow);
 
+    /* constraints with one element are removed */
+    pp->removeRow[idxRow] = 1;
+    pp->colNConstraints[idx]--;
+    pp->rowsRemoved++;
+
     if(coef <= -EPS)
     {
         if(sense == 'L') sense = 'G';
@@ -197,13 +202,7 @@ void one_element_constraint(Preprocess *pp, int idxRow)
         case 'E':
             if(pp->colLb[idx] == pp->colUb[idx])
             {
-                if(newRhs == pp->colLb[idx])
-                {
-                    pp->removeRow[idxRow] = 1;
-                    pp->colNConstraints[idx]--;
-                    pp->rowsRemoved++;
-                }
-                else
+                if(fabs(newRhs - pp->colLb[idx]) > EPS)
                 {
                     fprintf(stderr, "Error: variable %s has already been fixed!\n", problem_var_name(pp->problem, idx));
                     exit(EXIT_FAILURE);
@@ -219,34 +218,38 @@ void one_element_constraint(Preprocess *pp, int idxRow)
         case 'L':
             if(pp->colUb[idx] > newRhs + EPS)
             {
-                improve_upper_bound(pp, idx, newRhs);
-                pp->boundsImproved++;
-
-                if(pp->colLb[idx] == pp->colUb[idx])
+                if(problem_var_is_binary(pp->problem, idx))
+                {
+                    fix_var(pp, idx, 0.0);
                     pp->varsRemoved++;
-            }
-            else
-            {
-                pp->removeRow[idxRow] = 1;
-                pp->colNConstraints[idx]--;
-                pp->rowsRemoved++;
+                }
+                else
+                {
+                    improve_upper_bound(pp, idx, newRhs);
+                    pp->boundsImproved++;
+
+                    if(pp->colLb[idx] == pp->colUb[idx])
+                        pp->varsRemoved++;
+                }
             }
         break;
 
         case 'G':
             if(pp->colLb[idx] + EPS < newRhs)
             {
-                improve_lower_bound(pp, idx, newRhs);
-                pp->boundsImproved++;
-
-                if(pp->colLb[idx] == pp->colUb[idx])
+                if(problem_var_is_binary(pp->problem, idx))
+                {
+                    fix_var(pp, idx, 1.0);
                     pp->varsRemoved++;
-            }
-            else
-            {
-                pp->removeRow[idxRow] = 1;
-                pp->colNConstraints[idx]--;
-                pp->rowsRemoved++;
+                }
+                else
+                {
+                    improve_lower_bound(pp, idx, newRhs);
+                    pp->boundsImproved++;
+
+                    if(pp->colLb[idx] == pp->colUb[idx])
+                        pp->varsRemoved++;
+                }
             }
         break;
 
