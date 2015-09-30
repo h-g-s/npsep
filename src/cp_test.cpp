@@ -50,7 +50,7 @@ int main( int argc, char **argv )
     char output[256];
     strncpy(output, problemName, 256);
     strcat(output, "_PP");
-    preProcSolver->writeLp(output);
+    preProcSolver->writeMps(output);
     
     problem_free(&preProcProblem);
     preprocess_free(&preproc);

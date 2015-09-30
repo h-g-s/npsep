@@ -18,6 +18,7 @@ struct _Preprocess
 
     double **coefficients, *rhs;
     double *colLb, *colUb;
+    int *colNConstraints; /* count how many constraints each variable appears  */
 
     double *lhsMin, *lhsMax; /* minimum and maximum values for LHS of each constraint. */
     int *countInftyPosBounds, *countInftyNegBounds; /* counts how many variables at each constraint have infinity as upper bound */
@@ -48,6 +49,7 @@ Preprocess* preprocess_create(const Problem *problem)
     pp->rhs = (double*) xmalloc(sizeof(double) * nRows);
     pp->colLb = (double*) xmalloc(sizeof(double) * nCols);
     pp->colUb = (double*) xmalloc(sizeof(double) * nCols);
+    pp->colNConstraints = (int*) xmalloc(sizeof(int) * nCols);
     pp->lhsMin = (double*) xmalloc(sizeof(double) * nRows);
     pp->lhsMax = (double*) xmalloc(sizeof(double) * nRows);
     pp->countInftyPosBounds = (int*) xmalloc(sizeof(int) * nRows);
@@ -62,6 +64,7 @@ Preprocess* preprocess_create(const Problem *problem)
         pp->colLb[i] = problem_var_lower_bound(pp->problem, i);
         pp->colUb[i] = problem_var_upper_bound(pp->problem, i);
         pp->nindexes[i] = -1;
+        pp->colNConstraints[i] = problem_var_n_rows(pp->problem, i);
 
         if(pp->colLb[i] == pp->colUb[i])
             pp->varsRemoved++;
@@ -126,6 +129,7 @@ void preprocess_free(Preprocess **pp)
     free((*pp)->rhs);
     free((*pp)->colLb);
     free((*pp)->colUb);
+    free((*pp)->colNConstraints);
     free((*pp)->lhsMin);
     free((*pp)->lhsMax);
     free((*pp)->countInftyPosBounds);
@@ -196,6 +200,7 @@ void one_element_constraint(Preprocess *pp, int idxRow)
                 if(newRhs == pp->colLb[idx])
                 {
                     pp->removeRow[idxRow] = 1;
+                    pp->colNConstraints[idx]--;
                     pp->rowsRemoved++;
                 }
                 else
@@ -223,6 +228,7 @@ void one_element_constraint(Preprocess *pp, int idxRow)
             else
             {
                 pp->removeRow[idxRow] = 1;
+                pp->colNConstraints[idx]--;
                 pp->rowsRemoved++;
             }
         break;
@@ -239,6 +245,7 @@ void one_element_constraint(Preprocess *pp, int idxRow)
             else
             {
                 pp->removeRow[idxRow] = 1;
+                pp->colNConstraints[idx]--;
                 pp->rowsRemoved++;
             }
         break;
@@ -266,6 +273,10 @@ void handling_inequality_constraints(Preprocess *pp, int idxRow)
     {
         pp->removeRow[idxRow] = 1; /* redundant row has been discovered. */
         pp->rowsRemoved++;
+
+        for(j = 0; j < rowSize; j++)
+        	pp->colNConstraints[idxs[j]]--;
+
         return;
     }
 
@@ -384,6 +395,10 @@ void handling_equality_constraints(Preprocess *pp, int idxRow)
     {
         pp->removeRow[idxRow] = 1; /* redundant row has been discovered. */
         pp->rowsRemoved++;
+
+        for(j = 0; j < rowSize; j++)
+        	pp->colNConstraints[idxs[j]]--;
+
         return;
     }
 
@@ -624,6 +639,10 @@ void improve_lower_bound(Preprocess *pp, int idxVar, double newBound)
     const double prevLb = pp->colLb[idxVar];
 
     /* improving lower bound */
+    char vType = problem_var_type(pp->problem, idxVar);
+    assert(vType == INTEGER || vType == CONTINUOUS);
+    if(vType == INTEGER)
+    	newBound = ceil(newBound);
     pp->colLb[idxVar] = newBound;
     
     for(i = 0; i < nElements; i++)
@@ -651,6 +670,10 @@ void improve_upper_bound(Preprocess *pp, int idxVar, double newBound)
     const double prevUb = pp->colUb[idxVar], infty = problem_get_infinity(pp->problem);
 
     /* improving upper bound */
+    char vType = problem_var_type(pp->problem, idxVar);
+    assert(vType == INTEGER || vType == CONTINUOUS);
+    if(vType == INTEGER)
+    	newBound = floor(newBound);
     pp->colUb[idxVar] = newBound;
 
     if(prevUb >= infty)
@@ -690,12 +713,12 @@ Problem* preprocess_basic_preprocessing(Preprocess *pp)
 {
     execute_basic_preprocessing(pp);
 
-    int i = 0, j = 0, k = 0;
-    int nCols = problem_num_cols(pp->problem) - pp->varsRemoved + 1;
-    int nRows = problem_num_rows(pp->problem) - pp->rowsRemoved + 1;
-    int emptyRows = 0;
+    int i = 0, j = 0;
+    int initialNCols = problem_num_cols(pp->problem) - pp->varsRemoved + 1;
+    int initialNRows = problem_num_rows(pp->problem) - pp->rowsRemoved + 1;
+    int countCols = 0, countRows = 0;
     double sumFixedObj = 0.0;
-    Problem *preProc = problem_create(nCols, nRows, problem_get_infinity(pp->problem));
+    Problem *preProc = problem_create(initialNCols, initialNRows, problem_get_infinity(pp->problem));
 
     for(i = 0; i < problem_num_cols(pp->problem); i++)
     {
@@ -705,15 +728,18 @@ Problem* preprocess_basic_preprocessing(Preprocess *pp)
             continue;
         }
 
-        pp->nindexes[i] = j++;
+        assert(pp->colNConstraints[i] >= 0 && pp->colNConstraints[i] <= initialNRows);
+
+        if(pp->colNConstraints[i] == 0 && fabs(problem_var_obj_coef(pp->problem, i)) < EPS)
+        	continue;
+
+        pp->nindexes[i] = countCols++;
         problem_var_set_lower_bound(preProc, pp->nindexes[i], pp->colLb[i]);
         problem_var_set_upper_bound(preProc, pp->nindexes[i], pp->colUb[i]);
         problem_var_set_obj_coef(preProc, pp->nindexes[i], problem_var_obj_coef(pp->problem, i));
         problem_var_set_type(preProc, pp->nindexes[i], problem_var_type(pp->problem, i));
         problem_var_set_name(preProc, pp->nindexes[i], problem_var_name(pp->problem, i));
     }
-
-    assert(j == nCols-1);
 
     for(i = 0; i < problem_num_rows(pp->problem); i++)
     {
@@ -747,35 +773,34 @@ Problem* preprocess_basic_preprocessing(Preprocess *pp)
 
         if(newNElements > 0)
         {
-            problem_set_row(preProc, k, newIdxs, newCoefs, newNElements, newRhs-discount, sense);
-            problem_row_set_name(preProc, k, problem_row_name(pp->problem, i));
-            k++;
+            problem_set_row(preProc, countRows, newIdxs, newCoefs, newNElements, newRhs-discount, sense);
+            problem_row_set_name(preProc, countRows, problem_row_name(pp->problem, i));
+            countRows++;
         }
-        else emptyRows++;
     }
-
-    assert(k == nRows-emptyRows-1);
 
     if(fabs(sumFixedObj) > EPS)
     {
-        problem_var_set_lower_bound(preProc, nCols-1, 0.0);
-        problem_var_set_upper_bound(preProc, nCols-1, 1.0);
-        problem_var_set_obj_coef(preProc, nCols-1, sumFixedObj);
-        problem_var_set_type(preProc, nCols-1, BINARY);
-        problem_var_set_name(preProc, nCols-1, "sum_fixed_obj");
+        problem_var_set_lower_bound(preProc, countCols, 0.0);
+        problem_var_set_upper_bound(preProc, countCols, 1.0);
+        problem_var_set_obj_coef(preProc, countCols, sumFixedObj);
+        problem_var_set_type(preProc, countCols, BINARY);
+        problem_var_set_name(preProc, countCols, "sum_fixed_obj");
 
-        int newIdxs[] = {nCols-1};
-        double newCoefs[] = {1.0};
-        problem_set_row(preProc, nRows-emptyRows-1, newIdxs, newCoefs, 1, 1.0, 'E');
-        problem_row_set_name(preProc, nRows-emptyRows-1, "fix_sum_obj_coef");
+        int newIdxs[] = { countCols };
+        double newCoefs[] = { 1.0 };
+        problem_set_row(preProc, countRows, newIdxs, newCoefs, 1, 1.0, 'E');
+        problem_row_set_name(preProc, countRows, "fix_sum_obj_coef");
+
+        problem_set_num_cols(preProc, countCols + 1);
+        problem_set_num_rows(preProc, countRows + 1);
     }
     else
     {
-        problem_set_num_cols(preProc, problem_num_cols(preProc) - 1);
-        problem_set_num_rows(preProc, problem_num_rows(preProc) - 1);
+        problem_set_num_cols(preProc, countCols);
+        problem_set_num_rows(preProc, countRows);
     }
 
-    problem_set_num_rows(preProc, problem_num_rows(preProc) - emptyRows);
     problem_update_matrices_by_col(preProc);
 
     printf("%d %d %d %d", pp->rowsRemoved, pp->varsRemoved, pp->coefsImproved, pp->boundsImproved);
