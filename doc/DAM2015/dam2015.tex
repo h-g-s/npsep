@@ -1,0 +1,246 @@
+%% 
+%% Copyright 2007, 2008, 2009 Elsevier Ltd
+%% 
+%% This file is part of the 'Elsarticle Bundle'.
+%% ---------------------------------------------
+%% 
+%% It may be distributed under the conditions of the LaTeX Project Public
+%% License, either version 1.2 of this license or (at your option) any
+%% later version.  The latest version of this license is in
+%%    http://www.latex-project.org/lppl.txt
+%% and version 1.2 or later is part of all distributions of LaTeX
+%% version 1999/12/01 or later.
+%% 
+%% The list of all files belonging to the 'Elsarticle Bundle' is
+%% given in the file `manifest.txt'.
+%% 
+
+%% Template article for Elsevier's document class `elsarticle'
+%% with numbered style bibliographic references
+%% SP 2008/03/01
+
+\documentclass[preprint,12pt]{elsarticle}
+
+%% Use the option review to obtain double line spacing
+%% \documentclass[authoryear,preprint,review,12pt]{elsarticle}
+
+%% Use the options 1p,twocolumn; 3p; 3p,twocolumn; 5p; or 5p,twocolumn
+%% for a journal layout:
+%% \documentclass[final,1p,times]{elsarticle}
+%% \documentclass[final,1p,times,twocolumn]{elsarticle}
+%% \documentclass[final,3p,times]{elsarticle}
+%% \documentclass[final,3p,times,twocolumn]{elsarticle}
+%% \documentclass[final,5p,times]{elsarticle}
+%% \documentclass[final,5p,times,twocolumn]{elsarticle}
+
+%% For including figures, graphicx.sty has been loaded in
+%% elsarticle.cls. If you prefer to use the old commands
+%% please give \usepackage{epsfig}
+
+%% The amssymb package provides various useful mathematical symbols
+\usepackage{amssymb}
+%% The amsthm package provides extended theorem environments
+%% \usepackage{amsthm}
+
+%% The lineno packages adds line numbers. Start line numbering with
+%% \begin{linenumbers}, end it with \end{linenumbers}. Or switch it on
+%% for the whole article with \linenumbers.
+%% \usepackage{lineno}
+
+\usepackage{amsmath}
+
+\journal{Discrete Applied Mathematics}
+
+\begin{document}
+
+\begin{frontmatter}
+
+%% Title, authors and addresses
+
+%% use the tnoteref command within \title for footnotes;
+%% use the tnotetext command for theassociated footnote;
+%% use the fnref command within \author or \address for footnotes;
+%% use the fntext command for theassociated footnote;
+%% use the corref command within \author for corresponding author footnotes;
+%% use the cortext command for theassociated footnote;
+%% use the ead command for the email address,
+%% and the form \ead[url] for the home page:
+%% \title{Title\tnoteref{label1}}
+%% \tnotetext[label1]{}
+%% \author{Name\corref{cor1}\fnref{label2}}
+%% \ead{email address}
+%% \ead[url]{home page}
+%% \fntext[label2]{}
+%% \cortext[cor1]{}
+%% \address{Address\fnref{label3}}
+%% \fntext[label3]{}
+
+\title{}
+
+%% use optional labels to link authors explicitly to addresses:
+%% \author[label1,label2]{}
+%% \address[label1]{}
+%% \address[label2]{}
+
+\author{}
+
+\address{}
+
+\begin{abstract}
+%% Text of abstract
+
+\end{abstract}
+
+\begin{keyword}
+%% keywords here, in the form: keyword \sep keyword
+
+%% PACS codes here, in the form: \PACS code \sep code
+
+%% MSC codes here, in the form: \MSC code \sep code
+%% or \MSC[2008] code \sep code (2000 is the default)
+
+\end{keyword}
+
+\end{frontmatter}
+
+%% \linenumbers
+
+%% main text
+\section{Introduction}
+
+\section{Conflict Graph}
+
+\section{Preprocessing Step}\label{preprocessing}
+
+Preprocessing tries to improve the representation of MIP problems. Thus, problems are reformulated in order to reduce their size and decrease the difference in the objective function values between the solutions to the linear programming relaxation and the integer program.
+
+We run a preprocessing step before performing the cut separation routine. This step uses basic preprocessing and basic probing techniques proposed by Savelsbergh~\cite{Savelsbergh1994}. We also use constraint propagation technique to fix binary variables. The next subsections will explain all preprocessing techniques used on this work.
+
+\subsection{Basic Preprocessing and Basic Probing Techniques}
+
+For understanding the basic preprocessing and probing techniques consider the following notation:
+
+\begin{itemize}
+\item \textbf{$x_j$}: binary decision variable with index $j$;
+\item \textbf{$y_j$}: integer or continuous decision variable with index $j$;
+\item \textbf{$a_{ij}$}: coefficient for variable $x_{j}$ in constraint $i$;
+\item \textbf{$g_{ij}$}: coefficient for variable $y_{j}$ in constraint $i$;
+\item \textbf{$B_i^+$}: index set of binary variables with positive coefficients in $i$;
+\item \textbf{$B_i^-$}: index set of binary variables with negative coefficients in $i$;
+\item \textbf{$C_i^+$}: index set of integer or continuous variables with positive coefficients in $i$;
+\item \textbf{$C_i^-$}: index set of integer or continuous variables with negative coefficients in $i$;
+\item \textbf{$l_{x_j}$}: lower bound of binary variable $x_j$ (used to avoid wrong calculations involving fixed variables);
+\item \textbf{$u_{x_j}$}: upper bound of binary variable $x_j$ (used to avoid wrong calculations involving fixed variables);
+\item \textbf{$l_{y_j}$}: lower bound of integer or continuous variable $y_j$;
+\item \textbf{$u_{y_j}$}: upper bound of integer or continuous variable $y_j$;
+\item \textbf{$b_i$}: right-hand side of constraint $i$.
+
+\end{itemize}
+
+\subsubsection{Identification of infeasibility}
+
+\begin{align}
+	z = \sum_{j \in B_i^+}{a_{ij}l_{x_j}} + \sum_{j \in B_i^-}{a_{ij}u_{x_j}} + \sum_{j \in C_i^+}{g_{ij}l_{y_j}} + \sum_{j \in C_i^-}{g_{ij}u_{y_j}}
+\end{align}
+
+If $z > b_{i}$, then the problem is infeasible.
+
+\subsubsection{Identification of redundancy}
+
+\begin{align}
+	z = \sum_{j \in B_i^+}{a_{ij}u_{x_j}} + \sum_{j \in B_i^-}{a_{ij}l_{x_j}} + \sum_{j \in C_i^+}{g_{ij}u_{y_j}} + \sum_{j \in C_i^-}{g_{ij}l_{y_j}}
+\end{align}
+
+If $z \leq b_{i}$, then the constraint $i$ is redundant.
+
+\subsubsection{Improving bounds}
+
+Considering a variable $y_k$, $k \in C_i^{+}$:
+
+\begin{align}
+	z_k = \sum_{j \in B_i^+}{a_{ij}l_{x_j}} + \sum_{j \in B_i^-}{a_{ij}u_{x_j}} + \sum_{j \in C_i^+ \setminus\{k\}}{g_{ij}l_{y_j}} + \sum_{j \in C_i^-}{g_{ij}u_{y_j}}
+\end{align}
+
+If $\frac{b_i - z_k}{g_ik} < u_k$, the upper bound $u_{y_k}$ can be improved.
+
+Considering a variable $y_k$, $k \in C_i^{-}$:
+
+\begin{align}
+	z_k = \sum_{j \in B_i^+}{a_{ij}l_{x_j}} + \sum_{j \in B_i^-}{a_{ij}u_{x_j}} + \sum_{j \in C_i^+}{g_{ij}l_{y_j}} + \sum_{j \in C_i^-\setminus\{k\}}{g_{ij}u_{y_j}}
+\end{align}
+
+If $\frac{z_k - b_i}{-g_ik} > l_k$, the lower bound $l_{y_k}$ can be improved.
+
+\subsubsection{Fixing variables}
+
+Considering a variable $x_k$, $k \in B_i^{+}$:
+
+\begin{align}
+	z_k = a_{ik}u_{x_k} + \sum_{j \in B_i^+\setminus\{k\}}{a_{ij}l_{x_j}} + \sum_{j \in B_i^-}{a_{ij}u_{x_j}} + \sum_{j \in C_i^+}{g_{ij}l_{y_j}} + \sum_{j \in C_i^-}{g_{ij}u_{y_j}}
+\end{align}
+
+If $z_k > b_i$, then $x_k$ can be fixed to 0.
+
+Considering a variable $x_k$, $k \in B_i^{-}$:
+
+\begin{align}
+	z_k = \sum_{j \in B_i^+}{a_{ij}l_{x_j}} + a_{ik}l_{x_k} + \sum_{j \in B_i^-\setminus\{k\}}{a_{ij}u_{x_j}} + \sum_{j \in C_i^+}{g_{ij}l_{y_j}} + \sum_{j \in C_i^-}{g_{ij}u_{y_j}}
+\end{align}
+
+If $z_k > b_i$, then $x_k$ can be fixed to 1.
+
+\subsubsection{Improving coefficients}
+
+Considering a variable $x_k$, $k \in B_i^{+}$:
+
+\begin{align}
+	z_k = a_{ik}l_k + \sum_{j \in B_i^+\setminus\{k\}}{a_{ij}u_{x_j}} + \sum_{j \in B_i^-}{a_{ij}l_{x_j}} + \sum_{j \in C_i^+}{g_{ij}u_{y_j}} + \sum_{j \in C_i^-}{g_{ij}l_{y_j}}
+\end{align}
+
+If $z_k < b_i$, then $a_{ik}$ and $b_i$ can be decreased by $\delta = b_i - z_k$ ($a_{ik} = a_{ik} - \delta$ and $b_i = b_i - delta$).
+
+Considering a variable $x_k$, $k \in B_i^{-}$:
+
+\begin{align}
+	z_k = \sum_{j \in B_i^+}{a_{ij}u_{x_j}} + a_{ik}u_k + \sum_{j \in B_i^-\setminus\{k\}}{a_{ij}l_{x_j}} + \sum_{j \in C_i^+}{g_{ij}u_{y_j}} + \sum_{j \in C_i^-}{g_{ij}l_{y_j}}
+\end{align}
+
+If $z_k < b_i$, then $a_{ik}$ can be increased by $\delta = b_i - z_k$ ($a_{ik} = a_{ik} + \delta$).
+
+\subsection{Constraint Propagation to Fix Binary Variables}
+
+\section{Aggressive Cut Separation}
+
+\section{Experimental Results}
+
+\section{Conclusions}
+
+%% The Appendices part is started with the command \appendix;
+%% appendix sections are then done as normal sections
+%% \appendix
+
+%% \section{}
+%% \label{}
+
+%% If you have bibdatabase file and want bibtex to generate the
+%% bibitems, please use
+%%
+\section*{References}
+  \bibliographystyle{elsarticle-num} 
+  \bibliography{references}
+
+%% else use the following coding to input the bibitems directly in the
+%% TeX file.
+
+%\begin{thebibliography}{00}
+
+%% \bibitem{label}
+%% Text of bibliographic item
+
+%\bibitem{}
+
+%\end{thebibliography}
+\end{document}
+\endinput
+%%
+%% End of file `elsarticle-template-num.tex'.
