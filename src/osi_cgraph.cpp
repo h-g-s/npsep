@@ -4,7 +4,6 @@
 #include <cfloat>
 #include <algorithm>
 #include <climits>
-#include <OsiSolverInterface.hpp>
 #include <CoinPackedMatrix.hpp>
 #include "osi_cgraph.h"
 #include <vector>
@@ -77,25 +76,23 @@ void cliqueComplementDetection(CGraph* cgraph, const vector<pair<int, double> >&
 /* Searches for cliques involving variables and complements of variables in this constraint. */
 void mixedCliqueDetection(CGraph* cgraph, const vector<pair<int, double> >& columns, double sumNegCoefs, double rhs);
 
-CGraph *osi_build_cgraph_pairwise( void *_lp )
+CGraph *osi_build_cgraph_pairwise( const OsiSolverInterface *solver )
 {
-    OsiSolverInterface *lp = (OsiSolverInterface *)_lp;
-
-    if (lp->getNumIntegers()<2)
+    if (solver->getNumIntegers()<2)
         return 0;
 
-    int cgraphSize = lp->getNumCols() * 2; //considering binary complement
+    int cgraphSize = solver->getNumCols() * 2; //considering binary complement
                                           //using extra memory to facilitate indexing
 
     CGraph *cgraph = cgraph_create( cgraphSize );
-    const char *ctype = lp->getColType();
-    const CoinPackedMatrix *M = lp->getMatrixByRow();
-    const double *rhs = lp->getRightHandSide();
-    const double *colLb = lp->getColLower();
-    const double *colUb = lp->getColUpper();
-    const char *sense = lp->getRowSense();
-    int nCols = lp->getNumCols();
-    int nRows = lp->getNumRows();
+    const char *ctype = solver->getColType();
+    const CoinPackedMatrix *M = solver->getMatrixByRow();
+    const double *rhs = solver->getRightHandSide();
+    const double *colLb = solver->getColLower();
+    const double *colUb = solver->getColUpper();
+    const char *sense = solver->getRowSense();
+    int nCols = solver->getNumCols();
+    int nRows = solver->getNumRows();
     int idxRow;
     cvec.reserve( CVEC_CAP );
 
@@ -117,7 +114,7 @@ CGraph *osi_build_cgraph_pairwise( void *_lp )
 
         if ( sense[idxRow] == 'R' )  // lets not consider ranged constraints by now
         {
-            printf("TODO: CHECK FOR RANGED CONSTRAINT (%s) rhs is %g\n", lp->getRowName(idxRow).c_str(), rhs[idxRow] );
+            printf("TODO: CHECK FOR RANGED CONSTRAINT (%s) rhs is %g\n", solver->getRowName(idxRow).c_str(), rhs[idxRow] );
             continue;
         }
 
@@ -333,23 +330,21 @@ int binary_search_complement(const vector< pair<int, double> >& columns, double 
     return colStart - 1;
 }
 
-CGraph *osi_build_cgraph( void *_lp )
+CGraph *osi_build_cgraph( const OsiSolverInterface *solver )
 {
-    OsiSolverInterface *lp = (OsiSolverInterface *)_lp;
-
-    if (lp->getNumIntegers()<2)
+    if (solver->getNumIntegers()<2)
         return 0;
 
-    int cgraphSize = lp->getNumCols() * 2;
+    int cgraphSize = solver->getNumCols() * 2;
     CGraph *cgraph = cgraph_create( cgraphSize );
-    const char *ctype = lp->getColType();
-    const CoinPackedMatrix *M = lp->getMatrixByRow();
-    const double *rhs = lp->getRightHandSide();
-    const double *colLb = lp->getColLower();
-    const double *colUb = lp->getColUpper();
-    const char *sense = lp->getRowSense();
-    int nCols = lp->getNumCols();
-    int nRows = lp->getNumRows();
+    const char *ctype = solver->getColType();
+    const CoinPackedMatrix *M = solver->getMatrixByRow();
+    const double *rhs = solver->getRightHandSide();
+    const double *colLb = solver->getColLower();
+    const double *colUb = solver->getColUpper();
+    const char *sense = solver->getRowSense();
+    int nCols = solver->getNumCols();
+    int nRows = solver->getNumRows();
     int idxRow;
     cvec.reserve( CVEC_CAP );
 
@@ -372,7 +367,7 @@ CGraph *osi_build_cgraph( void *_lp )
 
         if ( sense[idxRow] == 'R' )  // lets not consider ranged constraints by now
         {
-            printf("TODO: CHECK FOR RANGED CONSTRAINT (%s) rhs is %g\n", lp->getRowName(idxRow).c_str(), rhs[idxRow] );
+            printf("TODO: CHECK FOR RANGED CONSTRAINT (%s) rhs is %g\n", solver->getRowName(idxRow).c_str(), rhs[idxRow] );
             continue;
         }
 

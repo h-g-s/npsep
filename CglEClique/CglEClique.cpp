@@ -75,7 +75,7 @@ void CglEClique::generateCuts( const OsiSolverInterface &si, OsiCuts &cs, const 
    if (_cgraph)
       cgraph = _cgraph;
    else
-      cgraph = osi_build_cgraph( (void*) &si );
+      cgraph = osi_build_cgraph( &si );
 
    CliqueSeparation *sep = clq_sep_create( cgraph );
 
