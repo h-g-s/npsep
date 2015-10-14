@@ -20,6 +20,8 @@ typedef enum
     CglSepM
 } SeparationMethod;
 
+SeparationMethod sepMethod = Npsep;
+char preproc = 0;
 string optFile;
 map<string, double> optimals;
 
@@ -35,17 +37,22 @@ void readLP(OsiSolverInterface *solver, const char *fileName)
         solver->readMps( fileName );
 }
 
-void parseParameters( int argc, char **argv, SeparationMethod *sepMethod )
+void parseParameters( int argc, char **argv)
 {
     int i;
     for ( i=1 ; (i<argc) ; ++i )
     {
-        if (strstr( argv[i], "-cgl"))
+        if (strcmp( argv[i], "-cgl")==0)
         {
-            *sepMethod = CglSepM;
+            sepMethod = CglSepM;
             continue;
         }
-        else *sepMethod = Npsep;
+
+        if (strcmp( argv[i], "-preproc" )==0)
+        {
+            preproc = 1;
+            continue;
+        }
 
         char pName[256];
         char pValue[256];
@@ -165,11 +172,10 @@ int main( int argc, char **argv )
         exit( EXIT_FAILURE );
     }
 
-    SeparationMethod sepMethod;
     clock_t start = clock();
     OsiClpSolverInterface solver;
     solver.getModelPtr()->setPerturbation(50); /* makes CLP faster for hard instances */
-    parseParameters( argc, argv, &sepMethod );
+    parseParameters( argc, argv );
     readLP( &solver, argv[1] );
 
     const int numCols = solver.getNumCols(), numRows = solver.getNumRows();
