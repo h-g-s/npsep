@@ -16,11 +16,10 @@ using namespace std;
 
 typedef enum
 {
-    Default,   /* our new clique separation implementation */
+    Npsep,   /* our new clique separation implementation */
     CglSepM
 } SeparationMethod;
 
-SeparationMethod sepMethod = Default;
 string optFile;
 map<string, double> optimals;
 
@@ -36,16 +35,17 @@ void readLP(OsiSolverInterface *solver, const char *fileName)
         solver->readMps( fileName );
 }
 
-void parseParameters( int argc, char **argv )
+void parseParameters( int argc, char **argv, SeparationMethod *sepMethod )
 {
     int i;
     for ( i=1 ; (i<argc) ; ++i )
     {
         if (strstr( argv[i], "-cgl"))
         {
-            sepMethod = CglSepM;
+            *sepMethod = CglSepM;
             continue;
         }
+        else *sepMethod = Npsep;
 
         char pName[256];
         char pValue[256];
@@ -57,10 +57,10 @@ void parseParameters( int argc, char **argv )
             optFile = pValue;
             continue;
         }
-
     }
 }
 
+/* Fills a vector with the variable names, including the binary complements */
 vector<string> getVarNames(const vector<string> &colNames, int numCols)
 {
     vector<string> varNames(numCols * 2);
@@ -74,8 +74,6 @@ vector<string> getVarNames(const vector<string> &colNames, int numCols)
     return varNames;
 }
 
-/* Fills a vector with the variable names, including the binary complements */
-vector<string> getVarNames(const vector<string> &colNames, int numCols);
 bool differentSense( const double v1, const double v2 )
 {
     if ( (v1>1e-5) && (v2<-1e-5) )
@@ -132,6 +130,7 @@ const double abs_mip_gap( const double v1, const double v2 )
 
     return result;
 }
+
 void getOptimals()
 {
     FILE *file = fopen(optFile.c_str(), "r");
@@ -166,18 +165,22 @@ int main( int argc, char **argv )
         exit( EXIT_FAILURE );
     }
 
+    SeparationMethod sepMethod;
+    clock_t start = clock();
     OsiClpSolverInterface solver;
     solver.getModelPtr()->setPerturbation(50); /* makes CLP faster for hard instances */
-    parseParameters( argc, argv );
+    parseParameters( argc, argv, &sepMethod );
     readLP( &solver, argv[1] );
 
     const int numCols = solver.getNumCols(), numRows = solver.getNumRows();
     char problemName[ 256 ];
     getFileName( problemName, argv[1] );
-
-    CGraph *cgraph = osi_build_cgraph( &solver );
     int pass = 0, newCuts = 0, totalCuts = 0;
-    double pTime, opt;
+    double pTime, opt, cgTime;
+    CGraph *cgraph = NULL;
+
+    if(sepMethod == Npsep)
+    	cgraph = osi_build_cgraph( &solver );
 
     if(!optFile.empty())
     {
@@ -190,7 +193,6 @@ int main( int argc, char **argv )
         opt = optimals[problemName];
     }
 
-    clock_t start = clock();
     solver.initialSolve();
 
     if (!solver.isProvenOptimal())
@@ -245,7 +247,7 @@ int main( int argc, char **argv )
 
         switch (sepMethod)
         {
-            case Default :
+            case Npsep:
             {
                 CglEClique cliqueGen;
                 OsiCuts cuts;
@@ -263,7 +265,7 @@ int main( int argc, char **argv )
             }
             break;
 
-            case CglSepM :
+            case CglSepM:
             {
                 CglClique cliqueGen;
                 OsiCuts cuts;
@@ -278,6 +280,12 @@ int main( int argc, char **argv )
                 solver.applyCuts( cuts );
             }
             break;
+
+            Default:
+            {
+            	fprintf( stderr, "Separation Method does not recognized!\n" );
+                exit( EXIT_FAILURE );
+            }
         }
 
         pTime = ((double)(clock()-start)) / ((double)CLOCKS_PER_SEC);
@@ -338,7 +346,8 @@ int main( int argc, char **argv )
     }
     while ( (newCuts>0) && (pass<MAX_PASSES) ) ;
 
-    cgraph_free( &cgraph );
+    if(cgraph)
+    	cgraph_free( &cgraph );
 
     return EXIT_SUCCESS;
 }
