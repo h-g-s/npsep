@@ -30,8 +30,6 @@ public:
 
    void setGenOddHoles( const bool gen );
 
-   //virtual void generateCuts( const OsiSolverInterface &si, OsiCuts &cs, const CglTreeInfo info=CglTreeInfo() ) const ;
-
    virtual void generateCuts( const OsiSolverInterface & si, OsiCuts & cs,
          const CglTreeInfo info = CglTreeInfo() );
 

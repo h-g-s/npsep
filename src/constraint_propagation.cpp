@@ -5,64 +5,17 @@
 #include <vector>
 #include <set>
 #include <queue>
-#include <OsiClpSolverInterface.hpp>
 #include <CoinBuild.hpp>
 #include <omp.h>
+
+#include <OsiClpSolverInterface.hpp>
 
 extern "C"
 {
 	#include "memory.h"
 }
 
-using namespace std;
-
-#define DEACTIVATE 0
-#define ACTIVATE 1
-#define UNFIXED 2
-
-#define CONFLICT 3
-#define FIXATION 4
-#define NOIMPLICATION 5
-
-typedef struct Fixation
-{
-	int idxVar;
-	double valueToFix;
-
-    Fixation() { }
-    Fixation(int _idxVar, double _valueToFix) : idxVar(_idxVar), valueToFix(_valueToFix) { }
-} Fixation;
-
-inline bool operator<(const Fixation &f1, const Fixation &f2)
-{
-	if(f1.idxVar != f2.idxVar)
-		return f1.idxVar < f2.idxVar;
-	return f1.valueToFix < f2.valueToFix;
-}
-
-/* stores constraints which have only binary variables */
-struct _CPropagation
-{
-	int numCols, numRows;
-	char *varIsBinary; /* for each variable, stores 1 if variable is binary and 0 otherwise */
-
-	vector<vector<pair<int, double> > > matrixByRow; /* matrix of indexes and coefficients by row */
-    vector<vector<pair<int, double> > > matrixByCol; /* matrix of indexes and coefficients by column */
-	vector<double> rhs; /* right-hand side for each constraint */
-	int binaryVars; /* number of binary variables and number of unfixed binary variables */
-
-	/* Used for preprocess module. For each variable:
-		0 - if variable must be fixed to 0
-        1 - if variable must be fixed to 1
-        2 - if variable is unfixed */
-	char *isToFix;
-    int varsToFix; /* number of variables to fix */
-
-	/* a pointer to original problem */
-	OsiSolverInterface *solver;
-};
-
-void fillMatrices(const OsiSolverInterface *solver, CPropagation *cp);
+void fillMatrices(CPropagation *cp);
 
 void fixVariable(CPropagation *cp, int idx, double value, int &unfixedVars, double *colLb, double *colUb, double *constrBound,
                     int *unfixedVarsByRow);
@@ -72,17 +25,17 @@ void unfixVariable(CPropagation *cp, int idx, int &unfixedVars, double *colLb, d
 
 void calculateCj(CPropagation *cp);
 
-CPropagation *cpropagation_create(const OsiSolverInterface *solver)
+CPropagation *cpropagation_create(const Problem *_problem)
 {
 	CPropagation *cp = new CPropagation;
-	const double *colLb = solver->getColLower();
-    const double *colUb = solver->getColUpper();
+	const double *colLb = problem_vars_lower_bound(_problem);
+    const double *colUb = problem_vars_upper_bound(_problem);
 
-    cp->solver = (OsiSolverInterface*)solver;
-    fillMatrices(solver, cp);
+    cp->problem = (Problem*)_problem;
+    fillMatrices(cp);
 	assert(cp->matrixByRow.size() == cp->rhs.size());
 
-    cp->numCols = solver->getNumCols();
+    cp->numCols = problem_num_cols(cp->problem);
 	cp->numRows = (int)cp->matrixByRow.size();
     cp->varIsBinary = new char[cp->numCols];
     cp->isToFix = new char[cp->numCols];
@@ -96,7 +49,7 @@ CPropagation *cpropagation_create(const OsiSolverInterface *solver)
         {
             cp->isToFix[i] = UNFIXED;
 
-            if(solver->isBinary(i))
+            if(problem_var_is_binary(cp->problem, i))
             {
                 cp->varIsBinary[i] = 1;
                 #pragma omp atomic
@@ -116,31 +69,29 @@ void cpropagation_free(CPropagation *cp)
 	delete cp;
 }
 
-void fillMatrices(const OsiSolverInterface *solver, CPropagation *cp)
+void fillMatrices(CPropagation *cp)
 {
-    const CoinPackedMatrix *M = solver->getMatrixByRow();
-    const double *rhs = solver->getRightHandSide();
-    const char *sense = solver->getRowSense();
+	const char *ctype = problem_vars_type(cp->problem);
 
-    for(int idxRow = 0; idxRow < solver->getNumRows(); idxRow++)
+    for(int idxRow = 0; idxRow < problem_num_rows(cp->problem); idxRow++)
     {
-        if(sense[idxRow] == 'R') /* ignoring ranged constarints */
+    	char sense = problem_row_sense(cp->problem, idxRow);
+
+        if(sense == 'R') /* ignoring ranged constarints */
             continue;
 
-        const CoinShallowPackedVector &row = M->getVector(idxRow);
-        const int nElements = row.getNumElements();
-        const int *idxs = row.getIndices();
-        const double *coefs = row.getElements();
-        double mult = (sense[idxRow] == 'G') ? -1.0 : 1.0;
+        const int nElements = problem_row_size(cp->problem, idxRow);
+        const int *idxs = problem_row_idxs(cp->problem, idxRow);
+        const double *coefs = problem_row_coefs(cp->problem, idxRow);
+        const double rhs = problem_row_rhs(cp->problem, idxRow);
+        double mult = (sense == 'G') ? -1.0 : 1.0;
         vector<pair<int, double> > constraint(nElements);
         bool allBinaries = true;
-
-        const char *ctype = solver->getColType();
 
         for(int i = 0; i < nElements; i++)
         {
             constraint[i] = pair<int, double> (idxs[i], mult * coefs[i]);
-            if(!solver->isBinary(idxs[i]))
+            if(ctype[idxs[i]] != BINARY)
             {
                 allBinaries = false;
                 break;
@@ -150,18 +101,18 @@ void fillMatrices(const OsiSolverInterface *solver, CPropagation *cp)
         if(allBinaries)
         {
             cp->matrixByRow.push_back(constraint);
-            cp->rhs.push_back(rhs[idxRow] * mult);
-            if(sense[idxRow] == 'E')
+            cp->rhs.push_back(rhs * mult);
+            if(sense == 'E')
             {
                 for(int j = 0; j < nElements; j++)
                     constraint[j].second = -1.0 * constraint[j].second;
                 cp->matrixByRow.push_back(constraint);
-                cp->rhs.push_back(-1.0 * rhs[idxRow]);
+                cp->rhs.push_back(-1.0 * rhs);
             }
         }
     }
 
-    cp->matrixByCol.resize(solver->getNumCols());
+    cp->matrixByCol.resize(problem_num_cols(cp->problem));
     for(int i = 0; i < (int)cp->matrixByRow.size(); i++)
         for(int j = 0; j < (int)cp->matrixByRow[i].size(); j++)
         {
@@ -201,8 +152,13 @@ char constraintPropagation(CPropagation *cp, int var, double value, vector<Fixat
 {
 	assert(value == 0.0 || value == 1.0);
 	assert(var >= 0 && var < cp->numCols);
-	assert(colLb[var] != colUb[var]);
-	assert(fixations.empty());
+	//assert(colLb[var] != colUb[var]);
+    if(colLb[var] == colUb[var])
+    {
+        // assert(colLb[var] == value);
+        return NOIMPLICATION;
+    }
+	//assert(fixations.empty());
 
 	char status = NOIMPLICATION;
 	queue<int> C;
@@ -296,7 +252,12 @@ void fixVariable(CPropagation *cp, int idx, double value, int &unfixedVars, doub
 {
 	assert(value == 0.0 || value == 1.0);
 	assert(idx >= 0 && idx < cp->numCols);
-	assert(colLb[idx] == 0.0 && colUb[idx] == 1.0);
+	// assert(colLb[idx] == 0.0 && colUb[idx] == 1.0);
+    if(colLb[idx] == colUb[idx])
+    {
+        //assert(colLb[idx] == value);
+        return;
+    }
 
 	unfixedVars--;
 	colLb[idx] = colUb[idx] = value;
@@ -323,7 +284,9 @@ void fixVariable(CPropagation *cp, int idx, double value, int &unfixedVars, doub
 void unfixVariable(CPropagation *cp, int idx, int &unfixedVars, double *colLb, double *colUb, double *constrBound,
                     int *unfixedVarsByRow)
 {
-    assert(colLb[idx] == colUb[idx]);
+    if(colLb[idx] != colUb[idx])
+        return;
+    //assert(colLb[idx] == colUb[idx]);
 
     int numThreads = omp_get_max_threads();
     int chunk = max(1, (int)cp->matrixByCol[idx].size()/numThreads);
@@ -350,7 +313,7 @@ void unfixVariable(CPropagation *cp, int idx, int &unfixedVars, double *colLb, d
 
 void cpropagation_get_vars_to_fix(CPropagation *cp, const CGraph* cgraph)
 {
-    const double *lb = cp->solver->getColLower(), *ub = cp->solver->getColUpper();
+    const double *lb = problem_vars_lower_bound(cp->problem), *ub = problem_vars_upper_bound(cp->problem);
     double colLb[cp->numCols], colUb[cp->numCols], constrBound[cp->numRows];
     int unfixedVars = cp->binaryVars, unfixedVarsByRow[cp->numRows];
 
@@ -390,7 +353,7 @@ void cpropagation_get_vars_to_fix(CPropagation *cp, const CGraph* cgraph)
 
             if(colLb[i] == colUb[i])
             {
-                cp->isToFix[i] = (int)colLb[i];
+                // cp->isToFix[i] = (int)colLb[i];
                 continue;
             }
 
@@ -428,21 +391,25 @@ void cpropagation_get_vars_to_fix(CPropagation *cp, const CGraph* cgraph)
         }
 }
 
+int cpropagation_get_num_vars_to_fix(CPropagation *cp) { return cp->varsToFix; }
+char cpropagation_var_is_to_fix(CPropagation *cp, int idxVar)
+{
+	assert(idxVar >= 0 && idxVar < problem_num_cols(cp->problem));
+	return cp->isToFix[idxVar];
+}
+
+
 OsiSolverInterface* cpropagation_preprocess(CPropagation *cp, int nindexes[])
 {
     if(cp->varsToFix == 0)
     {
         /* printf("There are no variables to remove from the problem!\n"); */
-        return cp->solver; /* returns a pointer to original solver */
+        return NULL; /* returns a pointer to original solver */
     }
 
-    const double *rhs = cp->solver->getRightHandSide();
-    const double *colLb = cp->solver->getColLower(), *colUb = cp->solver->getColUpper();
-    const double *rowLb = cp->solver->getRowLower(), *rowUb = cp->solver->getRowUpper();
-    const double *objCoef = cp->solver->getObjCoefficients();
-    const char *sense = cp->solver->getRowSense();
-    const char *ctype = cp->solver->getColType();
-    const CoinPackedMatrix *M = cp->solver->getMatrixByRow();
+    const double *colLb = problem_vars_lower_bound(cp->problem), *colUb = problem_vars_upper_bound(cp->problem);
+    const double *objCoef = problem_vars_obj_coefs(cp->problem);
+    const char *ctype = problem_vars_type(cp->problem);
 
     double sumFixedObj = 0.0; /* stores the sum of objective coefficients of all variables fixed to 1 */
 
@@ -450,16 +417,16 @@ OsiSolverInterface* cpropagation_preprocess(CPropagation *cp, int nindexes[])
     preProcSolver->setIntParam(OsiNameDiscipline, 2);
     preProcSolver->messageHandler()->setLogLevel(0);
     preProcSolver->setHintParam(OsiDoReducePrint,true,OsiHintTry);
-    preProcSolver->setObjName(cp->solver->getObjName());
+    //preProcSolver->setObjName(cp->solver->getObjName());
 
-    for(int i = 0, j = 0; i < cp->solver->getNumCols(); i++)
+    for(int i = 0, j = 0; i < problem_num_cols(cp->problem); i++)
     {
         nindexes[i] = -1;
         if(cp->isToFix[i] == UNFIXED)
         {
             preProcSolver->addCol(0, NULL, NULL, colLb[i], colUb[i], objCoef[i]);
-            preProcSolver->setColName(j, cp->solver->getColName(i));
-            if(cp->solver->isContinuous(j))
+            preProcSolver->setColName(j, problem_var_name(cp->problem, i));
+            if(problem_var_type(cp->problem, i) == CONTINUOUS)
                 preProcSolver->setContinuous(j);
             else 
                 preProcSolver->setInteger(j);
@@ -469,7 +436,7 @@ OsiSolverInterface* cpropagation_preprocess(CPropagation *cp, int nindexes[])
             sumFixedObj += objCoef[i];
     }
 
-    if(sumFixedObj != 0.0)
+    if(fabs(sumFixedObj) > EPS)
     {
         /* adding a variable with cost equals to the sum of all coefficients of variables fixed to 1 */
         preProcSolver->addCol(0, NULL, NULL, 1.0, 1.0, sumFixedObj);
@@ -477,21 +444,20 @@ OsiSolverInterface* cpropagation_preprocess(CPropagation *cp, int nindexes[])
         preProcSolver->setInteger(preProcSolver->getNumCols()-1);
     }
 
-    for(int idxRow = 0; idxRow < cp->solver->getNumRows(); idxRow++)
+    for(int idxRow = 0; idxRow < problem_num_rows(cp->problem); idxRow++)
     {
-        const CoinShallowPackedVector &row = M->getVector(idxRow);
-        const int nElements = row.getNumElements();
-        const int *idxs = row.getIndices();
-        const double *coefs = row.getElements();
-        vector< int > vidx; vidx.reserve(cp->solver->getNumCols());
-        vector< double > vcoef; vcoef.reserve(cp->solver->getNumCols());
+        const int nElements = problem_row_size(cp->problem, idxRow);
+        const int *idxs = problem_row_idxs(cp->problem, idxRow);
+        const double *coefs = problem_row_coefs(cp->problem, idxRow);
+        vector< int > vidx; vidx.reserve(problem_num_cols(cp->problem));
+        vector< double > vcoef; vcoef.reserve(problem_num_cols(cp->problem));
         double activeCoefs = 0.0;
 
         for(int i = 0; i < nElements; i++)
         {
             if(cp->isToFix[idxs[i]] == UNFIXED)
             {
-                assert(nindexes[idxs[i]] >= 0 && nindexes[idxs[i]] < cp->solver->getNumCols());
+                assert(nindexes[idxs[i]] >= 0 && nindexes[idxs[i]] < problem_num_cols(cp->problem));
                 vidx.push_back(nindexes[idxs[i]]);
                 vcoef.push_back(coefs[i]);
             }
@@ -502,21 +468,22 @@ OsiSolverInterface* cpropagation_preprocess(CPropagation *cp, int nindexes[])
         if(!vidx.empty())
         {
         	double rlb, rub;
+        	const char sense = problem_row_sense(cp->problem, idxRow);
         	
-        	if(sense[idxRow] == 'E')
+        	if(sense == 'E')
             {
-                rlb = rowLb[idxRow] - activeCoefs;
-                rub = rowUb[idxRow] - activeCoefs;
+                rlb = problem_row_rhs(cp->problem, idxRow) - activeCoefs;
+                rub = problem_row_rhs(cp->problem, idxRow) - activeCoefs;
             }
-        	else if(sense[idxRow] == 'L')
+        	else if(sense == 'L')
             {
-                rlb = rowLb[idxRow];
-                rub = rowUb[idxRow] - activeCoefs;
+                rlb = preProcSolver->getInfinity();
+                rub = problem_row_rhs(cp->problem, idxRow) - activeCoefs;
             }
-        	else if(sense[idxRow] == 'G')
+        	else if(sense == 'G')
             {
-                rlb = rowLb[idxRow] - activeCoefs;
-                rub = rowUb[idxRow];
+                rlb = problem_row_rhs(cp->problem, idxRow) - activeCoefs;
+                rub = preProcSolver->getInfinity();
             }
         	else
         	{
@@ -524,12 +491,10 @@ OsiSolverInterface* cpropagation_preprocess(CPropagation *cp, int nindexes[])
         		exit(EXIT_FAILURE);
         	}
 
-            preProcSolver->addRow((int)vcoef.size(), &vidx[0], &vcoef[0], rlb, rub);
-            preProcSolver->setRowName(idxRow, cp->solver->getRowName(idxRow));
+        	preProcSolver->addRow((int)vcoef.size(), &vidx[0], &vcoef[0], rlb, rub);
+            preProcSolver->setRowName(idxRow, problem_row_name(cp->problem, idxRow));
         }
 	}
 
     return preProcSolver;
 }
-
-int cpropagation_get_num_vars_to_fix(CPropagation *cp) { return cp->varsToFix; }

@@ -11,7 +11,7 @@ extern "C"
 
 struct _Problem
 {
-    int numCols, numRows, numElements;
+    int numCols, numRows, numElements, numBinaries, numIntegers, numContinuous;
     double infty; /* stores the solver's value for infinity */
     double *colLb, *colUb, *rhs, *objCoef;
     char *rowSense, *colType, **colName, **rowName;
@@ -32,6 +32,9 @@ Problem* problem_create(int numCols, int numRows, double infty)
     p->numCols = numCols;
     p->numRows = numRows;
     p->numElements = 0;
+    p->numBinaries = 0;
+    p->numIntegers = 0;
+    p->numContinuous = 0;
     p->infty = infty;
     p->colLb = (double*) xmalloc(sizeof(double) * p->numCols);
     p->colUb = (double*) xmalloc(sizeof(double) * p->numCols);
@@ -72,6 +75,9 @@ Problem* problem_create_using_osi(const OsiSolverInterface *solver)
     p->numCols = solver->getNumCols();
     p->numRows = solver->getNumRows();
     p->numElements = solver->getNumElements();
+    p->numBinaries = 0;
+    p->numIntegers = 0;
+    p->numContinuous = 0;
     p->infty = solver->getInfinity();
     p->colLb = (double*) xmalloc(sizeof(double) * p->numCols);
     p->colUb = (double*) xmalloc(sizeof(double) * p->numCols);
@@ -105,6 +111,16 @@ Problem* problem_create_using_osi(const OsiSolverInterface *solver)
         p->colUb[i] = colUb[i];
         p->objCoef[i] = objCoef[i];
         p->colType[i] = colType[i];
+
+        if(p->colType[i] == CONTINUOUS)
+            p->numContinuous++;
+        else 
+        {
+            p->numIntegers++;
+            if(p->colType[i] == BINARY)
+                p->numBinaries++;
+        }
+        
 
         p->colName[i] = (char*) xmalloc(sizeof(char) * MAX_NAME_SIZE);
         strncpy(p->colName[i], solver->getColName(i).c_str(), MAX_NAME_SIZE);
@@ -193,6 +209,9 @@ void problem_free(Problem **p)
 int problem_num_cols(const Problem *p) { return p->numCols; }
 int problem_num_rows(const Problem *p) { return p->numRows; }
 int problem_num_elements(const Problem *p) { return p->numElements; }
+int problem_num_binaries(const Problem *p) { return p->numBinaries; }
+int problem_num_integers(const Problem *p) { return p->numIntegers; }
+int problem_num_continuous(const Problem *p) { return p->numContinuous; }
 double problem_get_infinity(const Problem *p) { return p->infty; }
 
 int problem_row_size(const Problem *p, int idxRow)
@@ -284,6 +303,8 @@ const double* problem_var_rows_coefs(const Problem *p, int idxVar)
     assert(idxVar >= 0 && idxVar < p->numCols);
     return p->coefsByCol[idxVar];
 }
+
+const char* problem_vars_type(const Problem *p) { return p->colType; }
 
 const double* problem_vars_lower_bound(const Problem *p) { return p->colLb; }
 

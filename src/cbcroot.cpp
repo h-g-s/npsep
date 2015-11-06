@@ -1,7 +1,7 @@
 #include <OsiClpSolverInterface.hpp>
 #include <CglClique.hpp>
 #include <CglEClique.hpp>
-#include "osi_cgraph.h"
+#include "build_cgraph.h"
 extern "C"
 {
     #include "strUtils.h"
@@ -12,7 +12,7 @@ using namespace std;
 #define MIN_VIOLATION 0.02
 #define MAX_TIME 600
 #define MAX_PASSES 999
-#define EPS 1e-6
+#define EPS 1e-8
 
 typedef enum
 {
@@ -186,7 +186,7 @@ int main( int argc, char **argv )
     CGraph *cgraph = NULL;
 
     if(sepMethod == Npsep)
-    	cgraph = osi_build_cgraph( &solver );
+    	cgraph = build_cgraph( &solver );
 
     if(!optFile.empty())
     {

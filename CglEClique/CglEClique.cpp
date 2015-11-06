@@ -7,7 +7,7 @@ extern "C"
 #include "memory.h"
 #include "oddhs.h"
 }
-#include "osi_cgraph.h"
+#include "build_cgraph.h"
 
 #define MIN_VIOL 0.02
 
@@ -75,7 +75,7 @@ void CglEClique::generateCuts( const OsiSolverInterface &si, OsiCuts &cs, const 
    if (_cgraph)
       cgraph = _cgraph;
    else
-      cgraph = osi_build_cgraph( &si );
+      cgraph = build_cgraph( &si );
 
    CliqueSeparation *sep = clq_sep_create( cgraph );
 

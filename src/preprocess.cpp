@@ -3,11 +3,15 @@
 #include <OsiClpSolverInterface.hpp>
 #include <CoinBuild.hpp>
 #include <vector>
+#include <queue>
+#include "constraint_propagation.h"
+
 using namespace std;
 
 extern "C"
 {
     #include "memory.h"
+    #include "cgraph.h"
 }
 
 #define EPS 1e-8
@@ -19,6 +23,7 @@ struct _Preprocess
     double **coefficients, *rhs;
     double *colLb, *colUb;
     int *colNConstraints; /* count how many constraints each variable appears  */
+    char *rowSense;
 
     double *lhsMin, *lhsMax; /* minimum and maximum values for LHS of each constraint. */
     int *countInftyPosBounds, *countInftyNegBounds; /* counts how many variables at each constraint have infinity as upper bound */
@@ -29,8 +34,16 @@ struct _Preprocess
     int varsRemoved; /* number of variables fixed at preprocessing */
     int coefsImproved; /* number of coefficients improved at preprocessing */
     int boundsImproved; /* number of bounds of variables improved at preprocessing */
+
+    /*----------------------------------CONSTRAINT PROPAGATION AND GUB STUFF---------------------------------------------*/
+    char *isGubConstraint; /* for each constraint, stores 1 if it is a GUB constraint. 0 otherwise */
+    CPropagation *cp;
+    double *cpColLb, *cpColUb, *constrBound;
+    int unfixedVars, *unfixedVarsByRow;
+    int numGub, transformed;
 };
 
+void gub_constraint(Preprocess *pp, int idxRow);
 void handling_inequality_constraints(Preprocess *pp, int idxRow);
 void handling_equality_constraints(Preprocess *pp, int idxRow);
 void one_element_constraint(Preprocess *pp, int idxRow);
@@ -43,6 +56,7 @@ Preprocess* preprocess_create(const Problem *problem)
 {
     int i, j, nCols = problem_num_cols(problem), nRows = problem_num_rows(problem);
     Preprocess* pp = new Preprocess;
+    pp->cp = cpropagation_create(problem);
 
     pp->problem = problem;
     pp->coefficients = (double**) xmalloc(sizeof(double*) * nRows);
@@ -50,6 +64,7 @@ Preprocess* preprocess_create(const Problem *problem)
     pp->colLb = (double*) xmalloc(sizeof(double) * nCols);
     pp->colUb = (double*) xmalloc(sizeof(double) * nCols);
     pp->colNConstraints = (int*) xmalloc(sizeof(int) * nCols);
+    pp->rowSense = (char*) xmalloc(sizeof(char) * nRows);
     pp->lhsMin = (double*) xmalloc(sizeof(double) * nRows);
     pp->lhsMax = (double*) xmalloc(sizeof(double) * nRows);
     pp->countInftyPosBounds = (int*) xmalloc(sizeof(int) * nRows);
@@ -58,6 +73,8 @@ Preprocess* preprocess_create(const Problem *problem)
     pp->nindexes = (int*) xmalloc(sizeof(int) * nCols);
     pp->removeRow = (char*) xmalloc(sizeof(char) * nRows);
     pp->rowsRemoved = pp->varsRemoved = pp->coefsImproved = pp->boundsImproved = 0;
+    pp->isGubConstraint = (char*) xmalloc(sizeof(char) * nRows);
+    pp->numGub = 0;
 
     for(i = 0; i < nCols; i++)
     {
@@ -72,12 +89,20 @@ Preprocess* preprocess_create(const Problem *problem)
 
     const double infty = problem_get_infinity(pp->problem);
 
+    int count = 0;
+
     for(i = 0; i < nRows; i++)
     {
         const int *idxs = problem_row_idxs(pp->problem, i);
         const double *coefs = problem_row_coefs(pp->problem, i);
-        int rowSize = problem_row_size(pp->problem, i);
-        const double mult = (problem_row_sense(pp->problem, i) == 'G') ? -1.0 : 1.0; /* used to convert >= rows to <= */
+        const char rowSense = problem_row_sense(pp->problem, i);
+        const int rowSize = problem_row_size(pp->problem, i);
+        const double mult = (rowSense == 'G') ? -1.0 : 1.0; /* used to convert >= rows to <= */
+        double minCoef = infty;
+        double maxCoef = -infty;
+        int countBin = 0;
+
+        pp->rowSense[i] = rowSense;
 
         pp->removeRow[i] = 0;
         pp->rhs[i] = mult * problem_row_rhs(pp->problem, i);
@@ -88,6 +113,12 @@ Preprocess* preprocess_create(const Problem *problem)
 
         for(j = 0; j < rowSize; j++)
         {
+        	if(problem_var_is_binary(pp->problem, idxs[j]))
+        		countBin++;
+
+        	minCoef = min(minCoef, coefs[j]);
+        	maxCoef = max(maxCoef, coefs[j]);
+
             pp->coefficients[i][j] = mult * coefs[j];
 
             if(pp->negBounds[i]) continue;
@@ -116,6 +147,45 @@ Preprocess* preprocess_create(const Problem *problem)
                 }
             }
         }
+
+        //Detects GUB constraints:
+        if( (countBin == rowSize) && (fabs(maxCoef - minCoef) < EPS) && (fabs(maxCoef - pp->rhs[i]) < EPS) &&
+           ( ( (pp->rowSense[i] == 'L') && (maxCoef > EPS) ) || ( (pp->rowSense[i] == 'G') && (maxCoef < EPS) ) ) )
+        {
+        	pp->isGubConstraint[i] = 1;
+        	pp->numGub++;
+        }
+        else pp->isGubConstraint[i] = 0;
+    }
+
+/*----------------------------------CONSTRAINT PROPAGATION AND GUB STUFF---------------------------------------------*/
+    int cpRows = pp->cp->numRows;
+
+    pp->cpColLb = (double*) xmalloc(sizeof(double) * nCols);
+    pp->cpColUb = (double*) xmalloc(sizeof(double) * nCols);
+    pp->constrBound = (double*) xmalloc(sizeof(double) * cpRows);
+    pp->unfixedVars = problem_num_binaries(pp->problem);
+    pp->unfixedVarsByRow = (int*) xmalloc(sizeof(int) * cpRows);
+    pp->transformed = 0;
+
+    for(int i = 0; i < nCols; i++)
+    {
+        pp->cpColLb[i] = pp->colLb[i];
+        pp->cpColUb[i] = pp->colUb[i];
+    }
+    for(int i = 0; i < pp->cp->numRows; i++)
+    {
+        pp->constrBound[i] = pp->cp->rhs[i];
+        pp->unfixedVarsByRow[i] = (int)pp->cp->matrixByRow[i].size();
+
+        for(int j = 0; j < (int)pp->cp->matrixByRow[i].size(); j++)
+        {
+            const int idx = pp->cp->matrixByRow[i][j].first;
+            const double coef = pp->cp->matrixByRow[i][j].second;
+
+            if(coef > 0.0) pp->constrBound[i] -= (coef * pp->cpColLb[idx]);
+            else pp->constrBound[i] -= (coef * pp->cpColUb[idx]);
+        }
     }
 
     return pp;
@@ -130,6 +200,7 @@ void preprocess_free(Preprocess **pp)
     free((*pp)->colLb);
     free((*pp)->colUb);
     free((*pp)->colNConstraints);
+    free((*pp)->rowSense);
     free((*pp)->lhsMin);
     free((*pp)->lhsMax);
     free((*pp)->countInftyPosBounds);
@@ -137,6 +208,15 @@ void preprocess_free(Preprocess **pp)
     free((*pp)->negBounds);
     free((*pp)->nindexes);
     free((*pp)->removeRow);
+
+    free((*pp)->isGubConstraint);
+    free((*pp)->cpColLb);
+    free((*pp)->cpColUb);
+    free((*pp)->constrBound);
+    free((*pp)->unfixedVarsByRow);
+    cpropagation_free((*pp)->cp);
+    
+
     free(*pp);
     (*pp) = NULL;
 }
@@ -151,7 +231,7 @@ void execute_basic_preprocessing(Preprocess *pp)
     {
         int rowSize = problem_row_size(pp->problem, i);
         const int *idxs = problem_row_idxs(pp->problem, i);
-        char sense = problem_row_sense(pp->problem, i);
+        char sense = pp->rowSense[i];
 
         if(sense != 'E' && sense != 'L' && sense != 'G')
         {
@@ -168,6 +248,9 @@ void execute_basic_preprocessing(Preprocess *pp)
         if(pp->negBounds[i]) continue; /* ignoring rows containing variables with negative bounds */
         if(pp->removeRow[i]) continue; /* ignoring rows already removed */
 
+        if(pp->isGubConstraint[i])
+        	gub_constraint(pp, i);
+
         if(sense == 'L' || sense == 'G')
         	handling_inequality_constraints(pp, i);
         else
@@ -175,9 +258,33 @@ void execute_basic_preprocessing(Preprocess *pp)
     }
 }
 
+void gub_constraint(Preprocess *pp, int idxRow)
+{
+	char status;
+	int rowSize = problem_row_size(pp->problem, idxRow);
+    const int *idxs = problem_row_idxs(pp->problem, idxRow);
+    vector<Fixation> fixations;
+
+    for(int i = 0; i < rowSize; i++)
+    {
+    	const int idx = idxs[i];
+    	fixations.push_back(Fixation(idx, 0.0));
+    	status = constraintPropagation(pp->cp, idx, 0.0, fixations, pp->unfixedVars, pp->cpColLb, pp->cpColUb,
+    								   pp->constrBound, pp->unfixedVarsByRow);
+    	if(status == CONFLICT)
+    		break;
+    }
+
+    if(status == CONFLICT)
+    	pp->transformed++;
+
+	for(int j = 0; j < (int)fixations.size(); j++)
+		unfixVariable(pp->cp, fixations[j].idxVar, pp->unfixedVars, pp->cpColLb, pp->cpColUb, pp->constrBound, pp->unfixedVarsByRow);
+}
+
 void one_element_constraint(Preprocess *pp, int idxRow)
 {
-    char sense = problem_row_sense(pp->problem, idxRow);
+    char sense = pp->rowSense[idxRow];
     int idx = (problem_row_idxs(pp->problem, idxRow))[0];
     double coef = (problem_row_coefs(pp->problem, idxRow))[0], rhs = problem_row_rhs(pp->problem, idxRow);
 
@@ -262,7 +369,7 @@ void one_element_constraint(Preprocess *pp, int idxRow)
 void handling_inequality_constraints(Preprocess *pp, int idxRow)
 {
     int j, rowSize = problem_row_size(pp->problem, idxRow);
-    char sense = problem_row_sense(pp->problem, idxRow);
+    char sense = pp->rowSense[idxRow];
     const double infty = problem_get_infinity(pp->problem);
     const int *idxs = problem_row_idxs(pp->problem, idxRow);
 
@@ -377,7 +484,7 @@ void handling_inequality_constraints(Preprocess *pp, int idxRow)
 void handling_equality_constraints(Preprocess *pp, int idxRow)
 {
 	int j, rowSize = problem_row_size(pp->problem, idxRow);
-    char sense = problem_row_sense(pp->problem, idxRow);
+    char sense = pp->rowSense[idxRow];
     const double infty = problem_get_infinity(pp->problem);
     const int *idxs = problem_row_idxs(pp->problem, idxRow);
 
@@ -614,7 +721,7 @@ void fix_var(Preprocess *pp, int idxVar, double valueToFix)
     for(i = 0; i < nElements; i++)
     {
         const int idxRow = idxs[i];
-        const double mult = (problem_row_sense(pp->problem, idxRow) == 'G') ? -1.0 : 1.0; /* used to convert >= rows to <= */
+        const double mult = (pp->rowSense[idxRow] == 'G') ? -1.0 : 1.0; /* used to convert >= rows to <= */
         const double coefRow = mult * coefs[i];
 
         if(coefRow <= -EPS)
@@ -651,7 +758,7 @@ void improve_lower_bound(Preprocess *pp, int idxVar, double newBound)
     for(i = 0; i < nElements; i++)
     {
         const int idxRow = idxs[i];
-        const double mult = (problem_row_sense(pp->problem, idxRow) == 'G') ? -1.0 : 1.0; /* used to convert >= rows to <= */
+        const double mult = (pp->rowSense[idxRow] == 'G') ? -1.0 : 1.0; /* used to convert >= rows to <= */
         const double coefRow = mult * coefs[i];
 
         if(coefRow <= -EPS)
@@ -683,7 +790,7 @@ void improve_upper_bound(Preprocess *pp, int idxVar, double newBound)
         for(i = 0; i < nElements; i++)
         {
             const int idxRow = idxs[i];
-            const double mult = (problem_row_sense(pp->problem, idxRow) == 'G') ? -1.0 : 1.0; /* used to convert >= rows to <= */
+            const double mult = (pp->rowSense[idxRow] == 'G') ? -1.0 : 1.0; /* used to convert >= rows to <= */
             const double coefRow = mult * coefs[i];
 
             if(coefRow <= -EPS)
@@ -702,7 +809,7 @@ void improve_upper_bound(Preprocess *pp, int idxVar, double newBound)
         for(i = 0; i < nElements; i++)
         {
             const int idxRow = idxs[i];
-            const double mult = (problem_row_sense(pp->problem, idxRow) == 'G') ? -1.0 : 1.0; /* used to convert >= rows to <= */
+            const double mult = (pp->rowSense[idxRow] == 'G') ? -1.0 : 1.0; /* used to convert >= rows to <= */
             const double coefRow = mult * coefs[i];
 
             if(coefRow <= -EPS)
@@ -749,7 +856,7 @@ Problem* preprocess_basic_preprocessing(Preprocess *pp)
         if(pp->removeRow[i]) continue;
 
         const int *idxs = problem_row_idxs(pp->problem, i), maxElements = problem_row_size(pp->problem, i);
-        const char sense = problem_row_sense(pp->problem, i);
+        const char sense = pp->rowSense[i];
         double mult = ((sense == 'G') ? -1.0 : 1.0);
 
         int newIdxs[maxElements], newNElements = 0;
@@ -806,7 +913,8 @@ Problem* preprocess_basic_preprocessing(Preprocess *pp)
 
     problem_update_matrices_by_col(preProc);
 
-    printf("%d %d %d %d", pp->rowsRemoved, pp->varsRemoved, pp->coefsImproved, pp->boundsImproved);
+    //printf("%d %d %d %d", pp->rowsRemoved, pp->varsRemoved, pp->coefsImproved, pp->boundsImproved);
+    printf("%d %d", pp->numGub, pp->transformed);
 
     return preProc;
 }

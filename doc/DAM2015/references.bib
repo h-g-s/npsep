@@ -1,10 +1,3 @@
-@phdthesis{Borndorfer1998,
-author = {Ralf Borndorfer},
-year = {1998},
-title = {Aspects of set packing, partitioning, and covering},
-school = {Technical University of Berlin}
-}
-
 @article{chvatal,
   title={Edmonds polytopes and a hierarchy of combinatorial problems},
   author={V{\'a}clav Chv{\'a}tal},
@@ -56,24 +49,9 @@ volume = "4",
 number = "1",
 pages = "4 - 20",
 year = "2007",
+note = "Mixed Integer Programming \{IMA\} Special Workshop on Mixed-Integer Programming ",
 issn = "1572-5286",
 author = "Tobias Achterberg"
-}
-
-@inproceedings{sandholm,
-author = {Tuomas Sandholm and Rob Shields},
-title = {Nogood learning for mixed integer programming},
-booktitle={Workshop on Hybrid Methods and Branching Rules in Combinatorial Optimization, Montr{\'e}al},
-year = {2006},
-}
-
-@article{haspeslagh,
-  title={The first international nurse rostering competition 2010},
-  author={Stefaan Haspeslagh and Patrick de Causmaecker and Andrea Schaerf and Martin St{\o}levik},
-  journal={Annals of Operations Research},
-  pages={1--16},
-  year={2012},
-  publisher={Springer}
 }
 
 @article{Padberg1973,
@@ -87,8 +65,8 @@ year = {2006},
 	year = {1973}
 }
 
-@article{miplib,
-  author       = "Thorsten Koch and Tobias Achterberg and Erling Andersen",
+@article{miplib2010,
+  author       = "Thorsten Koch and Tobias Achterberg and Erling Andersen and Oliver Bastert and Timo Berthold and Robert E. Bixby and Emilie Danna and Gerald Gamrath and Ambros M. Gleixner and Stefan Heinz and Andrea Lodi and Hans Mittelmann and Ted Ralphs and Domenico Salvagnin and Daniel E. Steffy and Kati Wolter",
   title        = "{MIPLIB} 2010",
   journal      = "Mathematical Programming Computation",
   volume       = "3",
@@ -96,6 +74,29 @@ year = {2006},
   pages        = "103--163",
   year         = "2011",
   language     = "english",
+  publisher={Springer}
+}
+
+@article{miplib2003,
+	title={MIPLIB 2003},
+	author={Achterberg, Tobias and Koch, Thorsten and Martin, Alexander},
+	journal={Operations Research Letters},
+	volume={34},
+	number={4},
+	pages={361--372},
+	year={2006},
+	publisher={Elsevier}
+}
+
+@article{miplib3,
+	title={An updated mixed integer programming library: MIPLIB 3.0},
+	author={Bixby, Robert E and Ceria, Sebastian and McZeal, Cassandra M and Savelsbergh, Martin},
+	journal={Optima},
+	volume={58},
+	number={June},
+	pages={12--15},
+	year={1998},
+	publisher={Citeseer}
 }
 
 @article{Avella2005,
@@ -115,7 +116,7 @@ volume={194},
 number={1},
 title={A branch-and-cut procedure for the Udine Course Timetabling problem},
 publisher={Springer US},
-author={Burke, EdmundK. and Mareček, Jakub and Parkes, AndrewJ. and Rudová, Hana},
+author={Burke, EdmundK. and Mare\v{c}ek, Jakub and Parkes, AndrewJ. and Rudová, Hana},
 pages={71-87}
 }
 
@@ -141,7 +142,7 @@ author = {Cornu\'{e}jols, G.},
 journal = {Annals of Operations Research},
 number = {1},
 pages = {63--66},
-title = {{Revival of the Gomory cuts in the 1990' s}},
+title = {{Revival of the Gomory cuts in the 1990's}},
 volume = {149},
 year = {2007}
 }
@@ -164,8 +165,7 @@ year = {1973}
 author = {Brito, S.S. and Santos, H. G.},
 title = {{Pivoting in the Bron-Kerbosch algorithm for maximum-weight clique detection (in portuguese).}},
 year = {2011},
-booktitle = {Anais do XLIII Simpósio Brasileiro de Pesquisa Operacional},
-pages = {3052--3059}
+booktitle = {Anais do XLIII Simpósio Brasileiro de Pesquisa Operacional}
 }
 
 @article{Mendez-Diaz2008,
@@ -184,89 +184,497 @@ title = {{Geometric Algorithms and Combinatorial Optimization}},
 year = {1993}
 }
 
+@article{Savelsbergh1994,
+	title={Preprocessing and probing techniques for mixed integer programming problems},
+	author={Savelsbergh, Martin W. P.},
+	journal={ORSA Journal on Computing},
+	volume={6},
+	number={4},
+	pages={445--454},
+	year={1994},
+	publisher={INFORMS}
+}
+
+@article{localsolver,
+	year={2011},
+	issn={1619-4500},
+	journal={4OR},
+	volume={9},
+	number={3},
+	doi={10.1007/s10288-011-0165-9},
+	title={LocalSolver 1.x: a black-box local-search solver for 0-1 programming},
+	publisher={Springer-Verlag},
+	keywords={Combinatorial optimization; 0-1 programming; Local search; Black-box solver; OR software; 90C27; 90C10; 90C90; 90B90},
+	author={Benoist, Thierry and Estellon, Bertrand and Gardi, Frédéric and Megel, Romain and Nouioua, Karim},
+	pages={299-316},
+	language={English}
+}
+
+@book{comet,
+	author = {Van Hentenryck, Pascal and Michel, Laurent},
+	title = {Constraint-Based Local Search},
+	year = {2005},
+	isbn = {0262220776},
+	publisher = {The MIT Press},
+} 
+
+@inproceedings{walser,
+	author = {Walser, Joachim P.},
+	title = {Solving Linear pseudo-Boolean Constraint Problems with Local Search},
+	booktitle = {Proceedings of the Fourteenth National Conference on Artificial Intelligence and Ninth Conference on Innovative Applications of Artificial Intelligence},
+	series = {AAAI'97/IAAI'97},
+	year = {1997},
+	isbn = {0-262-51095-2},
+	location = {Providence, Rhode Island},
+	pages = {269--274},
+	numpages = {6},
+	publisher = {AAAI Press},
+} 
+
+@article{scip,
+	title={SCIP: solving constraint integer programs},
+	author={Achterberg, Tobias},
+	journal={Mathematical Programming Computation},
+	volume={1},
+	number={1},
+	pages={1--41},
+	year={2009},
+	publisher={Springer}
+}
+
+@ARTICLE{coin, 
+	author={Lougee-Heimer, R.}, 
+	journal={IBM Journal of Research and Development}, 
+	title={The Common Optimization INterface for Operations Research: Promoting open-source software in the operations research community}, 
+	year={2003}, 
+	month={Jan}, 
+	volume={47}, 
+	number={1}, 
+	pages={57-66}, 
+	doi={10.1147/rd.471.0057}, 
+	ISSN={0018-8646},
+}
+
+@book{telebus,
+	title={Telebus Berlin: Vehicle scheduling in a dial-a-ride system},
+	author={Bornd{\"o}rfer, Ralf and Gr{\"o}tschel, Martin and Klostermeier, Fridolin and K{\"u}ttner, Christian},
+	year={1999},
+	publisher={Springer}
+}
+
+@article{minto,
+	title={MINTO, a mixed INTeger optimizer},
+	author={Nemhauser, George L and Savelsbergh, Martin WP and Sigismondi, Gabriele C},
+	journal={Operations Research Letters},
+	volume={15},
+	number={1},
+	pages={47--58},
+	year={1994},
+	publisher={Elsevier}
+}
+
+@article{Doig1960,
+	author = {A. H. Land and A. G. Doig},
+	journal = {Econometrica: Journal of the Econometric Society},
+	number = {3},
+	pages = {497--520},
+	title = {{An Automatic Method of Solving Discrete Programming Problems}},
+	volume = {28},
+	year = {1960}
+}
+
+@article{gendreau,
+	year={2005},
+	issn={0254-5330},
+	journal={Annals of Operations Research},
+	volume={140},
+	number={1},
+	doi={10.1007/s10479-005-3971-7},
+	title={Metaheuristics in Combinatorial Optimization},
+	publisher={Kluwer Academic Publishers},
+	keywords={metaheuristics; combinatorial optimization; vehicle routing; unifying framework},
+	author={M. Gendreau and J. Y. Potvin},
+	pages={189-213},
+	language={English}
+}
+
+@article{wilbaut,
+	title = "New convergent heuristics for 0?1 mixed integer programming ",
+	journal = "European Journal of Operational Research ",
+	volume = "195",
+	number = "1",
+	pages = "62 - 74",
+	year = "2009",
+	note = "",
+	issn = "0377-2217",
+	author = "C. Wilbaut and S. Hanafi",
+	keywords = "Relaxation",
+	keywords = "0?1 Mixed integer programming",
+	keywords = "Heuristic",
+	keywords = "Multidimensional Knapsack problem "
+}
+
+@article{fpump,
+	title={The feasibility pump},
+	author={M. Fischetti and F. Glover and A. Lodi},
+	journal={Mathematical Programming},
+	volume={104},
+	number={1},
+	pages={91--104},
+	year={2005},
+	publisher={Springer}
+}
+
+@article{localbranching,
+	year={2003},
+	issn={0025-5610},
+	journal={Mathematical Programming},
+	volume={98},
+	number={1-3},
+	doi={10.1007/s10107-003-0395-5},
+	title={Local branching},
+	publisher={Springer-Verlag},
+	keywords={Mixed integer program; heuristic; local search; branch-and-bound},
+	author={M. Fischetti and A. Lodi},
+	pages={23-47},
+	language={English}
+}
+
+@article{rins,
+	year={2005},
+	issn={0025-5610},
+	journal={Mathematical Programming},
+	volume={102},
+	number={1},
+	doi={10.1007/s10107-004-0518-7},
+	title={Exploring relaxation induced neighborhoods to improve MIP solutions},
+	publisher={Springer-Verlag},
+	keywords={Mixed integer programming; Heuristics; Local search; Hybrid algorithms},
+	author={E. Danna and E. Rothberg and C. Le Pape},
+	pages={71-90},
+	language={English}
+}
+
+@inproceedings{ga,
+	title={Solving Integer Programming Problems Using Genetic Algorithms},
+	author={P. N. A. Huy and C. T. B. San and E. Triantaphyllou},
+	booktitle={International Conference on Electronics, Informations and Commumications},
+	pages={400--404},
+	year={2004},
+	volume = {1},
+	address = {Vietnam},
+	publisher = {The Institue of Electronics Engineers of Korea}
+}
+
+@article{vassilev,
+	title = "An algorithm of internal feasible directions for linear integer programming ",
+	journal = "European Journal of Operational Research ",
+	volume = "52",
+	number = "2",
+	pages = "203 - 214",
+	year = "1991",
+	note = "",
+	issn = "0377-2217",
+	author = "V. Vassilev and K. Genova",
+	keywords = "Optimization",
+	keywords = "integer programming",
+	keywords = "approximate algorithm",
+	keywords = "heuristics",
+	keywords = "computational analysis "
+}
+
+@article{miplib,
+	year={2011},
+	issn={1867-2949},
+	journal={Mathematical Programming Computation},
+	volume={3},
+	number={2},
+	doi={10.1007/s12532-011-0025-9},
+	title={MIPLIB 2010},
+	publisher={Springer-Verlag},
+	keywords={Mixed Integer Programming; Problem instances; IP; MIP; MIPLIB; 90C11; 90C10; 90C90},
+	author={T. Koch and T. Achterberg and E. Andersen and O. Bastert and T. Berthold and R. Bixby and E. Danna and G. Gamrath and A. Gleixner and S. Heinz and A. Lodi and H. Mittelmann and T. Ralphs and D. Salvagnin and D. Steffy and K. Wolter},
+	pages={103-163},
+	language={English}
+}
+
+@article{clique,
+	year={2012},
+	issn={0254-5330},
+	journal={Annals of Operations Research},
+	volume={196},
+	number={1},
+	doi={10.1007/s10479-012-1124-3},
+	title={Multi-neighborhood tabu search for the maximum weight clique problem},
+	publisher={Springer US},
+	keywords={Multi-neighborhood search; Maximum weight clique; Maximum clique; Tabu search; Heuristics},
+	author={Q. Wu and J. K. Hao and F. Glover},
+	pages={611-634},
+	language={English}
+}
+
+@article{Pritsker1969,
+	author = {A. A. B. Pritsker and L. J. Watters and P. M. Wolfe},
+	file = {:home/haroldo/Dropbox/Documentos/projectScheduling/Multiproject Scheduling with Limited Resources$\backslash$: A Zero-One Programming Approach pdf.pdf:pdf},
+	journal = {Management Science},
+	number = {1},
+	pages = {93--108},
+	title = {{Multiproject Scheduling with Limited Resources: A Zero-One Programming Approach}},
+	volume = {16},
+	year = {1969}
+}
+
+@article{Dantzig54,
+	author = {G. Dantzig and R. Fulkerson and S. Johnson},
+	file = {:home/haroldo/Dropbox/Documentos/IntegerProgramming/apps/solution of a large scale traveling salesman problem.pdf:pdf},
+	journal = {Journal of the Operations Research Society of America},
+	number = {4},
+	pages = {393--410},
+	title = {{Solution of a Large-Scale Traveling-Salesman Problem}},
+	volume = {2},
+	year = {1954}
+}
+
+@article{Lancia2004,
+	author = {G. Lancia},
+	file = {:home/haroldo/Dropbox/Documentos/IntegerProgramming/apps/Integer programming models for computational biology problems.pdf:pdf},
+	journal = {Journal of Computer Science and Technology},
+	number = {1},
+	pages = {60--77},
+	title = {{Integer programming models for computational biology problems}},
+	volume = {19},
+	year = {2004}
+}
+
+@article{Johnson2000,
+	title={Progress in linear programming-based algorithms for integer programming: An exposition},
+	author={E. L. Johnson and G. L. Nemhauser and M. W. P. Savelsbergh},
+	journal={INFORMS Journal on Computing},
+	volume={12},
+	number={1},
+	pages={2--23},
+	year={2000},
+	publisher={INFORMS}
+}
+
+@incollection{Linderoth2005,
+	author = {J. T. Linderoth and T. K. Ralphs},
+	title = {{Noncommercial Software for Mixed-Integer Linear Programming}},
+	booktitle = {Integer Programming: Theory and Practice},
+	publisher = {CRC Press Operations Research Series},
+	year = {2005},
+	editor = {Karlof, John K},
+	pages = {253--303},
+	volume = {3},
+	address = {USA}
+}
+
+@article{Atamturk2000,
+	author = {A. Atamt\"{u}rk and G. L. Nemhauser and M. W. P. Savelsbergh},
+	journal = {European Journal of Operational Research},
+	pages = {40--55},
+	title = {{Conflict graphs in solving integer programming problems}},
+	volume = {121},
+	year = {2000}
+}
+
+@misc{MitellmanFes14,
+	author = "H. Mittelman",
+	title = "Feasibility Benchmark",
+	month = "February",
+	year = "2014",
+	howpublished = "\url{http://plato.asu.edu/ftp/feas_bench.html}"
+}
+
 @article{Forrest2005,
-  title={CBC user guide},
-  author={Forrest, John and Lougee-Heimer, Robin},
-  journal={INFORMS Tutorials in Operations Research},
-  pages={257--277},
-  year={2005}
+	author = {J. Forrest and R. Lougee-Heimer},
+	journal = {INFORMS Tutorials in Operations Research.},
+	pages = {257--277},
+	title = {CBC User Guide},
+	year = {2005},
+	volume = {1}
 }
 
-@article{Linderoth2005,
-  title={Noncommercial software for mixed-integer linear programming},
-  author={Linderoth, Jeffrey T. and Ralphs, Ted K.},
-  journal={Integer programming: theory and practice},
-  volume={3},
-  pages={253--303},
-  year={2005},
-  publisher={CRC Press Operations Research Series}
+@article{forrest2005cbc,
+	title={CBC user guide},
+	author={J. Forrest and R. Lougee-Heimer},
+	journal={INFORMS Tutorials in Operations Research},
+	pages={257--277},
+	year={2005}
 }
 
-@incollection{Ralphs2005,
-year={2005},
-isbn={978-0-387-23528-8},
-booktitle={The Next Wave in Computing, Optimization, and Decision Technologies},
-volume={29},
-series={Operations Research/Computer Science Interfaces Series},
-editor={Golden, Bruce and Raghavan, S. and Wasil, Edward},
-doi={10.1007/0-387-23529-9_5},
-title={The Symphony Callable Library for Mixed Integer Programming},
-publisher={Springer US},
-author={Ralphs, TedK. and Güzelsoy, Menal},
-pages={61-76},
-language={English}
-}
-
-@inproceedings{Saltzman2004,
-  title={The coin-or open solver interface: Technology overview},
-  author={Saltzman, Matthew and Lad{\'a}nyi, L{\'a}szl{\'o} and Ralphs, Ted},
-  booktitle={CORS/INFORMS Conference. Banff},
-  year={2004},
-  url={http://www.coin-or.org/Presentations/CORS2004-OSI.pdf}
-}
-
-@article{LougeeHeimer2003,
-	author = {Lougee-Heimer, R.},
+@article{Lougee-Heimer2003,
+	author = {R. Lougee-Heimer},
 	journal = {IBM Journal of Research and Development},
 	number = {1},
 	pages = {57--66},
-	title = {{The Common Optimization INterface for Operations Research}},
+	title = {{The Common Optimization INterface for Operations Research: Promoting open-source software in the operations research community}},
 	volume = {47},
 	year = {2003}
 }
 
-
-@article{Santos2014,
-year={2014},
-issn={0254-5330},
-journal={Annals of Operations Research},
-doi={10.1007/s10479-014-1594-6},
-title={Integer programming techniques for the nurse rostering problem},
-publisher={Springer US},
-keywords={Nurse rostering; Integer programming; Cutting planes; MIP heuristics},
-author={Santos, Haroldo G. and Toffolo, Túlio A.M. and Gomes, Rafael A.M. and Ribas, Sabir},
+@phdthesis{Borndorfer1998,
+	author = {R. Borndorfer},
+	file = {:home/haroldo/Downloads/borndoerfer.thesis.pdf:pdf},
+	title = {{Aspects of Set Packing, Partitioning, and Covering}},
+	year = {1998},
+	school = {Technische Universitat Berlin}
 }
 
-@incollection{Rebennack2009,
-  year={2009},
-  isbn={978-0-387-74758-3},
-  booktitle={Encyclopedia of Optimization},
-  editor={Floudas, Christodoulos A. and Pardalos, Panos M.},
-  doi={10.1007/978-0-387-74759-0_634},
-  title={Stable Set Problem: Branch \& Cut Algorithms Stable Set Problem: Branch \& Cut Algorithms},
-  publisher={Springer US},
-  author={Rebennack, Steffen},
-  pages={3676-3688},
-  language={English},
+@article{restrict,
+	title={Restrict-and-relax search for 0-1 mixed-integer programs},
+	author={M. Guzelsoy and G. Nemhauser and M. Savelsbergh},
+	journal={EURO Journal on Computational Optimization},
+	volume={1},
+	number={1-2},
+	pages={201--218},
+	year={2013},
+	publisher={Springer}
 }
 
-@article{Savelsbergh1994,
-  title={Preprocessing and probing techniques for mixed integer programming problems},
-  author={Savelsbergh, Martin W. P.},
-  journal={ORSA Journal on Computing},
-  volume={6},
-  number={4},
-  pages={445--454},
-  year={1994},
-  publisher={INFORMS}
+@article{johnson1991,
+	title={Optimization by simulated annealing: an experimental evaluation; part II, graph coloring and number partitioning},
+	author={Johnson, David S and Aragon, Cecilia R and McGeoch, Lyle A and Schevon, Catherine},
+	journal={Operations research},
+	volume={39},
+	number={3},
+	pages={378--406},
+	year={1991},
+	publisher={INFORMS}
+}
+
+@book{garey1979,
+	author    = {M. R. Garey and David S. Johnson},
+	title     = {Computers and Intractability: {A} Guide to the Theory of NP-Completeness},
+	publisher = {W. H. Freeman},
+	year      = {1979},
+	isbn      = {0-7167-1044-7},
+} 
+
+@article{dantzig2003,
+	title={Generalized Upper Bounds},
+	author={Dantzig, George B and Thapa, Mukund N},
+	journal={Linear Programming: 2: Theory and Extensions},
+	pages={251--264},
+	year={2003},
+	publisher={Springer}
+}
+
+@article{santos2014,
+	title={Integer programming techniques for the nurse rostering problem},
+	author={Santos, Haroldo G and Toffolo, T{\'u}lio AM and Gomes, Rafael AM and Ribas, Sabir},
+	journal={Annals of Operations Research},
+	pages={1--27},
+	year={2014},
+	publisher={Springer},
+	language={English},
+	issn={0254-5330},
+	doi={10.1007/s10479-014-1594-6},
+}
+
+@article{lbranching,
+	title={Local branching},
+	author={Fischetti, Matteo and Lodi, Andrea},
+	journal={Mathematical programming},
+	volume={98},
+	number={1-3},
+	pages={23--47},
+	year={2003},
+	publisher={Springer}
+}
+
+@article{cprog,
+	title={Constraint logic programming: A survey},
+	author={Jaffar, Joxan and Maher, Michael J},
+	journal={The journal of logic programming},
+	volume={19},
+	pages={503--581},
+	year={1994},
+	publisher={Elsevier}
+}
+
+@book{toth2001,
+	editor = {Toth, Paolo and Vigo, Daniele},
+	title = {The Vehicle Routing Problem},
+	year = {2001},
+	isbn = {0-89871-498-2},
+	publisher = {Society for Industrial and Applied Mathematics},
+	address = {Philadelphia, PA, USA},
+}
+
+@book{aluru2005,
+	title={Handbook of computational molecular biology},
+	author={Aluru, Srinivas},
+	year={2005},
+	publisher={CRC Press}
+}
+
+@article{herroelen2005,
+	title = "Project scheduling under uncertainty: Survey and research potentials ",
+	journal = "European Journal of Operational Research ",
+	volume = "165",
+	number = "2",
+	pages = "289 - 306",
+	year = "2005",
+	note = "Project Management and Scheduling ",
+	issn = "0377-2217",
+	author = "Willy Herroelen and Roel Leus"
+}
+
+@article{allahverdi2008,
+	title={A survey of scheduling problems with setup times or costs},
+	author={Allahverdi, Ali and Ng, CT and Cheng, TC Edwin and Kovalyov, Mikhail Y},
+	journal={European Journal of Operational Research},
+	volume={187},
+	number={3},
+	pages={985--1032},
+	year={2008},
+	publisher={Elsevier}
+}
+
+@book{wolsey1998,
+	title={Integer Programming},
+	author={Wolsey, Laurence A.},
+	isbn={9780471283669},
+	lccn={98007296},
+	series={Wiley Series in Discrete Mathematics and Optimization},
+	year={1998},
+	publisher={Wiley}
+}
+
+@incollection{rebennack2009,
+	year={2009},
+	isbn={978-0-387-74758-3},
+	booktitle={Encyclopedia of Optimization},
+	editor={Floudas, Christodoulos A. and Pardalos, Panos M.},
+	doi={10.1007/978-0-387-74759-0_634},
+	title={Stable Set Problem: Branch \& Cut Algorithms Stable Set Problem: Branch \& Cut Algorithms},
+	publisher={Springer US},
+	author={Rebennack, Steffen},
+	pages={3676-3688},
+	language={English},
+}
+
+@article{haspeslagh,
+	year={2014},
+	issn={0254-5330},
+	journal={Annals of Operations Research},
+	volume={218},
+	number={1},
+	doi={10.1007/s10479-012-1062-0},
+	title={The first international nurse rostering competition 2010},
+	publisher={Springer US},
+	author={Haspeslagh, Stefaan and De Causmaecker, Patrick and Schaerf, Andrea and Stølevik, Martin},
+	pages={221-236},
+	language={English}
+}
+
+@TECHREPORT{sandholm,
+	AUTHOR = {Tuomas Sandholm and Rob Shields},
+	TITLE = {Nogood learning for mixed integer programming},
+	NUMBER =        {CMU-CS-06-155},
+	INSTITUTION =   {School of Computer Science, Carnegie Mellon University},
+	ADDRESS = {Pittsburgh, PA},
+	MONTH = {November},
+	YEAR  = {2006},
 }

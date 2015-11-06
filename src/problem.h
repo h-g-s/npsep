@@ -22,6 +22,9 @@ void problem_free(Problem **p);
 int problem_num_cols(const Problem *p);
 int problem_num_rows(const Problem *p);
 int problem_num_elements(const Problem *p);
+int problem_num_binaries(const Problem *p);
+int problem_num_integers(const Problem *p); /* binary variables are considered as integer variables */
+int problem_num_continuous(const Problem *p);
 double problem_get_infinity(const Problem *p);
 
 /* information about constraints */
@@ -42,6 +45,8 @@ double problem_var_obj_coef(const Problem *p, int idxVar);
 int problem_var_n_rows(const Problem *p, int idxVar);
 const int* problem_var_rows_idxs(const Problem *p, int idxVar);
 const double* problem_var_rows_coefs(const Problem *p, int idxVar);
+
+const char* problem_vars_type(const Problem *p);
 const double* problem_vars_lower_bound(const Problem *p);
 const double* problem_vars_upper_bound(const Problem *p);
 const double* problem_vars_obj_coefs(const Problem *p);
