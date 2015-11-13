@@ -49,6 +49,9 @@
 
 \usepackage{amsmath}
 \usepackage[utf8]{inputenc}
+\usepackage[algoruled,linesnumbered,vlined]{algorithm2e}
+\usepackage{hyperref}
+\usepackage{url}
 
 \journal{Discrete Applied Mathematics}
 
@@ -135,17 +138,17 @@ x = 0 \implies y = 0 & \therefore \text{conflict between } \bar{x} \text{ and } 
 x = 0 \implies y = 1 & \therefore \text{conflict between } \bar{x} \text{ and } \bar{y}\nonumber
 \end{align}
 
-\noindent where notation $\bar{x}$ represents the complement of binary variable $x$ (i.e. it represents $1 - x$).
+\noindent where notation $\bar{x}$ represents the complement of binary variable $x$ (i.e. it represents $1 - x$, the deactivation of variable $x$).
 
 Given an Integer Programming (IP) problem, a conflict graph can be constructed using probing techniques based on feasibility considerations, checking the impact of fixing pairs of binary variables to different combinations of values. For ease of presentation and understanding, the remainder of this section considers only pure 0-1 IP problems. Despite this, all mechanisms presented can be applied to any IP problem containing binary variables.
 
 First, consider that each constraint $i \in \{1,\ldots,m\}$, with $m$ being the number of constraints of the input problem, can be written as one or two equations of the form:
 
-\begin{equation}
+\begin{equation}\label{leqConstraints}
  \sum_{j \in N} a_{ij}x_{j} \leq b_i
 \end{equation}
 
-\noindent where $N$ is the index set of binary variables $x$, $a_{ij}$ is the coefficient of variable $x_{j}$ in the constraint $i$ and $b_i$ is the right-hand side of the constraint $i$.
+\noindent where $N$ is the index set of binary variables $x$, $a_{ij}$ is the coefficient of variable $x_{j}$ in the constraint $i$ and $b_i$ is the right-hand side (RHS) of the constraint $i$.
 
 Suppose we are analyzing two particular binary variables $x_j$ and $x_k$ with respect to the constraint $i$. Consider that these variables are assigned with values $u$ and $v$, respectively. Let:
 
@@ -153,11 +156,154 @@ Suppose we are analyzing two particular binary variables $x_j$ and $x_k$ with re
 L_{i}^{x_j = u,\, x_k = v}=\sum_{l\in N_{i}^{-} \setminus \{j, k\}}a_{il}+a_{ij}u+a_{ik}v 
 \end{equation}
 
-\noindent where $N_{i}^{-} = \{j \in N : a_{ij} < 0\}$. In this case, $L_{i}^{x_j = u,\, x_k = v}$ is a lower bound for the value on the left-hand side  of the constraint $i$, considering the assignments $x_j = u$ and $x_k = v$. If $L_{i}^{x_j = u,\, x_k = v} > b_{i}$, there is a conflict between the assignments of $x_j$ and $x_k$. 
+\noindent where $N_{i}^{-} = \{j \in N : a_{ij} < 0\}$. In this case, $L_{i}^{x_j = u,\, x_k = v}$ is a lower bound for the value on the left-hand side (LHS)  of the constraint $i$, considering the assignments $x_j = u$ and $x_k = v$. If $L_{i}^{x_j = u,\, x_k = v} > b_{i}$, there is a conflict between the assignments of $x_j$ and $x_k$. 
 
-By performing this calculation for each combination of values of two binary variables, considering each pair of variables in each constraint, we obtain a conflict graph for any IP problem. Thus, a conflict graph can be constructed in $O(m \times n^2)$ steps, where $m$ is the number of constraints and $n$ is the number of variables of the problem. However, for IP problems with a large set of variables and constraints this technique may be expensive computationally. In this sense, the following subsection describes an approach to detect conflicts faster than $O(m \times n^2)$ steps, allowing the fast construction of dense conflict graphs.
+By performing this calculation for each combination of values of two binary variables, considering each pair of variables in each constraint, we obtain a conflict graph for any IP problem. For IP problems with a large set of variables and constraints this technique may be expensive computationally. Nevertheless, for some constraint types a large number of conflicts can be quickly discovered. For instance, in Generalized Upper Bound constraints ($\sum x_j \leq 1$) each variable has conflict with all others, forming a clique. In this sense, we develop an approach to detect cliques in constraints, aiming to accelerate the process of building conflict graphs. Next subsection details this approach.
 
 \subsection{Fast Detection of Conflicts}
+A conflict graph can be constructed by using probing techniques based on constraints analysis, as shown previously. However, this process can require a large execution times for problems with many variables and constraints. One way to speed up the creation of these graphs is the detection of various conflicts in a single analysis of a constraint. This avoids the inspection in each pair of constraint variables.
+
+The main idea of our approach is to detect cliques on constraints. Once the constraint is ordered by the values of the coefficients, it is possible to find sets of variables which form cliques. Algorithm~\ref{algCGraph} describes this approach. The first step is to create a graph $cg$ with vertices for each variable and for each complement of variable. Because a variable always has conflict with its complement, edges that represent these conflicts are included in $cg$. Next, each constraint is analyzed individually.
+
+If a constraint $constr$ is classified as GUB constraint, then all variables in it forms a clique. So, this clique is stored in $cg$. Else, the variables of $constr$ are ordered in non-decreasing order of their coefficients and the analysis continues. Since variables are ordered, it is possible to look for cliques involving the activation of variables and also look for cliques involving the complement (deactivation) of variables in $constr$. Additionally, conflicts involving the activation of some variable and the complement of another one can be discovered.
+
+The discovering of cliques involving the activation of variables for a constraint $constr$ is presented in Algorithm~\ref{algClqDetection} - CliqueDetection. The existence of such cliques can be discarded by calculating the lower bound for the left-hand side (LHS) of $constr$ (using Equation~\ref{li}), considering the activation of the two variables with the highest coefficients. If the existence of these cliques cannot be discarded, the algorithm searches for cliques in $constr$. This search is made by calculating the lower bound for the LHS of $constr$ considering the activation of pairs of consecutive variables. The lower bound for LHS is monotonically non-decreasing as the values of coefficients increase. So, if a conflict between a variable at position $j$ and a variable at position $j+1$ is detected, all the variables in the interval $[j, n_{constr}]$ form a clique $clq$. This clique is stored in $cg$. The algorithm stops searching for conflicts between consecutive variables. The next step is to find cliques that involving some variables outside of clique $clq$, using binary search. For each variable at a position $k$ outside of $clq$, a binary search is performed to find the first position ($pos$) of a variable that has conflict with it. If binary search finds no results, then the search process is finished. Else, another clique is found, involving the variable at position $k$ and all variables at interval $[pos, n_{constr}]$
+
+
+\begin{algorithm}
+\caption{Building a conflict graph.} \label{algCGraph}
+\KwIn{Pure 0-1 IP problem with $n$ variables and $m$ constraints.}
+\KwOut{Conflict graph $cg$}
+
+$cg \gets$ create a graph with $2 \times n$ vertices\;
+
+\For{$j = 1$ to $n$}
+{
+	Insert an edge between $x_j$ and $\bar{x}_j$ in $cg$\;
+}
+
+\For{$i = 1$ to $m$}
+{
+	$currConstr \gets i$-th constraint of the problem\;
+	
+	\If{$currConstr$ is a GUB constraint}
+	{
+		Store in cg the clique formed by all variables in $currConstr$\;
+	}			
+	Sort variables of $currConstr$ in non-decreasing order of their coefficients\;
+	CliqueDetection(cg, currConstr)\;
+	CliqueComplementDetection(cg, currConstr)\;
+	MixedConflictDetection(cg, currConstr)\;
+}
+\end{algorithm}
+
+\begin{algorithm}\label{algClqDetection}
+\caption{CliqueDetection}
+\KwIn{Conflict graph $cg$ and constraint $constr$ to be analyzed.}
+\KwOut{Stores in $cg$ all detected cliques.}
+$lhsMin \gets$ lower bound for the LHS of $constr$ considering the activation of last two variables\;
+$b_{constr} \gets$ RHS of $constr$\;
+$n_{constr} \gets$ number of variables in $constr$\;
+\If{$lhsMin \leq b_{constr}$}
+{
+	There are no cliques involving the activation of variables in $constr$\;
+	return;
+}
+\For{$j = 1$ to $n_{constr} - 1$}
+{
+	$lhsMin \gets$ lower bound for the LHS of $constr$ considering the activation of variables at positions $j$ and $j + 1$\;
+	\If{$lhsMin > b_{constr}$}
+	{
+		$clq \gets$ clique involving all variables from position $j$ until position $n_{constr}$\;
+		Insert $clq$ in $cg$\;
+		$cliqueStart \gets j$\;
+		break\;
+	}
+}
+\For{$k = cliqueStart - 1$ downto $1$}
+{
+	Perform a binary search to find the first variable conflicting with variable at position $k$\;
+	\If{binary search did not found any conflicting variable}
+	{
+		There are no more cliques involving the activation of variables in $constr$\;
+		return\;
+	}
+	$pos \gets$ position of the first variable conflicting with the variable at position $k$\;
+	$clq \gets$ clique involving the variable at position $k$ and all variables from position $pos$ until position $n_{constr}$\;
+	Insert $clq$ in $cg$\;
+}
+\end{algorithm}
+
+\begin{algorithm}\label{algClqCompDetection}
+\caption{CliqueComplementDetection}
+\KwIn{Conflict graph $cg$ and constraint $constr$ to be analyzed.}
+\KwOut{Stores in $cg$ all detected cliques that involve complement of variables.}
+$lhsMin \gets$ lower bound for the LHS of $constr$ considering the deactivation of first two variables\;
+$b_{constr} \gets$ RHS of $constr$\;
+$n_{constr} \gets$ number of variables in $constr$\;
+\If{$lhsMin \leq b_{constr}$}
+{
+	There are no cliques involving the complement of variables in $constr$\;
+	return;
+}
+\For{$j = n_{constr}$ donwnto $2$}
+{
+	$lhsMin \gets$ lower bound for the LHS of $constr$ considering the deactivation of variables at positions $j$ and $j - 1$\;
+	\If{$lhsMin > b_{constr}$}
+	{
+		$clq \gets$ clique involving all complement of variables from position $1$ until position $j$\;
+		Insert $clq$ in $cg$\;
+		$cliqueCompStart \gets j$\;
+		break\;
+	}
+}
+\For{$j = cliqueCompStart +1$ to $n_{constr} - 1$}
+{
+	Perform a binary search to find the first complement of variable conflicting with the complement of variable at position $j$\;
+	\If{binary search did not found any conflicting complement of variable}
+	{
+		There are no more cliques involving the complements of variables in $constr$\;
+		return\;
+	}
+	$pos \gets$ position of the first complement of variable conflicting with the complement of variable at position $j$\;
+	$clq \gets$ clique involving the complement of variable at position $j$ and all complements of variables from position $1$ until position $pos$\;
+	Insert $clq$ in $cg$\;
+}
+\end{algorithm}
+
+\begin{algorithm}\label{algMixConfDetection}
+\caption{MixedConflictDetection}
+\KwIn{Conflict graph $cg$ and constraint $constr$ to be analyzed.}
+\KwOut{Stores in $cg$ all pairs of conflicts detected that involve variables and complement of variables.}
+\For{$j = 1$ to $n_{constr} - 1$}
+{
+	Perform a binary search to find the first variable conflicting with the complement of variable at position $j$\;
+	\If{binary search did not found any conflicting variable}
+	{
+		There are no more conflicts involving the complement of a variable and the activation of another one in $constr$\;
+		return\;
+	}
+	$pos \gets$ position of the first variable conflicting with the complement of variable at position $j$\;
+	\For{$k = pos$ to $n_constr$}
+	{
+		Insert in cg an edge between the complement of variable at position $j$ and variable at position $k$\;
+	}
+}
+\For{$j = n_{constr}$ downto $2$}
+{
+	Perform a binary search to find the first complement of variable conflicting with variable at position $j$\;
+	\If{binary search did not found any conflicting complement of variable}
+	{
+		There are no more conflicts involving a variable and a complement of another one in $constr$\;
+		return\;
+	}
+	$pos \gets$ position of first complement of variable conflicting with variable at position $j$\;
+	\For{$k = j + 1$ to $pos$}
+	{
+		Insert in cg an edge between the variable at position $j$ and the complement of variable at position $k$\;
+	}
+}
+\end{algorithm}
 
 
 
@@ -174,110 +320,102 @@ By performing this calculation for each combination of values of two binary vari
 
 
 
-
-
-
-
-
-
-
-
-\section{Preprocessing Step}\label{preprocessing}
-
-Preprocessing tries to improve the representation of MIP problems. Thus, problems are reformulated in order to reduce their size and decrease the difference in the objective function values between the solutions to the linear programming relaxation and the integer program.
-
-We run a preprocessing step before performing the cut separation routine. This step uses basic preprocessing and basic probing techniques proposed by Savelsbergh~\cite{Savelsbergh1994}. We also use constraint propagation technique to fix binary variables. The next subsections will explain all preprocessing techniques used on this work.
-
-\subsection{Basic Preprocessing and Basic Probing Techniques}
-
-For understanding the basic preprocessing and probing techniques consider the following notation:
-
-\begin{itemize}
-\item \textbf{$x_j$}: binary decision variable with index $j$;
-\item \textbf{$y_j$}: integer or continuous decision variable with index $j$;
-\item \textbf{$a_{ij}$}: coefficient for variable $x_{j}$ in constraint $i$;
-\item \textbf{$g_{ij}$}: coefficient for variable $y_{j}$ in constraint $i$;
-\item \textbf{$B_i^+$}: index set of binary variables with positive coefficients in $i$;
-\item \textbf{$B_i^-$}: index set of binary variables with negative coefficients in $i$;
-\item \textbf{$C_i^+$}: index set of integer or continuous variables with positive coefficients in $i$;
-\item \textbf{$C_i^-$}: index set of integer or continuous variables with negative coefficients in $i$;
-\item \textbf{$l_{x_j}$}: lower bound of binary variable $x_j$ (used to avoid wrong calculations involving fixed variables);
-\item \textbf{$u_{x_j}$}: upper bound of binary variable $x_j$ (used to avoid wrong calculations involving fixed variables);
-\item \textbf{$l_{y_j}$}: lower bound of integer or continuous variable $y_j$;
-\item \textbf{$u_{y_j}$}: upper bound of integer or continuous variable $y_j$;
-\item \textbf{$b_i$}: right-hand side of constraint $i$.
-
-\end{itemize}
-
-\subsubsection{Identification of infeasibility}
-
-\begin{align}
-	z = \sum_{j \in B_i^+}{a_{ij}l_{x_j}} + \sum_{j \in B_i^-}{a_{ij}u_{x_j}} + \sum_{j \in C_i^+}{g_{ij}l_{y_j}} + \sum_{j \in C_i^-}{g_{ij}u_{y_j}}
-\end{align}
-
-If $z > b_{i}$, then the problem is infeasible.
-
-\subsubsection{Identification of redundancy}
-
-\begin{align}
-	z = \sum_{j \in B_i^+}{a_{ij}u_{x_j}} + \sum_{j \in B_i^-}{a_{ij}l_{x_j}} + \sum_{j \in C_i^+}{g_{ij}u_{y_j}} + \sum_{j \in C_i^-}{g_{ij}l_{y_j}}
-\end{align}
-
-If $z \leq b_{i}$, then the constraint $i$ is redundant.
-
-\subsubsection{Improving bounds}
-
-Considering a variable $y_k$, $k \in C_i^{+}$:
-
-\begin{align}
-	z_k = \sum_{j \in B_i^+}{a_{ij}l_{x_j}} + \sum_{j \in B_i^-}{a_{ij}u_{x_j}} + \sum_{j \in C_i^+ \setminus\{k\}}{g_{ij}l_{y_j}} + \sum_{j \in C_i^-}{g_{ij}u_{y_j}}
-\end{align}
-
-If $\frac{b_i - z_k}{g_ik} < u_k$, the upper bound $u_{y_k}$ can be improved.
-
-Considering a variable $y_k$, $k \in C_i^{-}$:
-
-\begin{align}
-	z_k = \sum_{j \in B_i^+}{a_{ij}l_{x_j}} + \sum_{j \in B_i^-}{a_{ij}u_{x_j}} + \sum_{j \in C_i^+}{g_{ij}l_{y_j}} + \sum_{j \in C_i^-\setminus\{k\}}{g_{ij}u_{y_j}}
-\end{align}
-
-If $\frac{z_k - b_i}{-g_ik} > l_k$, the lower bound $l_{y_k}$ can be improved.
-
-\subsubsection{Fixing variables}
-
-Considering a variable $x_k$, $k \in B_i^{+}$:
-
-\begin{align}
-	z_k = a_{ik}u_{x_k} + \sum_{j \in B_i^+\setminus\{k\}}{a_{ij}l_{x_j}} + \sum_{j \in B_i^-}{a_{ij}u_{x_j}} + \sum_{j \in C_i^+}{g_{ij}l_{y_j}} + \sum_{j \in C_i^-}{g_{ij}u_{y_j}}
-\end{align}
-
-If $z_k > b_i$, then $x_k$ can be fixed to 0.
-
-Considering a variable $x_k$, $k \in B_i^{-}$:
-
-\begin{align}
-	z_k = \sum_{j \in B_i^+}{a_{ij}l_{x_j}} + a_{ik}l_{x_k} + \sum_{j \in B_i^-\setminus\{k\}}{a_{ij}u_{x_j}} + \sum_{j \in C_i^+}{g_{ij}l_{y_j}} + \sum_{j \in C_i^-}{g_{ij}u_{y_j}}
-\end{align}
-
-If $z_k > b_i$, then $x_k$ can be fixed to 1.
-
-\subsubsection{Improving coefficients}
-
-Considering a variable $x_k$, $k \in B_i^{+}$:
-
-\begin{align}
-	z_k = a_{ik}l_k + \sum_{j \in B_i^+\setminus\{k\}}{a_{ij}u_{x_j}} + \sum_{j \in B_i^-}{a_{ij}l_{x_j}} + \sum_{j \in C_i^+}{g_{ij}u_{y_j}} + \sum_{j \in C_i^-}{g_{ij}l_{y_j}}
-\end{align}
-
-If $z_k < b_i$, then $a_{ik}$ and $b_i$ can be decreased by $\delta = b_i - z_k$ ($a_{ik} = a_{ik} - \delta$ and $b_i = b_i - delta$).
-
-Considering a variable $x_k$, $k \in B_i^{-}$:
-
-\begin{align}
-	z_k = \sum_{j \in B_i^+}{a_{ij}u_{x_j}} + a_{ik}u_k + \sum_{j \in B_i^-\setminus\{k\}}{a_{ij}l_{x_j}} + \sum_{j \in C_i^+}{g_{ij}u_{y_j}} + \sum_{j \in C_i^-}{g_{ij}l_{y_j}}
-\end{align}
-
-If $z_k < b_i$, then $a_{ik}$ can be increased by $\delta = b_i - z_k$ ($a_{ik} = a_{ik} + \delta$).
+%\section{Preprocessing Step}\label{preprocessing}
+%
+%Preprocessing tries to improve the representation of MIP problems. Thus, problems are reformulated in order to reduce their size and decrease the difference in the objective function values between the solutions to the linear programming relaxation and the integer program.
+%
+%We run a preprocessing step before performing the cut separation routine. This step uses basic preprocessing and basic probing techniques proposed by Savelsbergh~\cite{Savelsbergh1994}. We also use constraint propagation technique to fix binary variables. The next subsections will explain all preprocessing techniques used on this work.
+%
+%\subsection{Basic Preprocessing and Basic Probing Techniques}
+%
+%For understanding the basic preprocessing and probing techniques consider the following notation:
+%
+%\begin{itemize}
+%\item \textbf{$x_j$}: binary decision variable with index $j$;
+%\item \textbf{$y_j$}: integer or continuous decision variable with index $j$;
+%\item \textbf{$a_{ij}$}: coefficient for variable $x_{j}$ in constraint $i$;
+%\item \textbf{$g_{ij}$}: coefficient for variable $y_{j}$ in constraint $i$;
+%\item \textbf{$B_i^+$}: index set of binary variables with positive coefficients in $i$;
+%\item \textbf{$B_i^-$}: index set of binary variables with negative coefficients in $i$;
+%\item \textbf{$C_i^+$}: index set of integer or continuous variables with positive coefficients in $i$;
+%\item \textbf{$C_i^-$}: index set of integer or continuous variables with negative coefficients in $i$;
+%\item \textbf{$l_{x_j}$}: lower bound of binary variable $x_j$ (used to avoid wrong calculations involving fixed variables);
+%\item \textbf{$u_{x_j}$}: upper bound of binary variable $x_j$ (used to avoid wrong calculations involving fixed variables);
+%\item \textbf{$l_{y_j}$}: lower bound of integer or continuous variable $y_j$;
+%\item \textbf{$u_{y_j}$}: upper bound of integer or continuous variable $y_j$;
+%\item \textbf{$b_i$}: right-hand side of constraint $i$.
+%
+%\end{itemize}
+%
+%\subsubsection{Identification of infeasibility}
+%
+%\begin{align}
+%	z = \sum_{j \in B_i^+}{a_{ij}l_{x_j}} + \sum_{j \in B_i^-}{a_{ij}u_{x_j}} + \sum_{j \in C_i^+}{g_{ij}l_{y_j}} + \sum_{j \in C_i^-}{g_{ij}u_{y_j}}
+%\end{align}
+%
+%If $z > b_{i}$, then the problem is infeasible.
+%
+%\subsubsection{Identification of redundancy}
+%
+%\begin{align}
+%	z = \sum_{j \in B_i^+}{a_{ij}u_{x_j}} + \sum_{j \in B_i^-}{a_{ij}l_{x_j}} + \sum_{j \in C_i^+}{g_{ij}u_{y_j}} + \sum_{j \in C_i^-}{g_{ij}l_{y_j}}
+%\end{align}
+%
+%If $z \leq b_{i}$, then the constraint $i$ is redundant.
+%
+%\subsubsection{Improving bounds}
+%
+%Considering a variable $y_k$, $k \in C_i^{+}$:
+%
+%\begin{align}
+%	z_k = \sum_{j \in B_i^+}{a_{ij}l_{x_j}} + \sum_{j \in B_i^-}{a_{ij}u_{x_j}} + \sum_{j \in C_i^+ \setminus\{k\}}{g_{ij}l_{y_j}} + \sum_{j \in C_i^-}{g_{ij}u_{y_j}}
+%\end{align}
+%
+%If $\frac{b_i - z_k}{g_ik} < u_k$, the upper bound $u_{y_k}$ can be improved.
+%
+%Considering a variable $y_k$, $k \in C_i^{-}$:
+%
+%\begin{align}
+%	z_k = \sum_{j \in B_i^+}{a_{ij}l_{x_j}} + \sum_{j \in B_i^-}{a_{ij}u_{x_j}} + \sum_{j \in C_i^+}{g_{ij}l_{y_j}} + \sum_{j \in C_i^-\setminus\{k\}}{g_{ij}u_{y_j}}
+%\end{align}
+%
+%If $\frac{z_k - b_i}{-g_ik} > l_k$, the lower bound $l_{y_k}$ can be improved.
+%
+%\subsubsection{Fixing variables}
+%
+%Considering a variable $x_k$, $k \in B_i^{+}$:
+%
+%\begin{align}
+%	z_k = a_{ik}u_{x_k} + \sum_{j \in B_i^+\setminus\{k\}}{a_{ij}l_{x_j}} + \sum_{j \in B_i^-}{a_{ij}u_{x_j}} + \sum_{j \in C_i^+}{g_{ij}l_{y_j}} + \sum_{j \in C_i^-}{g_{ij}u_{y_j}}
+%\end{align}
+%
+%If $z_k > b_i$, then $x_k$ can be fixed to 0.
+%
+%Considering a variable $x_k$, $k \in B_i^{-}$:
+%
+%\begin{align}
+%	z_k = \sum_{j \in B_i^+}{a_{ij}l_{x_j}} + a_{ik}l_{x_k} + \sum_{j \in B_i^-\setminus\{k\}}{a_{ij}u_{x_j}} + \sum_{j \in C_i^+}{g_{ij}l_{y_j}} + \sum_{j \in C_i^-}{g_{ij}u_{y_j}}
+%\end{align}
+%
+%If $z_k > b_i$, then $x_k$ can be fixed to 1.
+%
+%\subsubsection{Improving coefficients}
+%
+%Considering a variable $x_k$, $k \in B_i^{+}$:
+%
+%\begin{align}
+%	z_k = a_{ik}l_k + \sum_{j \in B_i^+\setminus\{k\}}{a_{ij}u_{x_j}} + \sum_{j \in B_i^-}{a_{ij}l_{x_j}} + \sum_{j \in C_i^+}{g_{ij}u_{y_j}} + \sum_{j \in C_i^-}{g_{ij}l_{y_j}}
+%\end{align}
+%
+%If $z_k < b_i$, then $a_{ik}$ and $b_i$ can be decreased by $\delta = b_i - z_k$ ($a_{ik} = a_{ik} - \delta$ and $b_i = b_i - delta$).
+%
+%Considering a variable $x_k$, $k \in B_i^{-}$:
+%
+%\begin{align}
+%	z_k = \sum_{j \in B_i^+}{a_{ij}u_{x_j}} + a_{ik}u_k + \sum_{j \in B_i^-\setminus\{k\}}{a_{ij}l_{x_j}} + \sum_{j \in C_i^+}{g_{ij}u_{y_j}} + \sum_{j \in C_i^-}{g_{ij}l_{y_j}}
+%\end{align}
+%
+%If $z_k < b_i$, then $a_{ik}$ can be increased by $\delta = b_i - z_k$ ($a_{ik} = a_{ik} + \delta$).
 
 \section{Aggressive Cut Separation}\label{cuts}
 
