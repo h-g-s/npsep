@@ -1,106 +1,17 @@
 #include <cassert>
 #include "BKGraph.hpp"
+#define INT_SIZE (8*sizeof(int))
+
 
 using namespace std;
 
-BKGraph::BKGraph(const string& fileName)
+BKGraph::BKGraph(const char* fileName)
 {
-    char ch,SMP,edge;
-    char line[100];
-    int vert,edges,weight, max = 0;
-    FILE* file;
-
-    file = fopen(fileName.c_str(), "r");
-
-    instance = fileName;
-
-    if(file == NULL)
-    {
-        fprintf( stderr, "Could not open file " );
-        exit( EXIT_FAILURE );
-    }
-
-    int status;
-    status = fscanf(file,"%c",&ch);
-    assert( status>0 );
-
-
-    while(ch!='e')
-    {
-        if(ch == 'p')
-        {
-            char* strRead = fgets(line, 100, file) ;
-            assert( strRead );
-            int statusRead  = sscanf( line + 1, "%c %s %d %d", &SMP, &edge, &nVertices, &nEdges);
-            assert( statusRead == 4 );
-        }
-        else if(ch == 'c')
-        {
-            char* strRead = fgets(line, 100, file);
-            assert( strRead );
-        }
-        int chRead = fscanf(file,"%c",&ch);
-        assert( chRead );
-    }
-
-    vertices.resize(nVertices + 1);
-
-    for(int i = 0; i <= nVertices; i++)
-    {
-        vertices[i].setDegree(0);
-        vertices[i].setNumber(i);
-    }
-
-    for(int i = 0; i < nEdges; i++)
-    {
-        char *strRead = fgets(line, 100, file);
-        assert( strRead );
-        sscanf( line+1, "%d %d", &vert, &edges);
-
-        assert( vert <= nVertices );
-        assert( edges <= nVertices );
-
-        vertices[vert].insertConflict(edges);
-        vertices[edges].insertConflict(vert);
-        vertices[vert].setDegree(vertices[vert].getDegree() + 1);
-        vertices[edges].setDegree(vertices[edges].getDegree() + 1);
-    }
-
-    for(int i = 0; i < nVertices; i++)
-    {
-        char *strRead = fgets(line, 100, file);
-        assert( strRead );
-        sscanf( line + 1, "%d %d", &vert, &weight);
-        vertices[vert].setWeight(weight);
-        vertices[vert].setMDegree(vertices[vert].getDegree());
-    }
-
-    for(int i = 1; i <= nVertices; i++)
-    {
-        if( max < vertices[i].getDegree() )
-            max = vertices[i].getDegree();
-    }
-
-    maxDegree = max;
-
-    for(int i = 1; i <= nVertices;i++)
-    {
-        for(int j = 0; j < vertices[i].getNumberOfConflicts(); j++)
-        {
-            int position = vertices[i].getNodeConflict(j);
-            vertices[i].setMDegree( vertices[i].getMDegree() + vertices[position].getDegree() );
-        }
-    }
-
-    fclose(file);
-}
-
-BKGraph::BKGraph(const CGraph* cgraph)
-{
+    cgraph = cgraph_load(fileName);
     const int* pesos;
     BKVertex aux;
 
-    nVertices = cgraph_size(cgraph);
+    int nVertices = cgraph_size(cgraph);
 
     pesos = cgraph_get_node_weights(cgraph);
 
@@ -123,7 +34,7 @@ BKGraph::BKGraph(const CGraph* cgraph)
 
         aux.setDegree(realDegree);
 
-        aux.setMDegree(aux.getDegree());
+        aux.setMDegree(realDegree);
 
         for(int j = 0; j < aux.getDegree(); j++)
             aux.insertConflict(neighs[j] + 1);
@@ -135,190 +46,394 @@ BKGraph::BKGraph(const CGraph* cgraph)
 
     for(int i = 1; i <= nVertices; i++)
     {
-        int mdegree = vertices[i].getMDegree();
+        int mdegree = vertices[i].getDegree();
 
         for(int j = 0; j < vertices[i].getNumberOfConflicts(); j++)
         {
             int position = vertices[i].getNodeConflict(j);
-            assert( position < (int)vertices.size() );
+            assert( position != i && position >= 0 && position < (int)vertices.size() );
             mdegree += vertices[position].getDegree();
-            vertices[i].setMDegree(vertices[i].getMDegree() + vertices[position].getDegree());
         }
+        vertices[i].setMDegree(mdegree);
     }
 
-    //free((int*)pesos);
+    clqSet = clq_set_create();
 }
 
-BKGraph::~BKGraph(){}
-
-vector<BKVertex> BKGraph::getVertices() const { return vertices; }
-
-int BKGraph::getNVertices() const { return nVertices; }
-
-int BKGraph::getNEdges() const { return nEdges; }
-
-int BKGraph::getMaxDegree() const { return maxDegree; }
-
-string BKGraph::getInstance() const { return instance; }
-
-BKVertex BKGraph::getVertex(int v) const { return vertices[v]; }
-
-void BKGraph::setNVertices(int nv){ nVertices = nv; }
-
-void BKGraph::setNEdges(int ne){ nEdges = ne; }
-
-void BKGraph::setMaxDegree(int md) { maxDegree = md; }
-
-int BKGraph::weightCompute(const set<int>& clique)
+BKGraph::BKGraph(const CGraph *cgraph)
 {
-    int weight = 0;
+    this->cgraph = cgraph;
+    const int* pesos;
+    BKVertex aux;
 
-    for(set<int>::iterator it = clique.begin(); it != clique.end(); ++it)
-        weight += vertices[*it].getWeight();
+    int nVertices = cgraph_size(cgraph);
 
-    return weight;
-}
+    pesos = cgraph_get_node_weights(cgraph);
 
-int BKGraph::weightEstimate(const set<int>& P)
-{
-    int weight = 0;
+    aux.setNumber(0);
+    aux.setWeight(0);
+    aux.setDegree(0);
+    aux.setMDegree(0);
 
-    for(set<int>::iterator it = P.begin(); it != P.end(); ++it)
-        weight += vertices[*it].getWeight();
+    vertices.push_back(aux);
 
-    return weight;
-}
-
-int BKGraph::writeSolutions(const char* filename)
-{
-    set<set<int> >::iterator extIterator;
-    set<int>::iterator intIterator;
-    FILE* arq;
-    int totalWeight = 0;
-
-    if((arq = fopen(filename, "w")) == NULL)
-        perror("Couldn't create file!\n");
-
-    for(extIterator = cliques.begin(); extIterator != cliques.end(); ++extIterator)
+    for(int i = 0; i < nVertices; i++)
     {
-        fprintf(arq, "[%d] ", weightCompute(*extIterator));
-        totalWeight += weightCompute(*extIterator);
-        for(intIterator = extIterator->begin(); intIterator != extIterator->end(); ++intIterator)
-            fprintf(arq, "%d ", *intIterator);
-        fprintf(arq,"\n");
+        aux.setNumber(i + 1);
+
+        aux.setWeight(pesos[i]);
+
+        int neighs[10 * cgraph_degree(cgraph, i)];
+
+        int realDegree = cgraph_get_all_conflicting( cgraph, i, neighs, 10 * nVertices );
+
+        aux.setDegree(realDegree);
+
+        aux.setMDegree(realDegree);
+
+        for(int j = 0; j < aux.getDegree(); j++)
+            aux.insertConflict(neighs[j] + 1);
+
+        vertices.push_back(aux);
+
+        aux.clearAllConflicts();
     }
 
-    return totalWeight;
+    for(int i = 1; i <= nVertices; i++)
+    {
+        int mdegree = vertices[i].getDegree();
+
+        for(int j = 0; j < vertices[i].getNumberOfConflicts(); j++)
+        {
+            int position = vertices[i].getNodeConflict(j);
+            assert( position != i && position >= 0 && position < (int)vertices.size() );
+            mdegree += vertices[position].getDegree();
+        }
+        vertices[i].setMDegree(mdegree);
+    }
+
+    clqSet = clq_set_create();
 }
 
-int BKGraph::BronKerbosch(set<int> C, set<int> P, set<int> S, int minWeight, double timeLimit, clock_t init)
+BKGraph::~BKGraph()
+{
+    clq_set_free( &(clqSet) );
+}
+
+int retornarPeso(Clique* c)
+{
+    return c->peso;
+}
+
+int vazio1(Clique* S, int quantidadeVertices)
+{
+    unsigned int i;
+    for(i = 0; i < quantidadeVertices/INT_SIZE+1; ++i)
+    {
+        if(S->vetorVertices[i] != 0)
+            return 1;
+    }
+    return 0;
+}
+
+int BKGraph::escolherVerticeMaiorGrauModificado(Clique* P)
+{
+    Lista* p = P->listaVerticesClique;
+    int valorMaiorGrauModificado = 0;
+    int posicaoMaiorGrauModificado = 0;
+    while(p != NULL)
+    {
+        if(vertices[(p->vertice)+1].getMDegree() > valorMaiorGrauModificado)
+        {
+
+            posicaoMaiorGrauModificado = p->vertice;
+            valorMaiorGrauModificado = vertices[(p->vertice)+1].getMDegree();
+        }
+        p = p->prox;
+    }
+    return posicaoMaiorGrauModificado;
+}
+
+void BKGraph::liberarClique(Clique* c)
+{
+    free(c->vetorVertices);
+    liberaRec(c->listaVerticesClique);
+}
+void BKGraph::liberaRec (Lista* l)
+{
+     if (l != NULL)
+     {
+        liberaRec (l->prox);
+        free (l);
+     }
+}
+
+void BKGraph::excluirVizinhos( int P_sem_vizinhos_U[], Clique* P, int u)
+{
+    Lista* p = P->listaVerticesClique;
+    int contador = 1;
+    while(p != NULL)
+    {
+        if(cgraph_conflicting_nodes(cgraph, u, p->vertice) == 0)
+        {
+            P_sem_vizinhos_U[contador] = p->vertice;
+            contador++;
+        }
+        p = p->prox;
+    }
+    P_sem_vizinhos_U[0] = contador;
+}
+
+void BKGraph::copiaClique1(Clique* C, Clique* Caux)
+{
+    unsigned int i;
+    for(i = 0; i < (vertices.size()-1)/INT_SIZE+1; ++i)
+         Caux->vetorVertices[i] = C->vetorVertices[i];
+    adicionarPeso(Caux, retornarPeso(C));
+}
+
+void BKGraph::adicionarVerticeClique1(Clique* P, int vertice, unsigned mask[])
+{
+    P->vetorVertices[vertice/INT_SIZE] |= mask[vertice%INT_SIZE];
+}
+
+void BKGraph::removerVertice(Clique* P, int vertice)
+{
+   P->vetorVertices[vertice] = 0;
+   Lista* ant = NULL;
+   Lista* p = P->listaVerticesClique;
+   while (p != NULL && p->vertice != vertice)
+   {
+         ant = p;
+         p = p->prox;
+   }
+   if(p == NULL)
+      return;
+   if (ant == NULL)
+      P->listaVerticesClique = p->prox;      // Elemento foi encontrado na 1a posição da lista
+   else
+      ant->prox = p->prox; // Elemento encontrado no meio da lista
+   free (p);
+}
+
+int BKGraph::busca(int cont, int P_sem_vizinho[], int vertice)
+{
+    int i;
+    for(i = 1; i < cont; ++i)
+    {
+        if(P_sem_vizinho[i] == vertice)
+            return 1;
+    }
+    return 0;
+}
+
+void BKGraph::intersecaoOrdenado( Clique* P, int v, Clique* vetorAux, int cont, int P_sem_vizinho[])
+{
+
+     Lista* p;
+     for (p = P->listaVerticesClique; p != NULL; p = p->prox)
+     {
+         if(cgraph_conflicting_nodes(cgraph, v, p->vertice) == 1 && (busca(cont, P_sem_vizinho, v) == 0))
+         {
+             insereOrdenado(vetorAux, p->vertice);
+             vetorAux->vetorVertices[p->vertice] = 1;
+             adicionarPeso(vetorAux, vertices[p->vertice+1].getWeight());
+         }
+     }
+}
+
+void BKGraph::intersecao1(Clique* S, Clique* Saux, int quantidadeVertices, int** bit, int vertice, unsigned mask[])
+{
+    unsigned int i;
+    for(i = 0; i < quantidadeVertices/INT_SIZE+1; ++i)
+        Saux->vetorVertices[i] = S->vetorVertices[i] & bit[vertice][i];
+
+}
+
+void BKGraph::subtrairPeso(Clique* c, int peso)
+{
+    c->peso -= peso;
+}
+
+int BKGraph::BronKerbosch(Clique *C, Clique*P, Clique *S, int minWeight, double timeLimit, clock_t init, unsigned mask[], int **bit)
 {
     clock_t end = clock();
     double sec = ((double)(end - init)) / ((double)CLOCKS_PER_SEC);
     if(sec >= timeLimit)
         return 1;
-
-    if( P.size() == 0 && S.size() == 0 )
+    if((retornarPeso(P) == 0) && (vazio1(S, (vertices.size()-1)) == 0))
     {
-        if(weightCompute(C) >= minWeight)
-            cliques.insert(C);
+        if(retornarPeso(C) >= minWeight)
+        {
+          //  printf("S = %d\n", S->vetorVertices[1]);
+
+            //printf("%d\n", cliquesa);
+             // printf("\n[%d] ", retornarPeso(C));
+              int contador;
+              unsigned int valor, t;
+              int nodes[vertices.size()-1];
+              int cont = 0;
+             // printf("\n");
+              for(t = 0; t < ((vertices.size()-1)/INT_SIZE + 1); ++t)
+              {
+                  contador = (INT_SIZE * t)+1;
+                  valor =  C->vetorVertices[t];
+                  while(valor > 1)
+                  {
+                      if(valor % 2 == 1)
+                      {
+                       //  printf("%d ", contador);
+                          nodes[cont] = contador - 1;
+                          cont++;
+                      }
+                      valor = valor/2;
+                      contador++;
+                  }
+                  if(valor == 1)
+                  {
+                    //  printf("%d ", contador);
+                      nodes[cont] = contador - 1;
+                      cont++;
+                  }
+              }
+         //     printf("\n");
+             int stat = clq_set_add(clqSet, cont, nodes, retornarPeso(C));
+        }
     }
 
-    if(weightCompute(C) + weightEstimate(P) >= minWeight)
+    if(retornarPeso(C) + retornarPeso(P) >= minWeight)
     {
-        set<BKVertex, sortByMDegree> pivot;
-
-        for(set<int>::iterator a = P.begin(); a != P.end();++a)
-            pivot.insert(vertices[*a]);
-
-        if(pivot.size() != 0)
-        {
-            BKVertex u;
-
-            u = *pivot.begin();
-
-            for(int i = 0; i < u.getDegree(); i++)
-                pivot.erase(vertices[u.getNodeConflict(i)]);
-        }
-
-        for(set<BKVertex, sortByMDegree>::const_iterator it = pivot.begin(); it != pivot.end(); ++it)
-        {
-            set<int> C2 = C;
-            C2.insert(it->getNumber());
-            set<int> P2;
-
-            for(set<int>::const_iterator it2 = P.begin(); it2 != P.end(); ++it2)
-            {
-                const vector<int> &conflicts = it->getConflicts();
-
-                if(binary_search(conflicts.begin(), conflicts.end(), *it2))
-                    P2.insert(*it2);
-            }
-
-            set<int> S2;
-
-            for(set<int>::iterator it3 = S.begin(); it3 != S.end(); ++it3)
-            {
-                const vector<int> &conflicts = it->getConflicts();
-
-                if(binary_search(conflicts.begin(), conflicts.end(), *it3))
-                    S2.insert(*it3);
-            }
-
-            BronKerbosch(C2, P2, S2, minWeight, timeLimit, init);
-
-            end = clock();
-            sec = ((double)(end - init)) / ((double)CLOCKS_PER_SEC);
-
-            if(sec >= timeLimit)
-                return 1;
-
-            S.insert(it->getNumber());
-            P.erase(it->getNumber());
-        }
+                int u = escolherVerticeMaiorGrauModificado(P);
+                int P_sem_vizinhos_U[vertices.size()];
+                excluirVizinhos(P_sem_vizinhos_U, P, u);
+                int cont;
+                Clique* Paux;
+                Clique* Saux;
+                Clique* Caux;
+               for(cont = 1; cont < P_sem_vizinhos_U[0]; ++cont)
+               {
+                    int v = P_sem_vizinhos_U[P_sem_vizinhos_U[0]-cont];
+                    Paux = criarClique(vertices.size());
+                    Saux = criarClique((vertices.size()-1)/INT_SIZE + 1);
+                    Caux = criarClique((vertices.size()-1)/INT_SIZE + 1);
+                    intersecaoOrdenado(P, v, Paux, (P_sem_vizinhos_U[0]-cont), P_sem_vizinhos_U);
+                    //intersecao(P, matriz, v, Paux);
+                    intersecao1(S, Saux, (vertices.size()-1), bit, v, mask);
+                    copiaClique1(C, Caux);
+                    adicionarVerticeClique1(Caux, v, mask);
+                    adicionarPeso(Caux, vertices[v+1].getWeight());
+                    BronKerbosch(Caux, Paux, Saux, minWeight, timeLimit, init, mask, bit);
+                    liberarClique(Paux);
+                    liberarClique(Saux);
+                    liberarClique(Caux);
+                    free(Paux);
+                    free(Saux);
+                    free(Caux);
+                    subtrairPeso(P, vertices[v+1].getWeight());
+                    removerVertice(P, v);
+                    adicionarVerticeClique1(S, v, mask);
+                }
     }
 
     return 0;
 }
 
+
+Clique* BKGraph::criarClique(int tamanho)
+{
+    Clique* c = (Clique*) malloc(sizeof(Clique));
+    c->vetorVertices = (unsigned long int*) calloc (tamanho, sizeof(unsigned long int));
+    c->listaVerticesClique = NULL;
+    c->peso = 0;
+    return c;
+}
+
+void BKGraph::adicionarPeso(Clique* c, int peso)
+{
+    c->peso += peso;
+}
+
+void BKGraph::insereOrdenado (Clique* P, int vertice)
+{
+       Lista* novo = (Lista*) malloc(sizeof(Lista));
+       if(P->listaVerticesClique == NULL)
+       {
+           novo->vertice = vertice;
+           novo->prox = P->listaVerticesClique;
+           P->listaVerticesClique = novo;
+           return;
+       }
+       Lista* ant = NULL;
+       Lista* p = P->listaVerticesClique;
+       while(p!= NULL && vertices[p->vertice+1].getMDegree() > vertices[vertice+1].getMDegree())
+       {
+            ant = p;
+            p = p->prox;
+       }
+       if(p == NULL)
+       {
+           novo->vertice = vertice;
+           novo->prox = NULL;
+           ant->prox = novo;
+       }
+       if(ant == NULL)
+       {
+           novo->vertice = vertice;
+           novo->prox = P->listaVerticesClique;
+           P->listaVerticesClique = novo;
+           return;
+       }
+       else
+       {
+           novo->vertice = vertice;
+           novo->prox = p;
+           ant->prox = novo;
+       }
+}
+
+
 int BKGraph::execute(int minWeight, double timeLimit)
 {
-    set<int> C, P, S;
     clock_t init;
+    unsigned int i;
+    Clique* C = criarClique((vertices.size()-1)/INT_SIZE + 1);
+    Clique* P = criarClique(vertices.size()-1);
+    Clique* S = criarClique((vertices.size()-1)/INT_SIZE + 1);
+    unsigned mask[INT_SIZE];
+    mask[0] = 1;
+    for(unsigned h=1;h<INT_SIZE;h++)
+        mask[h] = mask[h-1]<<1;
+    int **bit;
+    bit = (int**) calloc ((vertices.size()-1), sizeof(int*));
+    for(i = 0; i < (vertices.size()-1); ++i)
+        bit[i] = (int*) calloc((vertices.size()-1)/INT_SIZE + 1, sizeof(int));
+    for(unsigned int i = 0; i < (vertices.size()-1); i++)
+    {
+        insereOrdenado(P, i);
+        P->vetorVertices[i] = 1;
+        adicionarPeso(P, vertices[i+1].getWeight());
+    }
+    unsigned int v,y;
+    for(v = 0; v < (vertices.size()-1); ++v)
+    {
+        for(y = (v+1); y < (vertices.size()-1); ++y)
+        {
+            if(cgraph_conflicting_nodes(cgraph, v, y) == 1)
+            {
+                 bit[y][v/INT_SIZE] |= mask[v%INT_SIZE];
+            bit[v][y/INT_SIZE] |= mask[y%INT_SIZE];
 
-    for(unsigned int i = 1; i < vertices.size(); i++)
-        P.insert(vertices[i].getNumber());
+            }
+        }
+    }
 
     init = clock();
 
-    int stat = BronKerbosch(C, P, S, minWeight, timeLimit, init);
+    int stat = BronKerbosch(C, P, S, minWeight, timeLimit, init, mask, bit);
 
     return stat;
+
+
 }
 
-CliqueSet* BKGraph::convertToClqSet()
-{
-    CliqueSet *clqSet;
-    set< set<int> >::iterator extIt;
-    set<int>::iterator intIt;
-
-    clqSet = clq_set_create();
-
-    for(extIt = cliques.begin(); extIt != cliques.end(); ++extIt)
-    {
-        int nodes[extIt->size()];
-        int count = 0;
-
-        for(intIt = extIt->begin(); intIt != extIt->end(); ++intIt)
-        {
-            nodes[count] = *intIt -1 ;
-            count++;
-        }
-
-        int stat = clq_set_add(clqSet, extIt->size(), nodes, weightCompute(*extIt));
-
-        if(!stat) cout<<"Couldn't insert clique!"<<endl;
-    }
-
-    return clqSet;
-}
+CliqueSet* BKGraph::getCliqueSet() { return clqSet; }

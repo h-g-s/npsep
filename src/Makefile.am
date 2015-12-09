@@ -4,7 +4,7 @@ INCLUDES = \
 AM_CFLAGS= -fopenmp
 AM_CXXFLAGS= -fopenmp
 
-bin_PROGRAMS=cbcr writeclqw cptest
+bin_PROGRAMS=cbcr writeclqw cptest bk
 
 
 cptest_SOURCES= cgraph.c\
@@ -54,19 +54,21 @@ cbcr_SOURCES=cgraph.c \
 				 macros.h
 
 
-#bk_SOURCES=bkRun.cpp\
-#			  cgraph.c \
-#			  bron_kerbosch.cpp\
-#			  vint_set.c\
-#			  memory.c\
-#			  clique.c\
-#			  strUtils.c\
-#			  vectormgm.c\
-#			  BKVertex.cpp\
-#			  BKGraph.cpp
+bk_SOURCES=bkRun.cpp\
+			  cgraph.c \
+			  bron_kerbosch.cpp\
+			  vint_set.c\
+			  memory.c\
+			  clique.c\
+			  strUtils.c\
+			  vectormgm.c\
+			  BKVertex.cpp\
+			  BKGraph.cpp
 
 cbcr_LDADD=-lz -ldl -lrt -lm  ${cbc_LIBS}
 
 writeclqw_LDADD=-lz -ldl -lrt -lm  ${cbc_LIBS}
 
 cptest_LDADD=-lz -ldl -lrt -lm  ${cbc_LIBS}
+
+bk=-lz -ldl -lrt -lm  ${cbc_LIBS}

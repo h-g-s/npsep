@@ -3,6 +3,7 @@
 extern "C"
 {
 #include "cgraph.h"
+#include "strUtils.h"
 };
 #include "bron_kerbosch.h"
 #include "clique.h"
@@ -10,8 +11,10 @@ extern "C"
 int main( int argc, char ** argv )
 {
    CGraph *cgraph = cgraph_load( argv[1] );
-
    BronKerbosch *bk = bk_create( cgraph );
+
+   char problemName[ 256 ];
+   getFileName( problemName, argv[1] );
 
    bk_run( bk, 1010, 300 );
 
@@ -21,4 +24,3 @@ int main( int argc, char ** argv )
 
    bk_free( bk );
 }
-

@@ -9,6 +9,20 @@
 #include <set>
 #include <ctime>
 
+
+typedef struct lista{
+    int vertice;
+    struct lista* prox;
+}Lista;
+
+typedef struct clique{
+    unsigned long int *vetorVertices;
+    Lista* listaVerticesClique;
+    int peso;
+}Clique;
+
+
+
 extern "C"
 {
     #include "cgraph.h"
@@ -19,33 +33,31 @@ extern "C"
 class BKGraph
 {
 public:
-    BKGraph(const std::string&);
+    BKGraph(const char*);
     BKGraph(const CGraph*);
     virtual ~BKGraph();
-    std::vector<BKVertex> getVertices() const;
-    int getNVertices() const;
-    int getNEdges() const;
-    int getMaxDegree() const;
-    std::string getInstance() const;
-    BKVertex getVertex(int) const;
-    void setNVertices(int);
-    void setNEdges(int);
-    void setMaxDegree(int);
-    int weightCompute(const std::set<int>&);
-    int weightEstimate(const std::set<int>&);
-    int writeSolutions(const char*);
-    int BronKerbosch(std::set<int>, std::set<int>, std::set<int>, int, double, clock_t);
+    void insereOrdenado (Clique* P, int vertice);
+    Clique* criarClique(int tamanho);
+    void removerVertice(Clique* P, int vertice);
+    void subtrairPeso(Clique* c, int peso);
+    void adicionarPeso(Clique* c, int peso);
+    void liberarClique(Clique* c);
+    void liberaRec (Lista* l);
+    void copiaClique1(Clique* C, Clique* Caux);
+    int escolherVerticeMaiorGrauModificado(Clique* P);
+    void adicionarVerticeClique1(Clique* P, int vertice, unsigned mask[]);
+    int BronKerbosch(Clique *C, Clique *P, Clique *S, int, double, clock_t, unsigned mask[], int **bit);
+    void intersecaoOrdenado(Clique* P, int v, Clique* vetorAux, int cont, int P_sem_vizinho[]);
     int execute(int, double);
-    CliqueSet* convertToClqSet();
+    void intersecao1(Clique* S, Clique* Saux, int quantidadeVertices, int** bit, int vertice, unsigned mask[]);
+    void excluirVizinhos(int P_sem_vizinhos_U[], Clique* P, int u);
+    int busca(int cont, int P_sem_vizinho[], int vertice);
+    CliqueSet* getCliqueSet();
 
 private:
+    const CGraph *cgraph;
     std::vector<BKVertex> vertices;
-    std::set< std::set<int> > cliques;
-    int nVertices;
-    int nEdges;
-    int maxDegree;
-    std::string instance;
-
+    CliqueSet *clqSet;
 };
 
 struct sortByMDegree
@@ -61,5 +73,7 @@ struct sortByMDegree
       return x.getNumber() < y.getNumber();
     }
 };
+
+
 
 #endif // BKGRAPH_HPP_INCLUDED

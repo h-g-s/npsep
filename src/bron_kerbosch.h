@@ -11,9 +11,9 @@ extern "C"
 #include "cgraph.h"
 #include "clique.h"
 
-BronKerbosch *bk_create( const CGraph *cgraph );
+BronKerbosch *bk_create(const CGraph *cgraph );
 
-int bk_run( BronKerbosch *bk, const int minViol, const int timeLimit );
+int bk_run(BronKerbosch *bk, const int minViol, const int timeLimit );
 
 CliqueSet *bk_get_clq_set( BronKerbosch *bk );
 
@@ -22,9 +22,9 @@ void bk_free( BronKerbosch *bk );
 }
 #else
 
-BronKerbosch *bk_create( const CGraph *cgraph );
+BronKerbosch *bk_create(const CGraph *craph);
 
-int bk_run( BronKerbosch *bk, const int minViol, const int timeLimit );
+int bk_run(BronKerbosch *bk, const int minViol, const int timeLimit );
 
 CliqueSet *bk_get_clq_set( BronKerbosch *bk );
 
@@ -38,4 +38,4 @@ void bk_free( BronKerbosch *bk );
 /* returns 0 if complete search was done, 1 otherwise */
 
 
-#endif 
+#endif
