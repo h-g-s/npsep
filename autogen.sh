@@ -3,4 +3,5 @@ aclocal
 autoheader
 automake -a -c --foreign
 autoconf
+libtoolize
 
