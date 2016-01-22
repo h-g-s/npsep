@@ -6,8 +6,6 @@
 #ifndef PROBLEM_H
 #define PROBLEM_H
 
-#include <OsiSolverInterface.hpp>
-
 #define CONTINUOUS 0
 #define BINARY 1
 #define INTEGER 2
@@ -15,7 +13,7 @@
 typedef struct _Problem Problem;
 
 Problem* problem_create(int numCols, int numRows, double infty);
-Problem* problem_create_using_osi(const OsiSolverInterface *solver); /* Fills the structure Problem using an OsiSolverInterface pointer */
+Problem* problem_create_using_osi(const void *_solver); /* Fills the structure Problem using an OsiSolverInterface pointer */
 void problem_free(Problem **p);
 
 /* general information */
@@ -71,6 +69,6 @@ void problem_row_set_name(Problem *p, int idxRow, const char *name);
 void problem_update_matrices_by_col(Problem *p);
 
 /* converts Problem structure to OsiSolverInterface */
-OsiSolverInterface* problem_convert_to_osi(Problem *p);
+void* problem_convert_to_osi(Problem *p);
 
 #endif

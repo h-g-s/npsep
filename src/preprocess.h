@@ -1,11 +1,10 @@
 #ifndef PREPROCESS_H
 #define PREPROCESS_H
 
-#include "problem.h"
-
 extern "C"
 {
     #include "cgraph.h"
+    #include "problem.h"
 }
 
 typedef struct _Preprocess Preprocess;

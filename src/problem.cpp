@@ -1,9 +1,10 @@
 extern "C"
 {
     #include "memory.h"
+    #include "problem.h"
 }
 
-#include "problem.h"
+#include <OsiSolverInterface.hpp>
 #include <OsiClpSolverInterface.hpp>
 #include <CoinBuild.hpp>
 
@@ -68,8 +69,9 @@ Problem* problem_create(int numCols, int numRows, double infty)
     return p;
 }
 
-Problem* problem_create_using_osi(const OsiSolverInterface *solver)
+Problem* problem_create_using_osi(const void *_solver)
 {
+    const OsiSolverInterface *solver = (const OsiSolverInterface *) _solver;
     Problem *p = (Problem*) xmalloc (sizeof(Problem));
 
     p->numCols = solver->getNumCols();
@@ -412,7 +414,7 @@ void problem_update_matrices_by_col(Problem *p)
         }
 }
 
-OsiSolverInterface* problem_convert_to_osi(Problem *p)
+void* problem_convert_to_osi(Problem *p)
 {
     int i;
     double rowLb, rowUb;

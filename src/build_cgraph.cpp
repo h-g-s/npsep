@@ -5,12 +5,13 @@
 #include <algorithm>
 #include <climits>
 #include <vector>
-#include "build_cgraph.h"
+#include <OsiSolverInterface.hpp>
 
 extern "C"
 {
 	#include "memory.h"
 	#include "node_heap.h"
+	#include "build_cgraph.h"
 }
 
 using namespace std;
@@ -75,8 +76,10 @@ void cliqueComplementDetection(CGraph* cgraph, const vector<pair<int, double> >&
 /* Searches for cliques involving variables and complements of variables in this constraint. */
 void mixedCliqueDetection(CGraph* cgraph, const vector<pair<int, double> >& columns, double sumNegCoefs, double rhs);
 
-CGraph *build_cgraph_pairwise( const OsiSolverInterface *solver )
+CGraph *build_cgraph_pairwise_osi( const void *_solver )
 {
+	const OsiSolverInterface *solver = (const OsiSolverInterface *) _solver;
+
     if (solver->getNumIntegers()<2)
         return 0;
 
@@ -94,6 +97,13 @@ CGraph *build_cgraph_pairwise( const OsiSolverInterface *solver )
     int nRows = solver->getNumRows();
     int idxRow;
     cvec.reserve( CVEC_CAP );
+
+    for(int i = 0; i < nCols; i++)
+    {
+    	/* inserting trivial conflicts: variable-complement */
+        if(ctype[i] == 1) //consider only binary variables
+            cvec.push_back( pair<int, int>(i, i + nCols) );
+    }
 
     for(idxRow = 0; idxRow < nRows; idxRow++)
     {
@@ -133,11 +143,6 @@ CGraph *build_cgraph_pairwise( const OsiSolverInterface *solver )
 
             minCoef = min(minCoef, columns[i].second);
             maxCoef = max(maxCoef, columns[i].second);
-
-            /* inserting trivial conflicts: variable-complement */
-            if(ctype[cidx] != 1) //consider only binary variables
-                continue;
-            cvec.push_back( pair<int, int>(cidx, cidx + nCols) );
         }
 
         /* considering just constraints which have only binary variables */
@@ -196,6 +201,13 @@ CGraph *build_cgraph_pairwise(const Problem *problem)
     const double *colUb = problem_vars_upper_bound(problem);
     cvec.reserve( CVEC_CAP );
 
+    for(int i = 0; i < nCols; i++)
+    {
+    	/* inserting trivial conflicts: variable-complement */
+        if(ctype[i] == 1) //consider only binary variables
+            cvec.push_back( pair<int, int>(i, i + nCols) );
+    }
+
     for(idxRow = 0; idxRow < nRows; idxRow++)
     {
         const int nElements = problem_row_size(problem, idxRow);
@@ -237,11 +249,6 @@ CGraph *build_cgraph_pairwise(const Problem *problem)
 
             minCoef = min(minCoef, columns[i].second);
             maxCoef = max(maxCoef, columns[i].second);
-
-            /* inserting trivial conflicts: variable-complement */
-            if(ctype[cidx] != 1) //consider only binary variables
-                continue;
-            cvec.push_back( pair<int, int>(cidx, cidx + nCols) );
         }
 
         if(nBools < nElements)
@@ -275,6 +282,99 @@ CGraph *build_cgraph_pairwise(const Problem *problem)
                 }
                 pairwiseAnalysis(cgraph, newColumns, sumNegCoefs, -1.0 * rhs);
             }
+        }
+    }
+    fetchConflicts(true, cgraph);
+    cgraph_update_min_max_degree( cgraph );
+
+    return cgraph;
+}
+
+CGraph *build_cgraph_pairwise_no_gub(const Problem *problem)
+{
+    if(problem_num_integers(problem) < 2)
+        return NULL;
+
+    int nCols = problem_num_cols(problem);
+    int nRows = problem_num_rows(problem);;
+    int idxRow;
+    int cgraphSize = nCols * 2;
+    CGraph *cgraph = cgraph_create( cgraphSize );
+    const char *ctype = problem_vars_type(problem);
+    const double *colLb = problem_vars_lower_bound(problem);
+    const double *colUb = problem_vars_upper_bound(problem);
+    cvec.reserve( CVEC_CAP );
+
+    for(int i = 0; i < nCols; i++)
+    {
+    	/* inserting trivial conflicts: variable-complement */
+        if(ctype[i] == 1) //consider only binary variables
+            cvec.push_back( pair<int, int>(i, i + nCols) );
+    }
+
+    for(idxRow = 0; idxRow < nRows; idxRow++)
+    {
+        const int nElements = problem_row_size(problem, idxRow);
+        const int *idxs = problem_row_idxs(problem, idxRow);
+        const double *coefs = problem_row_coefs(problem, idxRow);
+        const double rhs = problem_row_rhs(problem, idxRow);
+        const char sense = problem_row_sense(problem, idxRow);
+
+        vector< pair<int, double> > columns(nElements);
+        int nBools = 0; // number of binary variables
+        int nPos = 0; //number of positive coefficients
+        double sumNegCoefs = 0.0; //sum of all negative coefficients
+        double minCoef = numeric_limits<double>::max();
+        double maxCoef = numeric_limits<double>::min();
+        
+        if((nElements < 2) || (fabs(rhs) >= LARGE_CONST))
+            continue;
+
+        if(sense == 'R') //lets not consider ranged constraints by now
+        {
+            printf("TODO: CHECK FOR RANGED CONSTRAINT (%s) rhs is %g\n", problem_row_name(problem, idxRow), rhs);
+            continue;
+        }
+
+        double mult = (sense == 'G') ? -1.0 : 1.0;
+        for(int i = 0; i < nElements; i++)
+        {
+            const int cidx = idxs[i];
+
+            columns[i].first = idxs[i];
+            columns[i].second = coefs[i] * mult;
+
+            if(ctype[cidx] == BINARY)
+                nBools++;
+
+            if(columns[i].second <= -EPS)
+                sumNegCoefs += columns[i].second;
+            else nPos++;
+
+            minCoef = min(minCoef, columns[i].second);
+            maxCoef = max(maxCoef, columns[i].second);
+        }
+
+        if(nBools < nElements)
+            continue;
+        
+        pairwiseAnalysis(cgraph, columns, sumNegCoefs, rhs * mult);
+
+        /*equality constraints are converted into two inequality constraints (<=).
+        the first one is analyzed above and the second (multiplying the constraint by -1) is analyzed below.
+        Example: x + y + z = 2 ==>  (x + y + z <= 2) and (- x - y - z <= -2)*/
+        if(sense == 'E')
+        {
+            vector<pair<int, double> > newColumns(nElements);
+            sumNegCoefs = 0.0;
+            for(int i = 0; i < nElements; i++)
+            {
+                newColumns[i].first = columns[i].first;
+                newColumns[i].second = -1.0 * columns[i].second;
+                if(newColumns[i].second <= -EPS)
+                    sumNegCoefs += newColumns[i].second;
+            }
+            pairwiseAnalysis(cgraph, newColumns, sumNegCoefs, -1.0 * rhs);
         }
     }
     fetchConflicts(true, cgraph);
@@ -430,8 +530,10 @@ int binary_search_complement(const vector< pair<int, double> >& columns, double 
     return colStart - 1;
 }
 
-CGraph *build_cgraph( const OsiSolverInterface *solver )
+CGraph *build_cgraph_osi( const void *_solver )
 {
+	const OsiSolverInterface *solver = (const OsiSolverInterface *) _solver;
+
     if (solver->getNumIntegers()<2)
         return 0;
 
@@ -447,6 +549,13 @@ CGraph *build_cgraph( const OsiSolverInterface *solver )
     int nRows = solver->getNumRows();
     int idxRow;
     cvec.reserve( CVEC_CAP );
+
+    for(int i = 0; i < nCols; i++)
+    {
+    	/* inserting trivial conflicts: variable-complement */
+        if(ctype[i] == 1) //consider only binary variables
+            cvec.push_back( pair<int, int>(i, i + nCols) );
+    }
 
     for(idxRow = 0; idxRow < nRows; idxRow++)
     {
@@ -487,11 +596,6 @@ CGraph *build_cgraph( const OsiSolverInterface *solver )
 
             minCoef = min(minCoef, columns[i].second);
             maxCoef = max(maxCoef, columns[i].second);
-
-            /* inserting trivial conflicts: variable-complement */
-            if(ctype[cidx] != 1) //consider only binary variables
-                continue;
-            cvec.push_back( pair<int, int>(cidx, cidx + nCols) );
         }
 
         if(nBools < nElements)
@@ -554,6 +658,13 @@ CGraph *build_cgraph( const Problem *problem )
     const double *colUb = problem_vars_upper_bound(problem);
     cvec.reserve( CVEC_CAP );
 
+    for(int i = 0; i < nCols; i++)
+    {
+    	/* inserting trivial conflicts: variable-complement */
+        if(ctype[i] == 1) //consider only binary variables
+            cvec.push_back( pair<int, int>(i, i + nCols) );
+    }
+
     for(idxRow = 0; idxRow < nRows; idxRow++)
     {
         const int nElements = problem_row_size(problem, idxRow);
@@ -595,11 +706,6 @@ CGraph *build_cgraph( const Problem *problem )
 
             minCoef = min(minCoef, columns[i].second);
             maxCoef = max(maxCoef, columns[i].second);
-
-            /* inserting trivial conflicts: variable-complement */
-            if(ctype[cidx] != 1) //consider only binary variables
-                continue;
-            cvec.push_back( pair<int, int>(cidx, cidx + nCols) );
         }
 
         if(nBools < nElements)

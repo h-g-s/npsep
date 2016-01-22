@@ -5,12 +5,12 @@
 #include <cstdlib>
 #include <vector>
 #include <OsiClpSolverInterface.hpp>
-#include "build_cgraph.h"
-#include "problem.h"
 
 extern "C"
 {
-#include "strUtils.h"
+    #include "strUtils.h"
+    #include "build_cgraph.h"
+    #include "problem.h"
 }
 
 using namespace std;
@@ -22,11 +22,11 @@ int main( int argc, char **argv )
     clock_t start;
     double cliqueAnalysis, pairwiseAnalysis, pairNoGubAnalysis;
 
-    OsiClpSolverInterface solver;
-    readLP( argv[1], &solver );
+    OsiSolverInterface *solver = new OsiClpSolverInterface();
+    readLP( argv[1], solver );
     char problemName[ 256 ];
     getFileName( problemName, argv[1] );
-    Problem *problem = problem_create_using_osi(&solver);
+    Problem *problem = problem_create_using_osi(solver);
 
     start = clock();
     CGraph *cgraphClique = build_cgraph( problem );
@@ -70,11 +70,11 @@ int main( int argc, char **argv )
     //printf("%s %.1lu %.2f %.1lu %.2lf\n", problemName, conflictsPairwise, pairwiseAnalysis, conflictsClique, cliqueAnalysis);
 
     int numBin = 0;
-    for(int i = 0; i < solver.getNumCols(); i++)
-        if(solver.isBinary(i))
+    for(int i = 0; i < solver->getNumCols(); i++)
+        if(solver->isBinary(i))
             numBin++;
 
-    printf("%s %d %d %d %d %.1lu %.2lf %.2lf %.2lf\n", problemName, solver.getNumRows(), solver.getNumCols(), numBin, solver.getNumElements(), conflictsPairwise, pairNoGubAnalysis, pairwiseAnalysis, cliqueAnalysis);
+    printf("%s %d %d %d %d %.1lu %.2lf %.2lf %.2lf\n", problemName, solver->getNumRows(), solver->getNumCols(), numBin, solver->getNumElements(), conflictsPairwise, pairNoGubAnalysis, pairwiseAnalysis, cliqueAnalysis);
 
     assert(cgraph_size(cgraphClique) == cgraph_size(cgraphPairwise));
     for(int i = 0; i < cgraph_size( cgraphClique ); i++)
@@ -83,8 +83,8 @@ int main( int argc, char **argv )
             {
                 printf("%d %d\n", cgraph_conflicting_nodes(cgraphPairwise, i, j), cgraph_conflicting_nodes(cgraphClique, i, j));
                 printf("%d %d\n", i, j);
-                printf("%s %s\n", i < solver.getNumCols() ? solver.getColName(i).c_str() : ("¬" + solver.getColName(i - solver.getNumCols())).c_str(),
-                                  j < solver.getNumCols() ? solver.getColName(j).c_str() : ("¬" + solver.getColName(j - solver.getNumCols())).c_str() );
+                printf("%s %s\n", i < solver->getNumCols() ? solver->getColName(i).c_str() : ("¬" + solver->getColName(i - solver->getNumCols())).c_str(),
+                                  j < solver->getNumCols() ? solver->getColName(j).c_str() : ("¬" + solver->getColName(j - solver->getNumCols())).c_str() );
                 i = cgraph_size( cgraphClique );
                 break;
             }
@@ -96,8 +96,8 @@ int main( int argc, char **argv )
             {
                 printf("%d %d\n", cgraph_conflicting_nodes(cgraphPairNoGub, i, j), cgraph_conflicting_nodes(cgraphClique, i, j));
                 printf("%d %d\n", i, j);
-                printf("%s %s\n", i < solver.getNumCols() ? solver.getColName(i).c_str() : ("¬" + solver.getColName(i - solver.getNumCols())).c_str(),
-                                  j < solver.getNumCols() ? solver.getColName(j).c_str() : ("¬" + solver.getColName(j - solver.getNumCols())).c_str() );
+                printf("%s %s\n", i < solver->getNumCols() ? solver->getColName(i).c_str() : ("¬" + solver->getColName(i - solver->getNumCols())).c_str(),
+                                  j < solver->getNumCols() ? solver->getColName(j).c_str() : ("¬" + solver->getColName(j - solver->getNumCols())).c_str() );
                 i = cgraph_size( cgraphPairNoGub );
                 break;
             }
@@ -106,6 +106,7 @@ int main( int argc, char **argv )
     cgraph_free( &cgraphClique );
     cgraph_free( &cgraphPairwise );
     problem_free( &problem );
+    delete solver;
 
     return EXIT_SUCCESS;
 }

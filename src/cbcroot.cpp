@@ -1,10 +1,10 @@
 #include <OsiClpSolverInterface.hpp>
 #include <CglClique.hpp>
 #include <CglEClique.hpp>
-#include "build_cgraph.h"
 extern "C"
 {
     #include "strUtils.h"
+    #include "build_cgraph.h"
 }
 
 using namespace std;
@@ -173,12 +173,14 @@ int main( int argc, char **argv )
     }
 
     clock_t start = clock();
-    OsiClpSolverInterface solver;
-    solver.getModelPtr()->setPerturbation(50); /* makes CLP faster for hard instances */
-    parseParameters( argc, argv );
-    readLP( &solver, argv[1] );
+    OsiClpSolverInterface *realSolver = new OsiClpSolverInterface();
+    realSolver->getModelPtr()->setPerturbation(50); /* makes CLP faster for hard instances */
+    OsiSolverInterface *solver = (OsiSolverInterface*) realSolver;
 
-    const int numCols = solver.getNumCols(), numRows = solver.getNumRows();
+    parseParameters( argc, argv );
+    readLP( solver, argv[1] );
+
+    const int numCols = solver->getNumCols(), numRows = solver->getNumRows();
     char problemName[ 256 ];
     getFileName( problemName, argv[1] );
     int pass = 0, newCuts = 0, totalCuts = 0;
@@ -186,7 +188,7 @@ int main( int argc, char **argv )
     CGraph *cgraph = NULL;
 
     if(sepMethod == Npsep)
-    	cgraph = build_cgraph( &solver );
+    	cgraph = build_cgraph_osi( solver );
 
     if(!optFile.empty())
     {
@@ -199,36 +201,36 @@ int main( int argc, char **argv )
         opt = optimals[problemName];
     }
 
-    solver.initialSolve();
+    solver->initialSolve();
 
-    if (!solver.isProvenOptimal())
+    if (!solver->isProvenOptimal())
     {
-        if (solver.isAbandoned())
+        if (solver->isAbandoned())
         {
             fprintf( stderr, "LP solver abandoned due to numerical dificulties.\n" );
             exit( EXIT_FAILURE );
         }
-        if (solver.isProvenPrimalInfeasible())
+        if (solver->isProvenPrimalInfeasible())
         {
             fprintf( stderr, "LP solver says PRIMAL INFEASIBLE.\n" );
             exit( EXIT_FAILURE );
         }
-        if (solver.isProvenDualInfeasible())
+        if (solver->isProvenDualInfeasible())
         {
             fprintf( stderr, "LP solver says DUAL INFEASIBLE.\n" );
             exit( EXIT_FAILURE );
         }
-        if (solver.isPrimalObjectiveLimitReached())
+        if (solver->isPrimalObjectiveLimitReached())
         {
             fprintf( stderr, "LP solver says isPrimalObjectiveLimitReached.\n" );
             exit( EXIT_FAILURE );
         }
-        if (solver.isDualObjectiveLimitReached())
+        if (solver->isDualObjectiveLimitReached())
         {
             fprintf( stderr, "LP solver says isDualObjectiveLimitReached.\n" );
             exit( EXIT_FAILURE );
         }
-        if (solver.isIterationLimitReached())
+        if (solver->isIterationLimitReached())
         {
             fprintf( stderr, "LP solver says isIterationLimitReached.\n" );
             exit( EXIT_FAILURE );
@@ -238,11 +240,11 @@ int main( int argc, char **argv )
         exit( EXIT_FAILURE );
     }
 
-    double initialBound = solver.getObjValue();
-    printf("%.2lf %d %d %.7lf", ((double)(clock()-start)) / ((double)CLOCKS_PER_SEC), pass, 0, solver.getObjValue());
+    double initialBound = solver->getObjValue();
+    printf("%.2lf %d %d %.7lf", ((double)(clock()-start)) / ((double)CLOCKS_PER_SEC), pass, 0, solver->getObjValue());
     if(!optFile.empty())
     {
-        printf(" %.7lf %.7lf", opt, abs_mip_gap(solver.getObjValue(), opt));
+        printf(" %.7lf %.7lf", opt, abs_mip_gap(solver->getObjValue(), opt));
     }
     printf("\n");
 
@@ -260,14 +262,14 @@ int main( int argc, char **argv )
                 CglTreeInfo info;
                 info.level = 0;
                 info.pass = 1;
-                vector<string> varNames = getVarNames(solver.getColNames(), numCols);
+                vector<string> varNames = getVarNames(solver->getColNames(), numCols);
                 cliqueGen.parseParameters( argc, (const char**)argv );
                 cliqueGen.setCGraph( cgraph );
                 cliqueGen.setGenOddHoles( true ); //allow (or not) inserting odd hole cuts
                 cliqueGen.colNames = &varNames;
-                cliqueGen.generateCuts( solver, cuts, info );
+                cliqueGen.generateCuts( *solver, cuts, info );
                 newCuts = cuts.sizeCuts();
-                solver.applyCuts( cuts );
+                solver->applyCuts( cuts );
             }
             break;
 
@@ -281,9 +283,9 @@ int main( int argc, char **argv )
                 cliqueGen.setMinViolation( MIN_VIOLATION );
                 cliqueGen.setStarCliqueReport(false);
                 cliqueGen.setRowCliqueReport(false);
-                cliqueGen.generateCuts( solver, cuts, info );
+                cliqueGen.generateCuts( *solver, cuts, info );
                 newCuts = cuts.sizeCuts();
-                solver.applyCuts( cuts );
+                solver->applyCuts( cuts );
             }
             break;
 
@@ -302,35 +304,35 @@ int main( int argc, char **argv )
 
         if (newCuts)
         {
-            solver.resolve();
-            if (!solver.isProvenOptimal())
+            solver->resolve();
+            if (!solver->isProvenOptimal())
             {
-                if (solver.isAbandoned())
+                if (solver->isAbandoned())
                 {
                     fprintf( stderr, "LP solver abandoned due to numerical dificulties.\n" );
                     exit( EXIT_FAILURE );
                 }
-                if (solver.isProvenPrimalInfeasible())
+                if (solver->isProvenPrimalInfeasible())
                 {
                     fprintf( stderr, "LP solver says PRIMAL INFEASIBLE.\n" );
                     exit( EXIT_FAILURE );
                 }
-                if (solver.isProvenDualInfeasible())
+                if (solver->isProvenDualInfeasible())
                 {
                     fprintf( stderr, "LP solver says DUAL INFEASIBLE.\n" );
                     exit( EXIT_FAILURE );
                 }
-                if (solver.isPrimalObjectiveLimitReached())
+                if (solver->isPrimalObjectiveLimitReached())
                 {
                     fprintf( stderr, "LP solver says isPrimalObjectiveLimitReached.\n" );
                     exit( EXIT_FAILURE );
                 }
-                if (solver.isDualObjectiveLimitReached())
+                if (solver->isDualObjectiveLimitReached())
                 {
                     fprintf( stderr, "LP solver says isDualObjectiveLimitReached.\n" );
                     exit( EXIT_FAILURE );
                 }
-                if (solver.isIterationLimitReached())
+                if (solver->isIterationLimitReached())
                 {
                     fprintf( stderr, "LP solver says isIterationLimitReached.\n" );
                     exit( EXIT_FAILURE );
@@ -344,9 +346,9 @@ int main( int argc, char **argv )
             if(pTime > MAX_TIME) break;
 
             double sepTime = ((double)(clock()-startSep)) / ((double)CLOCKS_PER_SEC);
-            printf("%.2lf %d %d %.7lf", sepTime, pass, newCuts, solver.getObjValue());
+            printf("%.2lf %d %d %.7lf", sepTime, pass, newCuts, solver->getObjValue());
             if(!optFile.empty())
-                printf(" %.7lf %.7lf", opt, abs_mip_gap(solver.getObjValue(), opt));
+                printf(" %.7lf %.7lf", opt, abs_mip_gap(solver->getObjValue(), opt));
             printf("\n");
         }
     }
@@ -354,6 +356,8 @@ int main( int argc, char **argv )
 
     if(cgraph)
     	cgraph_free( &cgraph );
+
+   	delete realSolver;
 
     return EXIT_SUCCESS;
 }

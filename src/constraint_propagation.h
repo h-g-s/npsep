@@ -4,10 +4,11 @@
 extern "C"
 {
 	#include "cgraph.h"
+	#include "problem.h"
 }
 
-#include "problem.h"
 #include <vector>
+#include <OsiSolverInterface.hpp>
 
 using namespace std;
 

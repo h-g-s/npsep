@@ -1,7 +1,5 @@
 #include "preprocess.h"
-
-#include <OsiClpSolverInterface.hpp>
-#include <CoinBuild.hpp>
+#include <cmath>
 #include <vector>
 #include <queue>
 #include "constraint_propagation.h"

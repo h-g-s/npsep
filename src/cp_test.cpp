@@ -1,13 +1,13 @@
 #include <OsiClpSolverInterface.hpp>
-#include "build_cgraph.h"
-#include "problem.h"
+#include "constraint_propagation.h"
 #include "preprocess.h"
-//#include "constraint_propagation.h"
 
 extern "C"
 {
     #include "strUtils.h"
     #include "cgraph.h"
+    #include "build_cgraph.h"
+    #include "problem.h"
 }
 
 using namespace std;
@@ -32,16 +32,17 @@ void readLP( const char *fileName, OsiSolverInterface *solver )
 int main( int argc, char **argv )
 {
 	char problemName[ 256 ];
-	OsiClpSolverInterface solver;
-	solver.getModelPtr()->setPerturbation(50); /* makes CLP faster for hard instances */
+	OsiClpSolverInterface *realSolver = new OsiClpSolverInterface();
+    realSolver->getModelPtr()->setPerturbation(50); /* makes CLP faster for hard instances */
+    OsiSolverInterface *solver = (OsiSolverInterface*) realSolver;
 	
 	getFileName( problemName, argv[1] );
-	readLP( argv[1], &solver );
+	readLP( argv[1], solver );
 
 
 	printf("%s ", problemName);
 	clock_t start = clock();
-    Problem *p = problem_create_using_osi(&solver);
+    Problem *p = problem_create_using_osi(solver);
     Preprocess *preproc = preprocess_create(p);
     Problem *preProcProblem = preprocess_basic_preprocessing(preproc);
  //    OsiSolverInterface* preProcSolver = problem_convert_to_osi(preProcProblem);
@@ -51,15 +52,15 @@ int main( int argc, char **argv )
  //    char output[256];
  //    strncpy(output, problemName, 256);
  //    strcat(output, "_PP");
- //    preProcsolver.writeMps(output);
+ //    preProcsolver->writeMps(output);
     
     problem_free(&preProcProblem);
     preprocess_free(&preproc);
     problem_free(&p);
     // delete preProcSolver;
- //    delete solver;
+ //    delete realSolver;
 
-	// Problem *problem = problem_create_using_osi(&solver);
+	// Problem *problem = problem_create_using_osi(solver);
 	// CGraph *cgraph = build_cgraph(problem);
 
  //    Preprocess *preproc = preprocess_create(problem);
@@ -85,51 +86,53 @@ int main( int argc, char **argv )
 
 	// clock_t start = clock();
 	// CPropagation *cp = cpropagation_create(problem);
- //    int nindexes[solver.getNumCols()];
+ //    int nindexes[solver->getNumCols()];
  //    cpropagation_get_vars_to_fix(cp, cgraph);
  //    double cpTime = ((double(clock() - start))/((double)CLOCKS_PER_SEC));
  //    printf("toFix: %d\n", cpropagation_get_num_vars_to_fix(cp));
  //    int toFix = 0, activate = 0, deactivate = 0;
- //    for(int i = 0; i < solver.getNumCols(); i++)
+ //    for(int i = 0; i < solver->getNumCols(); i++)
  //    {
  //        if(cpropagation_var_is_to_fix(cp, i) == DEACTIVATE)
  //        {
- //            printf("1- %s\n", solver.getColName(i).c_str());
+ //            printf("1- %s\n", solver->getColName(i).c_str());
  //            toFix++;
  //            deactivate++;
- //            solver.setColBounds(i, 1.0, 1.0);
- //            solver.initialSolve();
- //            solver.branchAndBound();
- //            assert(solver.isBinary(i));
- //            if(solver.isProvenOptimal())
- //            	printf("%lf\n", solver.getObjValue());
- //            assert(!solver.isProvenOptimal());
- //            solver.setColBounds(i, 0.0, 1.0);
+ //            solver->setColBounds(i, 1.0, 1.0);
+ //            solver->initialSolve();
+ //            solver->branchAndBound();
+ //            assert(solver->isBinary(i));
+ //            if(solver->isProvenOptimal())
+ //            	printf("%lf\n", solver->getObjValue());
+ //            assert(!solver->isProvenOptimal());
+ //            solver->setColBounds(i, 0.0, 1.0);
  //        }
         
  //        else if(cpropagation_var_is_to_fix(cp, i) == ACTIVATE)
  //        {
  //            toFix++;
  //            activate++;
- //            solver.setColBounds(i, 0.0, 0.0);
- //            solver.initialSolve();
- //            solver.branchAndBound();
- //            assert(solver.isBinary(i));
- //            assert(!solver.isProvenOptimal());
- //            solver.setColBounds(i, 0.0, 1.0);
+ //            solver->setColBounds(i, 0.0, 0.0);
+ //            solver->initialSolve();
+ //            solver->branchAndBound();
+ //            assert(solver->isBinary(i));
+ //            assert(!solver->isProvenOptimal());
+ //            solver->setColBounds(i, 0.0, 1.0);
  //        }
  //    }
  //    assert(toFix == cpropagation_get_num_vars_to_fix(cp));
- //    printf("%s %d %d %d %d %d %d %.2lf\n", problemName, solver.getNumCols(), solver.getNumRows(), solver.getNumElements(),
+ //    printf("%s %d %d %d %d %d %d %.2lf\n", problemName, solver->getNumCols(), solver->getNumRows(), solver->getNumElements(),
  //                                     toFix, activate, deactivate, cpTime);
     
     /* preprocessing and saving preprocessed lp */
     /* char output[256];
     sprintf(output, "%s_PP", problemName);
     OsiSolverInterface* preProcSolver = cpropagation_preprocess(cp, nindexes);
-    preProcsolver.writeLp(output); */
+    preProcsolver->writeLp(output); */
     // cpropagation_free(cp);
     // problem_free(&problem);
+
+    delete realSolver;
 
 	return EXIT_SUCCESS;
 }
