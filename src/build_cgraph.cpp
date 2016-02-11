@@ -90,8 +90,6 @@ CGraph *build_cgraph_pairwise_osi( const void *_solver )
     const char *ctype = solver->getColType();
     const CoinPackedMatrix *M = solver->getMatrixByRow();
     const double *rhs = solver->getRightHandSide();
-    const double *colLb = solver->getColLower();
-    const double *colUb = solver->getColUpper();
     const char *sense = solver->getRowSense();
     int nCols = solver->getNumCols();
     int nRows = solver->getNumRows();
@@ -116,7 +114,7 @@ CGraph *build_cgraph_pairwise_osi( const void *_solver )
         double sumNegCoefs = 0.0; //sum of all negative coefficients
         double minCoef = numeric_limits<double>::max();
         double maxCoef = numeric_limits<double>::min();
-        
+
         if ( (nElements<2) || (fabs(rhs[idxRow])>=LARGE_CONST) )
             continue;
 
@@ -152,7 +150,7 @@ CGraph *build_cgraph_pairwise_osi( const void *_solver )
         /* special case: GUB constraints */
         if ( DBL_EQUAL( minCoef, maxCoef ) &&  DBL_EQUAL( maxCoef, rhs[idxRow] * mult ) &&
             DBL_EQUAL(minCoef, 1.0) && ((sense[idxRow]=='E') || (sense[idxRow]=='L'))
-            && (row.getNumElements() > 3) ) 
+            && (row.getNumElements() > 3) )
         {
             processClique( row.getNumElements(), (const int *)idx, cgraph);
         }
@@ -175,7 +173,7 @@ CGraph *build_cgraph_pairwise_osi( const void *_solver )
                     if(newColumns[i].second <= -EPS)
                         sumNegCoefs += newColumns[i].second;
                 }
-                pairwiseAnalysis(cgraph, newColumns, sumNegCoefs, -1.0 * rhs[idxRow]);            
+                pairwiseAnalysis(cgraph, newColumns, sumNegCoefs, -1.0 * rhs[idxRow]);
             }
         }
     }
@@ -222,7 +220,7 @@ CGraph *build_cgraph_pairwise(const Problem *problem)
         double sumNegCoefs = 0.0; //sum of all negative coefficients
         double minCoef = numeric_limits<double>::max();
         double maxCoef = numeric_limits<double>::min();
-        
+
         if((nElements < 2) || (fabs(rhs) >= LARGE_CONST))
             continue;
 
@@ -326,7 +324,7 @@ CGraph *build_cgraph_pairwise_no_gub(const Problem *problem)
         double sumNegCoefs = 0.0; //sum of all negative coefficients
         double minCoef = numeric_limits<double>::max();
         double maxCoef = numeric_limits<double>::min();
-        
+
         if((nElements < 2) || (fabs(rhs) >= LARGE_CONST))
             continue;
 
@@ -357,7 +355,7 @@ CGraph *build_cgraph_pairwise_no_gub(const Problem *problem)
 
         if(nBools < nElements)
             continue;
-        
+
         pairwiseAnalysis(cgraph, columns, sumNegCoefs, rhs * mult);
 
         /*equality constraints are converted into two inequality constraints (<=).
@@ -542,8 +540,6 @@ CGraph *build_cgraph_osi( const void *_solver )
     const char *ctype = solver->getColType();
     const CoinPackedMatrix *M = solver->getMatrixByRow();
     const double *rhs = solver->getRightHandSide();
-    const double *colLb = solver->getColLower();
-    const double *colUb = solver->getColUpper();
     const char *sense = solver->getRowSense();
     int nCols = solver->getNumCols();
     int nRows = solver->getNumRows();
@@ -569,7 +565,7 @@ CGraph *build_cgraph_osi( const void *_solver )
         double sumNegCoefs = 0.0; //sum of all negative coefficients
         double minCoef = numeric_limits<double>::max();
         double maxCoef = numeric_limits<double>::min();
-        
+
         if ( (nElements<2) || (fabs(rhs[idxRow])>=LARGE_CONST) )
             continue;
 
@@ -604,7 +600,7 @@ CGraph *build_cgraph_osi( const void *_solver )
         /* special case: GUB constraints */
         if ( DBL_EQUAL( minCoef, maxCoef ) &&  DBL_EQUAL( maxCoef, rhs[idxRow] * mult ) &&
             DBL_EQUAL(minCoef, 1.0) && ((sense[idxRow]=='E') || (sense[idxRow]=='L'))
-            && (row.getNumElements() > 3) ) 
+            && (row.getNumElements() > 3) )
         {
             processClique( row.getNumElements(), (const int *)idx, cgraph );
         }
@@ -679,7 +675,7 @@ CGraph *build_cgraph( const Problem *problem )
         double sumNegCoefs = 0.0; //sum of all negative coefficients
         double minCoef = numeric_limits<double>::max();
         double maxCoef = numeric_limits<double>::min();
-        
+
         if((nElements < 2) || (fabs(rhs) >= LARGE_CONST))
             continue;
 
@@ -861,7 +857,7 @@ void cliqueComplementDetection(CGraph* cgraph, const vector<pair<int, double> >&
         int position = binary_search_complement(columns, partialLHS, rhs, 0, cliqueCompStart);
 
         assert(position >=0 && position < nElements);
-        
+
         int n = position + 2, idxs[n];
         cliqueCompSize = 1;
         idxs[0] = idx + nCols;

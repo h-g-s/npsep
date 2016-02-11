@@ -7,7 +7,6 @@
 #include <strings.h>
 #include <math.h>
 #include "clique_separation.h"
-#include "clique_extender.h"
 #include "strUtils.h"
 #include "memory.h"
 #include "grasp.h"
@@ -19,23 +18,24 @@
 
 
 /* default values */
-#define CLQ_SEP_DEF_MAX_DEPTH      3
-#define CLQ_SEP_DEF_MAX_PASSES     999
-#define CLQ_SEP_DEF_MIN_VIOL    0.02
-#define CLQ_SEP_DEF_MIN_FRAC   0.001
-#define CLQ_SEP_DEF_EXTEND         2
+#define CLQ_SEP_DEF_MAX_DEPTH     3
+#define CLQ_SEP_DEF_MAX_PASSES    999
+#define CLQ_SEP_DEF_MIN_VIOL      0.02
+#define CLQ_SEP_DEF_MIN_FRAC      0.001
+#define CLQ_SEP_DEF_EXTEND        CLQEM_RANDOM
 #define CLQ_SEP_DEF_ENUM          10
-#define CLQ_SEP_DEF_VERBOSE        0
+#define CLQ_SEP_DEF_VERBOSE       0
 #define CLQ_SEP_DEF_TLBK          20   /* time limit bron-kerbosch */
 
 /* command line param names */
-#define CLQ_SEP_STR_MAX_DEPTH   "maxDepth"
-#define CLQ_SEP_STR_MAX_PASSES  "maxPasses"
-#define CLQ_SEP_STR_MIN_VIOL    "minViol"
-#define CLQ_SEP_STR_MIN_FRAC    "minFrac"
-#define CLQ_SEP_STR_EXTEND      "extendC"
-#define CLQ_SEP_STR_ENUM        "enumM"
-#define CLQ_SEP_STR_VERBOSE     "verbose"
+#define CLQ_SEP_STR_MAX_DEPTH       "maxDepth"
+#define CLQ_SEP_STR_MAX_PASSES      "maxPasses"
+#define CLQ_SEP_STR_MIN_VIOL        "minViol"
+#define CLQ_SEP_STR_MIN_FRAC        "minFrac"
+#define CLQ_SEP_STR_EXTEND          "extendC"
+#define CLQ_SEP_STR_ENUM            "enumM"
+#define CLQ_SEP_STR_VERBOSE         "verbose"
+#define CLQ_SEP_STR_MAX_CLQE_SIZE   "maxClqESize" //max size to extend a clique
 
 double fracPart( const double x );
 
@@ -72,7 +72,7 @@ struct _CliqueSeparation
     /* maxPasses: default 3 */
     int maxPasses;
 
-    /* minViol: default 0.05 */
+    /* minViol: default 0.02 */
     double minViol;
 
     /* extendCliques: 0 - off  1 - extend randomly  2 - greedy extend (default) */
@@ -181,7 +181,6 @@ void clq_sep_separate( CliqueSeparation *sep, const double x[] )
         char inQueue[csize]; //'1' if a vertices is already in queue - '0' otherwise
         neighs = xmalloc(sizeof(int) * csize * 10);
         vint_queue_init(&queue, csize);
-        int deleted = 0;
 
         for(i = 0; i < csize; i++)
         {
@@ -202,26 +201,6 @@ void clq_sep_separate( CliqueSeparation *sep, const double x[] )
             {
                 iv[i] = cgraph_degree(cgraph, i);
                 inQueue[i] = '0';
-
-                //trying to delete variables that do not forms a violated clique:
-                /*int j, nsize = cgraph_get_all_conflicting(cgraph, i, neighs, csize * 10);
-                double maxViol = x[i];
-                for(j = 0; j < nsize; j++)
-                	if(fracPart(x[neighs[j]]) >= minFrac)
-                    	maxViol += x[neighs[j]];
-                
-                if(maxViol < sep->minViol)
-                {
-                    iv[i] = -1;
-                    vint_queue_push(&queue, i);
-                    inQueue[i] = '1';
-                    deleted++;
-                }
-                else
-                {
-                    iv[i] = cgraph_degree(cgraph, i);
-                    inQueue[i] = '0';
-                }*/
             }
         }
 
@@ -396,7 +375,6 @@ void clq_sep_separate( CliqueSeparation *sep, const double x[] )
             clqem = CLQEM_PRIORITY_GREEDY;
         }
 
-
         int i;
         for ( i=0 ; (i<clq_set_number_of_cliques( clqSetOrig )) ; ++i )
             if (!extended[i])
@@ -524,6 +502,12 @@ void clq_sep_set_params_parse_cmd_line( CliqueSeparation *clqsp, const int argc,
         if ( strcasecmp( CLQ_SEP_STR_VERBOSE, paramName ) == 0 )
         {
             clqsp->verbose = atoi( paramValue );
+            continue;
+        }
+
+        if ( strcasecmp( CLQ_SEP_STR_MAX_CLQE_SIZE, paramName ) == 0 )
+        {
+            clqe_set_max_clqe_size(clqsp->clqe, atoi( paramValue ));
             continue;
         }
     }
@@ -664,3 +648,13 @@ void clq_sep_set_verbose( CliqueSeparation *sep, const char verbose )
     sep->verbose = verbose;
 }
 
+void clq_sep_set_extend_method( CliqueSeparation *sep, const int extendC )
+{
+    assert(extendC >= 0 && extendC <= 2);
+    sep->extendCliques = extendC;
+}
+
+int clq_sep_get_extend_method( CliqueSeparation *sep )
+{
+    return sep->extendCliques;
+}

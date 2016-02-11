@@ -5,6 +5,7 @@ typedef struct _CliqueSeparation CliqueSeparation;
 
 #include "cgraph.h"
 #include "clique.h"
+#include "clique_extender.h"
 
 /* origGraph is the original conflict graph,
    containing all nodes. separation will always
@@ -25,6 +26,10 @@ int clq_sep_get_verbose( CliqueSeparation *sep );
 void clq_sep_set_min_viol( CliqueSeparation *sep, const double viol );
 
 double clq_sep_get_min_viol( CliqueSeparation *sep );
+
+void clq_sep_set_extend_method( CliqueSeparation *sep, const int extendC );
+
+int clq_sep_get_extend_method( CliqueSeparation *sep );
 
 /* returns separated clique inequalities */
 const CliqueSet *clq_sep_get_cliques( CliqueSeparation *sep );

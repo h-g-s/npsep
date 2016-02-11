@@ -1,5 +1,5 @@
 INCLUDES = \
-	-I$(top_srcdir)/include/ -I$(top_srcdir)/CglEClique/  -I/usr/include/coin/
+	-I/usr/include/coin/
 
 AM_CFLAGS= -fopenmp
 AM_CXXFLAGS= -fopenmp
@@ -48,9 +48,9 @@ cbcr_SOURCES=cgraph.c \
 				 problem.cpp\
 				 build_cgraph.cpp \
 				 cbcroot.cpp \
+				 CglEClique.cpp \
 				 spaths.c \
 				 oddhs.c \
-				 ../CglEClique/CglEClique.cpp \
 				 macros.h
 
 

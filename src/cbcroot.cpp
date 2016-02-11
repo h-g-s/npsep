@@ -1,6 +1,6 @@
-#include <OsiClpSolverInterface.hpp>
 #include <CglClique.hpp>
-#include <CglEClique.hpp>
+#include <OsiClpSolverInterface.hpp>
+#include "CglEClique.hpp"
 extern "C"
 {
     #include "strUtils.h"
@@ -22,7 +22,7 @@ typedef enum
 
 SeparationMethod sepMethod = Npsep;
 char preproc = 0;
-string optFile;
+string optFile, output;
 map<string, double> optimals;
 
 void readLP(OsiSolverInterface *solver, const char *fileName)
@@ -62,6 +62,11 @@ void parseParameters( int argc, char **argv)
         if (strcmp( pName, "optFile" )==0)
         {
             optFile = pValue;
+            continue;
+        }
+        if (strcmp( pName, "log" )==0)
+        {
+            output = pValue;
             continue;
         }
     }
@@ -172,6 +177,9 @@ int main( int argc, char **argv )
         exit( EXIT_FAILURE );
     }
 
+    char problemName[ 256 ];
+    getFileName( problemName, argv[1] );
+
     clock_t start = clock();
     OsiClpSolverInterface *realSolver = new OsiClpSolverInterface();
     realSolver->getModelPtr()->setPerturbation(50); /* makes CLP faster for hard instances */
@@ -180,9 +188,18 @@ int main( int argc, char **argv )
     parseParameters( argc, argv );
     readLP( solver, argv[1] );
 
+    FILE *log = NULL;
+    if(!output.empty())
+    {
+        log = fopen(output.c_str(), "a");
+        if(!log)
+        {
+            printf("Could not open the file!\n");
+            exit(EXIT_FAILURE);
+        }
+    }
+
     const int numCols = solver->getNumCols(), numRows = solver->getNumRows();
-    char problemName[ 256 ];
-    getFileName( problemName, argv[1] );
     int pass = 0, newCuts = 0, totalCuts = 0;
     double pTime, opt, cgTime;
     CGraph *cgraph = NULL;
@@ -353,6 +370,15 @@ int main( int argc, char **argv )
         }
     }
     while ( (newCuts>0) && (pass<MAX_PASSES) ) ;
+
+    if(log)
+    {
+        double totalTime = ((double)(clock()-start)) / ((double)CLOCKS_PER_SEC);
+        fprintf(log, "%s %.2lf %d %d %.7lf", problemName, totalTime, pass - 1, totalCuts, solver->getObjValue());
+        if(!optFile.empty())
+            fprintf(log, " %.7lf", abs_mip_gap(solver->getObjValue(), opt));
+        fprintf(log, "\n");
+    }
 
     if(cgraph)
     	cgraph_free( &cgraph );

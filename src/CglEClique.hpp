@@ -2,7 +2,6 @@
 #define CGLECLIQUE_HPP
 
 #include <CglCutGenerator.hpp>
-#include <CglCutGenerator.hpp>
 extern "C"
 {
 #include "clique_separation.h"

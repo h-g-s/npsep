@@ -31,6 +31,10 @@ const CliqueSet *clqe_get_cliques( CliqueExtender *clqe );
 /* sets up costs for n variables */
 void clqe_set_costs( CliqueExtender *clqe, const int costs[], const int n );
 
+/* sets up the maximum size to extend a clique */
+void clqe_set_max_clqe_size( CliqueExtender *clqe, const int max_size );
+int clqe_get_max_clqe_size( CliqueExtender *clqe );
+
 const int *clqe_get_costs( CliqueExtender *clqe );
 
 void clqe_set_clear( CliqueExtender *clqe );

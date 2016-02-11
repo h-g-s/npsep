@@ -16,9 +16,10 @@ using namespace std;
 CglEClique::CglEClique() :
    colNames(NULL),
    _cgraph(NULL),
-   genOddHoles(true),
    argc(0),
-   argv(NULL)
+   argv(NULL),
+   genOddHoles(true)
+
 {
 }
 
@@ -27,6 +28,8 @@ CglEClique::CglEClique(const CglEClique& rhs)
    this->_cgraph = rhs._cgraph;
    this->genOddHoles = rhs.genOddHoles;
    this->colNames = rhs.colNames;
+   this->argc = rhs.argc;
+   this->argv = rhs.argv;
 }
 
 CglCutGenerator* CglEClique::clone() const
@@ -36,6 +39,8 @@ CglCutGenerator* CglEClique::clone() const
    cglec->_cgraph = this->_cgraph;
    cglec->genOddHoles = this->genOddHoles;
    cglec->colNames = this->colNames;
+   cglec->argc = this->argc;
+   cglec->argv = this->argv;
 
    return static_cast<CglCutGenerator*>(cglec);
 }
@@ -70,7 +75,7 @@ void CglEClique::generateCuts( const OsiSolverInterface &si, OsiCuts &cs, const 
    //clock_t start = clock();
 
    const CGraph *cgraph;
-   const int numCols = si.getNumCols(), numRows = si.getNumRows();
+   const int numCols = si.getNumCols();
 
    if (_cgraph)
       cgraph = _cgraph;
@@ -87,7 +92,10 @@ void CglEClique::generateCuts( const OsiSolverInterface &si, OsiCuts &cs, const 
    double colSol[numCols*2], rCost[numCols*2];
    fillColSolution(si, colSol);
    fillReducedCost(si, rCost);
-   clq_sep_set_rc( sep, rCost );
+
+   if(clq_sep_get_extend_method(sep) == CLQEM_PRIORITY_GREEDY)
+      clq_sep_set_rc(sep, rCost);
+
    clq_sep_separate( sep, colSol );
 
    const CliqueSet *clqSet = clq_sep_get_cliques( sep );
@@ -121,7 +129,7 @@ void CglEClique::generateCuts( const OsiSolverInterface &si, OsiCuts &cs, const 
             else
             {
                printf("(%d %s %g) ", el[j], (*colNames)[el[j]].c_str(), -1.0);
-               lhs -= colSol[el[j]-numCols];  
+               lhs -= colSol[el[j]-numCols];
                rhs -= 1.0;
             }
          }
@@ -181,7 +189,7 @@ void CglEClique::generateCuts( const OsiSolverInterface &si, OsiCuts &cs, const 
       }
 
       osrc.setRow( size, idxs, coefs );
-      osrc.setUb( rhs ); 
+      osrc.setUb( rhs );
       osrc.setGloballyValid();
       CoinAbsFltEq equal(1.0e-12);
       cs.insertIfNotDuplicate(osrc,equal);
@@ -191,6 +199,7 @@ void CglEClique::generateCuts( const OsiSolverInterface &si, OsiCuts &cs, const 
    if (genOddHoles)
    {
       OddHoleSep *oddhs = oddhs_create();
+
       oddhs_search_odd_holes( oddhs, numCols*2, colSol, rCost, cgraph );
 
       /* adding odd holes */

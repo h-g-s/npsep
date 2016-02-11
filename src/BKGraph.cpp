@@ -297,7 +297,7 @@ int BKGraph::BronKerbosch(Clique *C, Clique*P, Clique *S, int minWeight, double 
                   }
               }
          //     printf("\n");
-             int stat = clq_set_add(clqSet, cont, nodes, retornarPeso(C));
+              clq_set_add(clqSet, cont, nodes, retornarPeso(C));
         }
     }
 
