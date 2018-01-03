@@ -1,0 +1,814 @@
+# depslib dependency file v1.0
+1515008335 source:/home/samuel/Downloads/npsep/src/BKGraph.cpp
+	<cassert>
+	<climits>
+	"BKGraph.hpp"
+
+1515006668 /home/samuel/Downloads/npsep/include/BKGraph.hpp
+	"BKVertex.hpp"
+	<string>
+	<iostream>
+	<cstdio>
+	<cstdlib>
+	<set>
+	<ctime>
+	<vector>
+	"cgraph.h"
+	"clique.h"
+	"memory.h"
+
+1487881151 /home/samuel/Downloads/npsep/include/BKVertex.hpp
+
+1507742770 /home/samuel/Downloads/npsep/include/cgraph.h
+
+1505305116 /home/samuel/Downloads/npsep/include/clique.h
+	"cgraph.h"
+	"vint_set.h"
+
+1514997324 /home/samuel/Downloads/npsep/include/vint_set.h
+	<stddef.h>
+
+1480447649 /home/samuel/Downloads/npsep/include/memory.h
+	<stdlib.h>
+	<sys/types.h>
+
+1487881151 source:/home/samuel/Downloads/npsep/src/BKVertex.cpp
+	"BKVertex.hpp"
+
+1515007930 source:/home/samuel/Downloads/npsep/src/bron_kerbosch.cpp
+	"BKGraph.hpp"
+	"bron_kerbosch.h"
+
+1515006944 /home/samuel/Downloads/npsep/include/bron_kerbosch.h
+	"cgraph.h"
+	"clique.h"
+
+1514909376 source:/home/samuel/Downloads/npsep/src/build_cgraph.cpp
+	<cstring>
+	<cmath>
+	<limits>
+	<cfloat>
+	<algorithm>
+	<climits>
+	<vector>
+	<assert.h>
+	<stdio.h>
+	<omp.h>
+	"OsiSolverInterface.hpp"
+	"CoinTime.hpp"
+	"memory.h"
+	"node_heap.h"
+	"build_cgraph.h"
+	"lp.h"
+
+1514896672 /usr/include/coin/OsiSolverInterface.hpp
+	<cstdlib>
+	<string>
+	<vector>
+	"CoinTypes.hpp"
+	"CoinMessageHandler.hpp"
+	"CoinPackedVectorBase.hpp"
+	"CoinPackedMatrix.hpp"
+	"CoinWarmStart.hpp"
+	"CoinFinite.hpp"
+	"CoinError.hpp"
+	"OsiCollections.hpp"
+	"OsiSolverParameters.hpp"
+
+1514896672 /usr/include/coin/CoinTypes.hpp
+	"CoinUtilsConfig.h"
+	<stdint.h>
+	<cstdint>
+
+1514896672 /usr/include/coin/CoinUtilsConfig.h
+
+1514896672 /usr/include/coin/CoinMessageHandler.hpp
+	"CoinUtilsConfig.h"
+	"CoinPragma.hpp"
+	"CoinTypes.hpp"
+	<iostream>
+	<cstdio>
+	<string>
+	<vector>
+
+1514896672 /usr/include/coin/CoinPragma.hpp
+
+1514896672 /usr/include/coin/CoinPackedVectorBase.hpp
+	<set>
+	<map>
+	"CoinPragma.hpp"
+	"CoinError.hpp"
+
+1514896672 /usr/include/coin/CoinError.hpp
+	<string>
+	<iostream>
+	<cassert>
+	<cstring>
+	"CoinUtilsConfig.h"
+	"CoinPragma.hpp"
+
+1514896672 /usr/include/coin/CoinPackedMatrix.hpp
+	"CoinError.hpp"
+	"CoinTypes.hpp"
+	"CoinPackedVectorBase.hpp"
+	"CoinShallowPackedVector.hpp"
+
+1514896672 /usr/include/coin/CoinShallowPackedVector.hpp
+	"CoinError.hpp"
+	"CoinPackedVectorBase.hpp"
+
+1514896672 /usr/include/coin/CoinWarmStart.hpp
+
+1514896672 /usr/include/coin/CoinFinite.hpp
+	<limits>
+
+1514896672 /usr/include/coin/OsiCollections.hpp
+	<vector>
+
+1514896672 /usr/include/coin/OsiSolverParameters.hpp
+
+1514896672 /usr/include/coin/CoinTime.hpp
+	<ctime>
+	<sys/time.h>
+	<sys/resource.h>
+	<windows.h>
+	<sys/types.h>
+	<sys/timeb.h>
+	<sys/time.h>
+	<windows.h>
+	<fstream>
+
+1487881151 /home/samuel/Downloads/npsep/include/node_heap.h
+
+1514908106 /home/samuel/Downloads/npsep/include/build_cgraph.h
+	"cgraph.h"
+
+1514998944 /home/samuel/Downloads/npsep/include/lp.h
+	"cgraph.h"
+	"cut.h"
+
+1501610794 /home/samuel/Downloads/npsep/include/clique_separation.h
+	"cgraph.h"
+	"clique.h"
+	"clique_extender.h"
+
+1500051707 /home/samuel/Downloads/npsep/include/clique_extender.h
+	"cgraph.h"
+
+1501622582 /home/samuel/Downloads/npsep/include/cut.h
+
+1514918864 source:/home/samuel/Downloads/npsep/src/cgraph.c
+	<ctype.h>
+	<stdio.h>
+	<stdlib.h>
+	<assert.h>
+	<string.h>
+	<limits.h>
+	<math.h>
+	<string.h>
+	"cgraph.h"
+	"memory.h"
+	"vint_set.h"
+	"vectormgm.h"
+	"clique.h"
+	"macros.h"
+
+1487881151 /home/samuel/Downloads/npsep/include/vectormgm.h
+	<stdlib.h>
+	<stdio.h>
+
+1480447649 /home/samuel/Downloads/npsep/include/macros.h
+	<stdlib.h>
+	<stdio.h>
+	<math.h>
+	<omp.h>
+
+1505225744 source:/home/samuel/Downloads/npsep/src/clique.c
+	<limits.h>
+	<stdio.h>
+	<stdlib.h>
+	<assert.h>
+	<string.h>
+	<math.h>
+	"clique.h"
+	"vint_set.h"
+	"vectormgm.h"
+	"memory.h"
+	"macros.h"
+	"strutils.h"
+
+1505307293 /home/samuel/Downloads/npsep/include/strutils.h
+	<string.h>
+	<ctype.h>
+
+1515008030 source:/home/samuel/Downloads/npsep/src/clique_extender.c
+	<stdlib.h>
+	<assert.h>
+	<limits.h>
+	<string.h>
+	<stdio.h>
+	<math.h>
+	"cgraph.h"
+	"memory.h"
+	"clique.h"
+	"vint_set.h"
+	"clique_extender.h"
+	"vectormgm.h"
+	"macros.h"
+	"bron_kerbosch.h"
+
+1515007598 source:/home/samuel/Downloads/npsep/src/clique_separation.c
+	<stdio.h>
+	<string.h>
+	<time.h>
+	<assert.h>
+	<limits.h>
+	<stdlib.h>
+	<strings.h>
+	<math.h>
+	<float.h>
+	"clique_separation.h"
+	"memory.h"
+	"vectormgm.h"
+	"macros.h"
+	"bron_kerbosch.h"
+	"vint_queue.h"
+	"strutils.h"
+
+1487881151 /home/samuel/Downloads/npsep/include/vint_queue.h
+
+1515003010 source:/home/samuel/Downloads/npsep/src/cut.c
+	"cut.h"
+	"memory.h"
+	"macros.h"
+	<string.h>
+	<assert.h>
+	<float.h>
+
+1515000816 source:/home/samuel/Downloads/npsep/src/lp.cpp
+	<cstddef>
+	<cstring>
+	<cstdlib>
+	<cstdio>
+	<cstdarg>
+	<cassert>
+	<cfloat>
+	<climits>
+	<cmath>
+	<set>
+	<algorithm>
+	<omp.h>
+	<ctime>
+	<cctype>
+	<string>
+	<vector>
+	<map>
+	"lp.h"
+	"gurobi_c.h"
+	<sstream>
+	<glpk.h>
+	<OsiSolverInterface.hpp>
+	<OsiCbcSolverInterface.hpp>
+	<OsiClpSolverInterface.hpp>
+	<CoinBuild.hpp>
+	<CglPreProcess.hpp>
+	<coin/OsiSolverInterface.hpp>
+	<coin/OsiClpSolverInterface.hpp>
+	<coin/OsiCbcSolverInterface.hpp>
+	<coin/CoinBuild.hpp>
+	<coin/CglPreProcess.hpp>
+	<cplex.h>
+	<CglKnapsackCover.hpp>
+	<CglFlowCover.hpp>
+	<CglZeroHalf.hpp>
+	<CglMixedIntegerRounding.hpp>
+	<CglTwomir.hpp>
+	<CglLandP.hpp>
+	<CglRedSplit.hpp>
+	<CglGMI.hpp>
+	"clique_separation.h"
+	"oddhs.h"
+	"knapsack_separation.hpp"
+
+1514896678 /usr/include/coin/OsiCbcSolverInterface.hpp
+	<string>
+	<cfloat>
+	<map>
+	"CbcModel.hpp"
+	"CoinPackedMatrix.hpp"
+	"OsiSolverInterface.hpp"
+	"CbcStrategy.hpp"
+	"CoinWarmStartBasis.hpp"
+
+1514896677 /usr/include/coin/CbcModel.hpp
+	<string>
+	<vector>
+	"CoinMessageHandler.hpp"
+	"OsiSolverInterface.hpp"
+	"OsiBranchingObject.hpp"
+	"OsiCuts.hpp"
+	"CoinWarmStartBasis.hpp"
+	"CbcCompareBase.hpp"
+	"CbcCountRowCut.hpp"
+	"CbcMessage.hpp"
+	"CbcEventHandler.hpp"
+	"ClpDualRowPivot.hpp"
+
+1514896672 /usr/include/coin/OsiBranchingObject.hpp
+	<cassert>
+	<string>
+	<vector>
+	"CoinError.hpp"
+	"CoinTypes.hpp"
+
+1514896672 /usr/include/coin/OsiCuts.hpp
+	"CoinPragma.hpp"
+	<cmath>
+	<cfloat>
+	"OsiCollections.hpp"
+	"OsiRowCut.hpp"
+	"OsiColCut.hpp"
+	"CoinFloatEqual.hpp"
+
+1514896672 /usr/include/coin/OsiRowCut.hpp
+	"CoinPackedVector.hpp"
+	"OsiCollections.hpp"
+	"OsiCut.hpp"
+
+1514896672 /usr/include/coin/CoinPackedVector.hpp
+	<map>
+	"CoinPragma.hpp"
+	"CoinPackedVectorBase.hpp"
+	"CoinSort.hpp"
+
+1514896672 /usr/include/coin/CoinSort.hpp
+	<functional>
+	<new>
+	<algorithm>
+	"CoinDistance.hpp"
+
+1514896672 /usr/include/coin/CoinDistance.hpp
+	<iterator>
+
+1514896672 /usr/include/coin/OsiCut.hpp
+	"OsiCollections.hpp"
+	"OsiSolverInterface.hpp"
+
+1514896672 /usr/include/coin/OsiColCut.hpp
+	<string>
+	"CoinPackedVector.hpp"
+	"OsiCollections.hpp"
+	"OsiCut.hpp"
+
+1514896672 /usr/include/coin/CoinFloatEqual.hpp
+	<algorithm>
+	<cmath>
+	"CoinFinite.hpp"
+
+1514896672 /usr/include/coin/CoinWarmStartBasis.hpp
+	<vector>
+	"CoinSort.hpp"
+	"CoinHelperFunctions.hpp"
+	"CoinWarmStart.hpp"
+
+1514896672 /usr/include/coin/CoinHelperFunctions.hpp
+	"CoinUtilsConfig.h"
+	<direct.h>
+	<cctype>
+	<cctype>
+	<unistd.h>
+	<cstdlib>
+	<cstdio>
+	<algorithm>
+	"CoinTypes.hpp"
+	"CoinError.hpp"
+
+1514896677 /usr/include/coin/CbcCompareBase.hpp
+	"CbcNode.hpp"
+	"CbcConfig.h"
+
+1514896677 /usr/include/coin/CbcNode.hpp
+	<string>
+	<vector>
+	"CoinWarmStartBasis.hpp"
+	"CoinSearchTree.hpp"
+	"CbcBranchBase.hpp"
+	"CbcNodeInfo.hpp"
+	"CbcFullNodeInfo.hpp"
+	"CbcPartialNodeInfo.hpp"
+
+1514896672 /usr/include/coin/CoinSearchTree.hpp
+	<vector>
+	<algorithm>
+	<cmath>
+	<string>
+	"CoinFinite.hpp"
+	"CoinHelperFunctions.hpp"
+
+1514896677 /usr/include/coin/CbcBranchBase.hpp
+	<string>
+	<vector>
+	"OsiBranchingObject.hpp"
+	"CbcObject.hpp"
+	"CbcBranchingObject.hpp"
+	"CbcBranchDecision.hpp"
+	"CbcConsequence.hpp"
+	"CbcObjectUpdateData.hpp"
+
+1514896678 /usr/include/coin/CbcObject.hpp
+	<string>
+	<vector>
+	"OsiBranchingObject.hpp"
+
+1514896677 /usr/include/coin/CbcBranchingObject.hpp
+	<string>
+	<vector>
+	"CbcBranchBase.hpp"
+	"OsiBranchingObject.hpp"
+
+1514896677 /usr/include/coin/CbcBranchDecision.hpp
+	"CbcBranchBase.hpp"
+
+1514896677 /usr/include/coin/CbcConsequence.hpp
+
+1514896678 /usr/include/coin/CbcObjectUpdateData.hpp
+	"CbcObject.hpp"
+
+1514896677 /usr/include/coin/CbcNodeInfo.hpp
+	<string>
+	<vector>
+	"CoinWarmStartBasis.hpp"
+	"CoinSearchTree.hpp"
+	"CbcBranchBase.hpp"
+
+1514896677 /usr/include/coin/CbcFullNodeInfo.hpp
+	<string>
+	<vector>
+	"CoinWarmStartBasis.hpp"
+	"CoinSearchTree.hpp"
+	"CbcBranchBase.hpp"
+	"CbcNodeInfo.hpp"
+
+1514896678 /usr/include/coin/CbcPartialNodeInfo.hpp
+	<string>
+	<vector>
+	"CoinWarmStartBasis.hpp"
+	"CoinSearchTree.hpp"
+	"CbcBranchBase.hpp"
+	"CbcNodeInfo.hpp"
+
+1514896677 /usr/include/coin/CbcConfig.h
+
+1514896677 /usr/include/coin/CbcCountRowCut.hpp
+
+1514896677 /usr/include/coin/CbcMessage.hpp
+	"CoinMessageHandler.hpp"
+
+1514896677 /usr/include/coin/CbcEventHandler.hpp
+	<cstddef>
+	<map>
+
+1514896674 /usr/include/coin/ClpDualRowPivot.hpp
+
+1514896678 /usr/include/coin/CbcStrategy.hpp
+	"CbcModel.hpp"
+
+1514896674 /usr/include/coin/OsiClpSolverInterface.hpp
+	<string>
+	<cfloat>
+	<map>
+	"ClpSimplex.hpp"
+	"ClpLinearObjective.hpp"
+	"CoinPackedMatrix.hpp"
+	"OsiSolverInterface.hpp"
+	"CoinWarmStartBasis.hpp"
+	"ClpEventHandler.hpp"
+	"ClpNode.hpp"
+	"CoinIndexedVector.hpp"
+	"CoinFinite.hpp"
+
+1514896674 /usr/include/coin/ClpSimplex.hpp
+	<iostream>
+	<cfloat>
+	"ClpModel.hpp"
+	"ClpMatrixBase.hpp"
+	"ClpSolve.hpp"
+	"ClpConfig.h"
+	"CoinIndexedVector.hpp"
+	"AbcCommon.hpp"
+	"CoinAbcCommon.hpp"
+	<cilk/cilk.h>
+	<pthread.h>
+
+1514896674 /usr/include/coin/ClpModel.hpp
+	"ClpConfig.h"
+	<iostream>
+	<cassert>
+	<cmath>
+	<vector>
+	<string>
+	"ClpPackedMatrix.hpp"
+	"CoinMessageHandler.hpp"
+	"CoinHelperFunctions.hpp"
+	"CoinTypes.hpp"
+	"CoinFinite.hpp"
+	"ClpParameters.hpp"
+	"ClpObjective.hpp"
+
+1514896674 /usr/include/coin/ClpConfig.h
+
+1514896674 /usr/include/coin/ClpPackedMatrix.hpp
+	"CoinPragma.hpp"
+	"ClpMatrixBase.hpp"
+	"ClpPrimalColumnSteepest.hpp"
+	<pthread.h>
+
+1514896674 /usr/include/coin/ClpMatrixBase.hpp
+	"CoinPragma.hpp"
+	"CoinTypes.hpp"
+	"CoinPackedMatrix.hpp"
+
+1514896674 /usr/include/coin/ClpPrimalColumnSteepest.hpp
+	"ClpPrimalColumnPivot.hpp"
+	<bitset>
+
+1514896674 /usr/include/coin/ClpPrimalColumnPivot.hpp
+
+1514896674 /usr/include/coin/ClpParameters.hpp
+
+1514896674 /usr/include/coin/ClpObjective.hpp
+
+1514896674 /usr/include/coin/ClpSolve.hpp
+	"ClpConfig.h"
+	"AbcCommon.hpp"
+
+1514896672 /usr/include/coin/CoinIndexedVector.hpp
+	<map>
+	"CoinFinite.hpp"
+	"CoinPackedVectorBase.hpp"
+	"CoinSort.hpp"
+	"CoinHelperFunctions.hpp"
+	<cassert>
+
+1514896674 /usr/include/coin/ClpLinearObjective.hpp
+	"ClpObjective.hpp"
+
+1514896674 /usr/include/coin/ClpEventHandler.hpp
+	"ClpSimplex.hpp"
+
+1514896674 /usr/include/coin/ClpNode.hpp
+	"CoinPragma.hpp"
+
+1514896672 /usr/include/coin/CoinBuild.hpp
+	"CoinPragma.hpp"
+	"CoinTypes.hpp"
+	"CoinFinite.hpp"
+
+1514896675 /usr/include/coin/CglPreProcess.hpp
+	<string>
+	<vector>
+	"CoinMessageHandler.hpp"
+	"OsiSolverInterface.hpp"
+	"CglStored.hpp"
+	"OsiPresolve.hpp"
+	"CglCutGenerator.hpp"
+
+1514896676 /usr/include/coin/CglStored.hpp
+	<string>
+	"CglCutGenerator.hpp"
+
+1514896676 /usr/include/coin/CglCutGenerator.hpp
+	"OsiCuts.hpp"
+	"OsiSolverInterface.hpp"
+	"CglTreeInfo.hpp"
+
+1514896676 /usr/include/coin/CglTreeInfo.hpp
+	"OsiCuts.hpp"
+	"OsiSolverInterface.hpp"
+	"CoinHelperFunctions.hpp"
+
+1514896672 /usr/include/coin/OsiPresolve.hpp
+	"OsiSolverInterface.hpp"
+	"CoinPresolveMatrix.hpp"
+
+1514896672 /usr/include/coin/CoinPresolveMatrix.hpp
+	"CoinPragma.hpp"
+	"CoinPackedMatrix.hpp"
+	"CoinMessage.hpp"
+	"CoinTime.hpp"
+	<cmath>
+	<cassert>
+	<cfloat>
+	<cassert>
+	<cstdlib>
+	"CoinFinite.hpp"
+
+1514896672 /usr/include/coin/CoinMessage.hpp
+	"CoinMessageHandler.hpp"
+
+1479834719 /opt/ibm/ILOG/CPLEX_Studio127/cplex/include/ilcplex/cplex.h
+	"cpxconst.h"
+	"cpxconst.h"
+
+1479834719 /opt/ibm/ILOG/CPLEX_Studio127/cplex/include/ilcplex/cpxconst.h
+	<stdint.h>
+	<stdlib.h>
+	<limits.h>
+	<stdio.h>
+
+1514896675 /usr/include/coin/CglKnapsackCover.hpp
+	<string>
+	"CglCutGenerator.hpp"
+	"CglTreeInfo.hpp"
+
+1514896675 /usr/include/coin/CglFlowCover.hpp
+	<iostream>
+	"CoinError.hpp"
+	"CglCutGenerator.hpp"
+
+1514896675 /usr/include/coin/CglZeroHalf.hpp
+	<string>
+	"CglCutGenerator.hpp"
+	"CoinPackedMatrix.hpp"
+	"Cgl012cut.hpp"
+
+1514896675 /usr/include/coin/Cgl012cut.hpp
+	<cstdio>
+	<cstdlib>
+	<cmath>
+
+1514896675 /usr/include/coin/CglMixedIntegerRounding.hpp
+	<iostream>
+	<fstream>
+	"CoinError.hpp"
+	"CglCutGenerator.hpp"
+
+1514896675 /usr/include/coin/CglTwomir.hpp
+	<string>
+	"CglCutGenerator.hpp"
+	"CoinFactorization.hpp"
+	<stdlib.h>
+	<stdio.h>
+	<stdarg.h>
+	<math.h>
+	<float.h>
+	<cassert>
+	<iostream.h>
+
+1514896672 /usr/include/coin/CoinFactorization.hpp
+	<iostream>
+	<string>
+	<cassert>
+	<cstdio>
+	<cmath>
+	"CoinTypes.hpp"
+	"CoinIndexedVector.hpp"
+
+1514896675 /usr/include/coin/CglLandP.hpp
+	"CglLandPValidator.hpp"
+	"CglCutGenerator.hpp"
+	"CglParam.hpp"
+	<iostream>
+
+1514896675 /usr/include/coin/CglLandPValidator.hpp
+	"OsiSolverInterface.hpp"
+	"CglParam.hpp"
+	<vector>
+
+1514896676 /usr/include/coin/CglParam.hpp
+	"CglConfig.h"
+	"CoinFinite.hpp"
+
+1514896675 /usr/include/coin/CglConfig.h
+
+1514896675 /usr/include/coin/CglRedSplit.hpp
+	"CglCutGenerator.hpp"
+	"CglRedSplitParam.hpp"
+
+1514896675 /usr/include/coin/CglRedSplitParam.hpp
+	"CglParam.hpp"
+
+1514896675 /usr/include/coin/CglGMI.hpp
+	"CglCutGenerator.hpp"
+	"CglGMIParam.hpp"
+	"CoinWarmStartBasis.hpp"
+	"CoinFactorization.hpp"
+
+1514896675 /usr/include/coin/CglGMIParam.hpp
+	"CglParam.hpp"
+
+1515003769 source:/home/samuel/Downloads/npsep/src/main.cpp
+	<stdio.h>
+	<stdlib.h>
+	<assert.h>
+	<string>
+	<math.h>
+	<float.h>
+	<map>
+	<vector>
+	"lp.h"
+	"strutils.h"
+	"build_cgraph.h"
+
+1480447649 source:/home/samuel/Downloads/npsep/src/memory.c
+	<stdio.h>
+	<stdlib.h>
+	"memory.h"
+
+1487881151 source:/home/samuel/Downloads/npsep/src/node_heap.c
+	<stdio.h>
+	<assert.h>
+	<stdlib.h>
+	<limits.h>
+	<string.h>
+	"memory.h"
+	"node_heap.h"
+	<execinfo.h>
+
+1505304965 source:/home/samuel/Downloads/npsep/src/strutils.c
+	<stdio.h>
+	<stdlib.h>
+	<ctype.h>
+	"macros.h"
+	"strutils.h"
+
+1487881151 source:/home/samuel/Downloads/npsep/src/vectormgm.c
+	<stdlib.h>
+	<stdio.h>
+	"memory.h"
+
+1487881151 source:/home/samuel/Downloads/npsep/src/vint_queue.c
+	<stdlib.h>
+	<stdio.h>
+	"vint_queue.h"
+	"memory.h"
+
+1514997277 source:/home/samuel/Downloads/npsep/src/vint_set.c
+	<stdlib.h>
+	<assert.h>
+	<stdio.h>
+	<string.h>
+	<limits.h>
+	<stddef.h>
+	"memory.h"
+	"macros.h"
+	"vint_set.h"
+
+1514996813 /home/samuel/Downloads/npsep/include/oddhs.h
+	"cgraph.h"
+	"clique.h"
+
+1514996709 source:/home/samuel/Downloads/npsep/src/oddhs.c
+	<float.h>
+	<limits.h>
+	<alloca.h>
+	<math.h>
+	<stdlib.h>
+	<stddef.h>
+	<assert.h>
+	<string.h>
+	<time.h>
+	<stdio.h>
+	"spaths.h"
+	"oddhs.h"
+	"memory.h"
+	"macros.h"
+	"node_heap.h"
+	"vectormgm.h"
+
+1474293036 /home/samuel/Downloads/npsep/include/spaths.h
+
+1514996523 source:/home/samuel/Downloads/npsep/src/spaths.c
+	<stdio.h>
+	<stdlib.h>
+	<string.h>
+	<limits.h>
+	<assert.h>
+	<ctype.h>
+	"digraph.h"
+	"memory.h"
+	"spaths.h"
+	"node_heap.h"
+	"vectormgm.h"
+	"strutils.h"
+
+1474293036 /home/samuel/Downloads/npsep/include/digraph.h
+
+1514999175 /home/samuel/Downloads/npsep/include/knapsack_separation.hpp
+	"cut.h"
+	"cgraph.h"
+	"lp.h"
+	<OsiSolverInterface.hpp>
+
+1515008366 source:/home/samuel/Downloads/npsep/src/knapsack_separation.cpp
+	"knapsack_separation.hpp"
+	<float.h>
+	<assert.h>
+	<string.h>
+	<limits.h>
+	<map>
+	"macros.h"
+	"clique.h"
+	"bron_kerbosch.h"
+	"strutils.h"
+
