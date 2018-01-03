@@ -35,7 +35,7 @@
 			<Add option="-DCBC" />
 			<Add option="-DPRECISE" />
 			<Add directory="/opt/ibm/ILOG/CPLEX_Studio127/cplex/include/ilcplex" />
-			<Add directory="/home/samuel/Downloads/npsep/include" />
+			<Add directory="include" />
 		</Compiler>
 		<Linker>
 			<Add option="`pkg-config --libs cbc` -lgomp" />
