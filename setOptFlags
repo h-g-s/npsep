@@ -1,6 +1,0 @@
-export CFLAGS="-O3 -g0 -flto -Wall -DNDEBUG"
-export CXXFLAGS="-O3 -g0 -flto -Wall -DNDEBUG"
-export LDFLAGS="-flto"
-./configure
-make clean
-make
