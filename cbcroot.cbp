@@ -11,7 +11,7 @@
 				<Option object_output="obj/Debug/" />
 				<Option type="1" />
 				<Option compiler="gcc" />
-				<Option parameters="instances/air04.mps.gz -extendC=4 -aggrClique=on -oddHole=on -knapsack=on" />
+				<Option parameters="./instances/MIPLIB/air04.mps.gz -extendC=4 -aggrClique=on -oddHole=on -knapsack=on" />
 				<Compiler>
 					<Add option="-g" />
 				</Compiler>
@@ -39,8 +39,6 @@
 		</Compiler>
 		<Linker>
 			<Add option="`pkg-config --libs cbc` -lgomp" />
-			<Add library="/opt/ibm/ILOG/CPLEX_Studio127/cplex/lib/x86-64_linux/static_pic/libcplex.a" />
-			<Add library="pthread" />
 		</Linker>
 		<Unit filename="include/BKGraph.hpp" />
 		<Unit filename="include/BKVertex.hpp" />
@@ -112,6 +110,7 @@
 		<Extensions>
 			<code_completion />
 			<debugger />
+			<envvars />
 		</Extensions>
 	</Project>
 </CodeBlocks_project_file>
