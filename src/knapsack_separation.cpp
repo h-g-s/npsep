@@ -5,8 +5,6 @@
 #include <limits.h>
 #include <map>
 
-#define MIN_VIOL 0.01
-
 extern "C"
 {
     #include "macros.h"
@@ -20,9 +18,12 @@ extern "C"
 #define INSERTED_AT_SIMPLE_EXTENSION    2
 #define INSERTED_AT_CLIQUE_EXTENSION    3
 
+#define KSEP_DEF_MIN_VIOL               0.02
 #define KSEP_DEF_MAX_RC                 DBL_MAX/10.0
-#define KSEP_STR_CLQE_MAX_RC            "maxRC"
-#define KSEP_DEF_BK_MAX_IT              5000
+#define KSEP_DEF_MAX_IT_BK              INT_MAX/10
+
+#define KSEP_STR_MAX_RC                 "maxRC"
+#define KSEP_STR_MAX_IT_BK              "maxItBK"
 
 #define CAPACITY_LIMIT  1000000
 #define BOTTOM_UP_LIMIT 1000000
@@ -39,6 +40,9 @@ struct _KnapsackSeparation
     char *rowHasCompVars;
     double *rhs;
     double maxRC;
+
+    /*lifting*/
+    int maxItBK;
 
     /*dynamic programming*/
     double *maxCoef, *totalWeight;
@@ -69,6 +73,7 @@ KnapsackSeparation *knapsack_sep_create(const OsiSolverInterface &si)
     ksep->nRows = 0;
     ksep->cg = NULL;
     ksep->maxRC = KSEP_DEF_MAX_RC;
+    ksep->maxItBK = KSEP_DEF_MAX_IT_BK;
 
     ksep->knpRowIdxs = new int*[nRows];
     ksep->knpRowIdxs[0] = new int[si.getNumElements()];
@@ -190,6 +195,7 @@ KnapsackSeparation* knapsack_sep_create(const LinearProgram *lp)
     ksep->nRows = 0;
     ksep->cg = NULL;
     ksep->maxRC = KSEP_DEF_MAX_RC;
+    ksep->maxItBK = KSEP_DEF_MAX_IT_BK;
 
     ksep->knpRowIdxs = new int*[nRows];
     ksep->knpRowIdxs[0] = new int[lp_nz(lp)];
@@ -516,7 +522,7 @@ int clique_lifting(KnapsackSeparation *ksep, const double *x, const double *rc, 
                 cgraph_set_node_weight(cg, j, nodeWeight[j]);
 
             BronKerbosch *bk = bk_create(cg);
-            bk_set_max_it(bk, KSEP_DEF_BK_MAX_IT);
+            bk_set_max_it(bk, ksep->maxItBK);
             bk_set_min_weight(bk, 0);
             bk_run(bk);
             const CliqueSet *clqSet = bk_get_clq_set(bk);
@@ -748,7 +754,7 @@ void separate_by_row(KnapsackSeparation *ksep, const int idxRow, const double *x
         }
 
         /* invalid cut */
-        if(viol < MIN_VIOL)
+        if(viol < KSEP_DEF_MIN_VIOL)
         {
             delete[] selected;
             break;
@@ -839,9 +845,15 @@ void knapsack_sep_set_params_parse_cmd_line( KnapsackSeparation *ksep, const int
         getParamName( paramName, param );
         getParamValue( paramValue, param );
 
-        if( strcasecmp( KSEP_STR_CLQE_MAX_RC, paramName ) == 0 )
+        if( strcasecmp( KSEP_STR_MAX_RC, paramName ) == 0 )
         {
             ksep->maxRC = atof( paramValue );
+            continue;
+        }
+
+        if( strcasecmp( KSEP_STR_MAX_IT_BK, paramName ) == 0 )
+        {
+            ksep->maxItBK = atof( paramValue );
             continue;
         }
     }

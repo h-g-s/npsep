@@ -117,7 +117,8 @@ const double EPS=1e-5;
 
 #define INT_NOT_SET INT_MIN
 
-struct _LinearProgram {
+struct _LinearProgram
+{
     int mipEmphasis;
 
     char optAsContinuous;
@@ -212,10 +213,10 @@ struct _LinearProgram {
     CPXLPptr cpxLP;
 #endif // CPX
 #ifdef GRB
-   GRBmodel* lp;
-   int tmpRows; // rows not flushed yet
-   int tmpCols; // rows not flushed yet
-   int nModelChanges;
+    GRBmodel* lp;
+    int tmpRows; // rows not flushed yet
+    int tmpCols; // rows not flushed yet
+    int nModelChanges;
 #endif
 };
 
@@ -249,23 +250,23 @@ LinearProgram *lp_wrap_osisolver( OsiSolverInterface *osiLP );
 class CglCallback : public CglCutGenerator
 {
 public:
-   CglCallback();
+    CglCallback();
 
-   lp_cb callback_;
-   LinearProgram *lp;
-   void *data;
-   CbcModel *model;
+    lp_cb callback_;
+    LinearProgram *lp;
+    void *data;
+    CbcModel *model;
 
-   /// Copy constructor
-   CglCallback(const CglCallback& rhs);
+    /// Copy constructor
+    CglCallback(const CglCallback& rhs);
 
-   /// Clone
-   virtual CglCutGenerator * clone() const;
+    /// Clone
+    virtual CglCutGenerator * clone() const;
 
-   virtual void generateCuts( const OsiSolverInterface & si, OsiCuts & cs,
-         const CglTreeInfo info = CglTreeInfo() );
+    virtual void generateCuts( const OsiSolverInterface & si, OsiCuts & cs,
+                               const CglTreeInfo info = CglTreeInfo() );
 
-   virtual ~CglCallback();
+    virtual ~CglCallback();
 private:
 };
 
@@ -288,13 +289,13 @@ CglCallback::CglCallback(const CglCallback& rhs)
 
 CglCutGenerator* CglCallback::clone() const
 {
-   CglCallback *cglcb = new CglCallback();
-   cglcb->callback_ = this->callback_;
-   cglcb->lp = this->lp;
-   cglcb->data = this->data;
-   cglcb->model = this->model;
+    CglCallback *cglcb = new CglCallback();
+    cglcb->callback_ = this->callback_;
+    cglcb->lp = this->lp;
+    cglcb->data = this->data;
+    cglcb->model = this->model;
 
-   return static_cast<CglCutGenerator*>(cglcb);
+    return static_cast<CglCutGenerator*>(cglcb);
 }
 
 void CglCallback::generateCuts( const OsiSolverInterface &si, OsiCuts &cs, const CglTreeInfo info )
@@ -304,15 +305,16 @@ void CglCallback::generateCuts( const OsiSolverInterface &si, OsiCuts &cs, const
     lp->nOptimizations = 0;
 
     lp->status = LP_ERROR;
-    if (lp->osiLP->isProvenOptimal()) {
+    if (lp->osiLP->isProvenOptimal())
+    {
         /* getting primal and dual solution */
         lp->_x->resize(lp_cols(lp));
         lp->_rc->resize(lp_cols(lp));
         lp->_pi->resize(lp_rows(lp));
         lp->_slack->resize(lp_rows(lp));
-        memcpy(&((*(lp->_x))[0]) , lp->osiLP->getColSolution(), sizeof(double)*lp_cols(lp));
-        memcpy(&((*(lp->_rc))[0]) , lp->osiLP->getReducedCost(), sizeof(double)*lp_cols(lp));
-        memcpy(&((*(lp->_pi))[0]) , lp->osiLP->getRowPrice(), sizeof(double)*lp_rows(lp));
+        memcpy(&((*(lp->_x))[0]), lp->osiLP->getColSolution(), sizeof(double)*lp_cols(lp));
+        memcpy(&((*(lp->_rc))[0]), lp->osiLP->getReducedCost(), sizeof(double)*lp_cols(lp));
+        memcpy(&((*(lp->_pi))[0]), lp->osiLP->getRowPrice(), sizeof(double)*lp_rows(lp));
         for ( int i=0 ; (i<lp_rows(lp)) ; ++i )
         {
             double activity = lp->osiLP->getRowActivity()[i];
@@ -434,9 +436,11 @@ LinearProgramPtr lp_create()
 #ifdef CPX
     int cpxError = 1;
 
-    if (!LPcpxDefaultEnv) {
+    if (!LPcpxDefaultEnv)
+    {
         LPcpxDefaultEnv = CPXopenCPLEX(&cpxError);
-        if (!LPcpxDefaultEnv) {
+        if (!LPcpxDefaultEnv)
+        {
             fprintf(stderr, "Error opening CPLEX environment. Quiting.\n");
             abort();
         }
@@ -536,23 +540,24 @@ void lp_read(LinearProgram *lp, const char *fileName)
     return;
 #endif
 
-    switch (getFileType(fileName)) {
-        case 'L':
+    switch (getFileType(fileName))
+    {
+    case 'L':
 #ifdef GLPK
-            glp_read_lp(lp->_lp, NULL, fileName);
+        glp_read_lp(lp->_lp, NULL, fileName);
 #endif
 #ifdef CBC
-            lp->osiLP->readLp(fileName);
+        lp->osiLP->readLp(fileName);
 #endif
-            break;
-        case 'M':
+        break;
+    case 'M':
 #ifdef GLPK
-            glp_read_mps(lp->_lp, GLP_MPS_FILE, NULL, fileName);
+        glp_read_mps(lp->_lp, GLP_MPS_FILE, NULL, fileName);
 #endif
 #ifdef CBC
-            lp->osiLP->readMps(fileName);
+        lp->osiLP->readMps(fileName);
 #endif
-            break;
+        break;
     }
 #ifdef NEED_OWN_INDEX
     lp_fill_col_name_index( lp );
@@ -600,34 +605,36 @@ void lp_write_lp(LinearProgram *lp, const char *fileName)
 
     char fileType = getFileType(fileName);
 
-    switch (fileType) {
-        case 'L':
+    switch (fileType)
+    {
+    case 'L':
 #ifdef GLPK
-            glp_write_lp(lp->_lp, NULL, fileName);
+        glp_write_lp(lp->_lp, NULL, fileName);
 #endif
 #ifdef CBC
+        {
+            char outFile[256];
+            strcpy(outFile, fileName);
+            char *s = NULL;
+            if ((s = strstr(outFile, ".lp")))
             {
-                char outFile[256];
-                strcpy(outFile, fileName);
-                char *s = NULL;
-                if ((s = strstr(outFile, ".lp"))) {
-                    if (s != outFile) // not at the start
-                        *s = '\0';
-                }
-                lp->osiLP->writeLp(outFile);
+                if (s != outFile) // not at the start
+                    *s = '\0';
             }
+            lp->osiLP->writeLp(outFile);
+        }
 #endif
 
-            break;
-        case 'M':
+        break;
+    case 'M':
 #ifdef GLPK
-            glp_write_mps(lp->_lp, GLP_MPS_FILE, NULL, fileName);
+        glp_write_mps(lp->_lp, GLP_MPS_FILE, NULL, fileName);
 #endif
 #ifdef CBC
-            lp->osiLP->writeMps(fileName);
+        lp->osiLP->writeMps(fileName);
 #endif
 
-            break;
+        break;
     }
 }
 
@@ -635,50 +642,51 @@ void lp_set_direction(LinearProgram *lp, const char direction)
 {
     assert(lp != NULL);
 
-    switch (direction) {
-        case LP_MIN:
+    switch (direction)
+    {
+    case LP_MIN:
 #ifdef GLPK
-            glp_set_obj_dir(lp->_lp, GLP_MIN);
+        glp_set_obj_dir(lp->_lp, GLP_MIN);
 #endif
 #ifdef CBC
-            lp->osiLP->setObjSense(1.0);
+        lp->osiLP->setObjSense(1.0);
 #endif
 #ifdef CPX
-            CPXchgobjsen(LPcpxDefaultEnv, lp->cpxLP, CPX_MIN);
+        CPXchgobjsen(LPcpxDefaultEnv, lp->cpxLP, CPX_MIN);
 #endif
 #ifdef GRB
-            {
-                int grbError = GRBsetintattr( lp->lp, GRB_INT_ATTR_MODELSENSE, 1 );
-                lp_check_for_grb_error( LPgrbDefaultEnv, grbError, __FILE__, __LINE__ );
-                grbError = GRBupdatemodel(lp->lp);
-                lp_check_for_grb_error( LPgrbDefaultEnv, grbError, __FILE__, __LINE__ );
-                return;
-            }
+        {
+            int grbError = GRBsetintattr( lp->lp, GRB_INT_ATTR_MODELSENSE, 1 );
+            lp_check_for_grb_error( LPgrbDefaultEnv, grbError, __FILE__, __LINE__ );
+            grbError = GRBupdatemodel(lp->lp);
+            lp_check_for_grb_error( LPgrbDefaultEnv, grbError, __FILE__, __LINE__ );
+            return;
+        }
 #endif
-            break;
-        case LP_MAX:
+        break;
+    case LP_MAX:
 #ifdef GLPK
-            glp_set_obj_dir(lp->_lp, GLP_MAX);
+        glp_set_obj_dir(lp->_lp, GLP_MAX);
 #endif
 #ifdef CBC
-            lp->osiLP->setObjSense(-1.0);
+        lp->osiLP->setObjSense(-1.0);
 #endif
 #ifdef GRB
-            {
-                int grbError = GRBsetintattr( lp->lp, GRB_INT_ATTR_MODELSENSE, -1 );
-                lp_check_for_grb_error( LPgrbDefaultEnv, grbError, __FILE__, __LINE__ );
-                grbError = GRBupdatemodel(lp->lp);
-                lp_check_for_grb_error( LPgrbDefaultEnv, grbError, __FILE__, __LINE__ );
-                return;
-            }
+        {
+            int grbError = GRBsetintattr( lp->lp, GRB_INT_ATTR_MODELSENSE, -1 );
+            lp_check_for_grb_error( LPgrbDefaultEnv, grbError, __FILE__, __LINE__ );
+            grbError = GRBupdatemodel(lp->lp);
+            lp_check_for_grb_error( LPgrbDefaultEnv, grbError, __FILE__, __LINE__ );
+            return;
+        }
 #endif
 #ifdef CPX
-            CPXchgobjsen(LPcpxDefaultEnv, lp->cpxLP, CPX_MAX);
+        CPXchgobjsen(LPcpxDefaultEnv, lp->cpxLP, CPX_MAX);
 #endif
-            break;
-        default:
-            fprintf(stderr, "Unknow optimization direction: %c\n", direction);
-            break;
+        break;
+    default:
+        fprintf(stderr, "Unknow optimization direction: %c\n", direction);
+        break;
     }
 }
 
@@ -702,28 +710,29 @@ int lp_get_direction(LinearProgram *lp)
     lp_check_for_grb_error( LPgrbDefaultEnv, grbError, __FILE__, __LINE__ );
     switch (dir)
     {
-        case 1:
-            return LP_MIN;
-        case -1:
-            return LP_MAX;
-        default:
-        {
-            fprintf( stderr, "Invalid optimization directtion: %d\n", dir );
-            abort();
-        }
+    case 1:
+        return LP_MIN;
+    case -1:
+        return LP_MAX;
+    default:
+    {
+        fprintf( stderr, "Invalid optimization directtion: %d\n", dir );
+        abort();
+    }
     }
 #endif
 #ifdef CPX
-    switch (CPXgetobjsen(LPcpxDefaultEnv, lp->cpxLP)) {
-        case CPX_MIN:
-            return LP_MIN;
-            break;
-        case CPX_MAX:
-            return LP_MAX;
-            break;
-        default:
-            fprintf(stderr, "Invalid value for CPXgetobjsen.\n");
-            abort();
+    switch (CPXgetobjsen(LPcpxDefaultEnv, lp->cpxLP))
+    {
+    case CPX_MIN:
+        return LP_MIN;
+        break;
+    case CPX_MAX:
+        return LP_MAX;
+        break;
+    default:
+        fprintf(stderr, "Invalid value for CPXgetobjsen.\n");
+        abort();
     }
 #endif
 }
@@ -738,19 +747,20 @@ static void lp_validate_row_data(LinearProgram *lp, const int nz,  int *indexes,
     assert( nz <= lp_cols(lp) );
 
     /* checking indexes */
-    for (int i = 0 ; (i < nz) ; ++i) {
+    for (int i = 0 ; (i < nz) ; ++i)
+    {
         LP_CHECK_COL_INDEX(lp, indexes[i]);
         for ( int j=i+1 ; j<nz ; ++j )
         {
             if ( indexes[i]==indexes[j] )
             {
 #ifdef GRB
-                    if ( lp->tmpCols || lp->tmpRows || lp->nModelChanges )
-                    {
-                        int grbError = GRBupdatemodel( lp->lp );
-                        lp_check_for_grb_error( LPgrbDefaultEnv, grbError, __FILE__, __LINE__ );
-                        lp->tmpCols = lp->tmpRows = lp->nModelChanges = 0;
-                    }
+                if ( lp->tmpCols || lp->tmpRows || lp->nModelChanges )
+                {
+                    int grbError = GRBupdatemodel( lp->lp );
+                    lp_check_for_grb_error( LPgrbDefaultEnv, grbError, __FILE__, __LINE__ );
+                    lp->tmpCols = lp->tmpRows = lp->nModelChanges = 0;
+                }
 #endif
                 char varName[256];
                 lp_col_name( lp, indexes[i], varName );
@@ -775,19 +785,20 @@ void lp_add_cut( LinearProgram *lp, int nz, int *cutIdx, double *cutCoef, const 
     orCut.setRow( nz, cutIdx, cutCoef, false );
 
     double rLB = 0.0, rUB = COIN_DBL_MAX;
-    switch (sense) {
-        case 'E':
-            rLB = rhs;
-            rUB = rhs;
-            break;
-        case 'L':
-            rLB = -COIN_DBL_MAX;
-            rUB = rhs;
-            break;
-        case 'G':
-            rLB = rhs;
-            rUB = COIN_DBL_MAX;
-            break;
+    switch (sense)
+    {
+    case 'E':
+        rLB = rhs;
+        rUB = rhs;
+        break;
+    case 'L':
+        rLB = -COIN_DBL_MAX;
+        rUB = rhs;
+        break;
+    case 'G':
+        rLB = rhs;
+        rUB = COIN_DBL_MAX;
+        break;
     }
     orCut.setLb( rLB );
     orCut.setUb( rUB );
@@ -833,8 +844,10 @@ void lp_add_row(LinearProgram *lp, const int nz, const int *indexes, const doubl
 
     char uSense = toupper(sense);
 
-    char strsense[2]; sprintf(strsense, "%c", uSense);
-    if (!strstr("GLE", strsense)) {
+    char strsense[2];
+    sprintf(strsense, "%c", uSense);
+    if (!strstr("GLE", strsense))
+    {
         fprintf(stderr, "LP: cannot handle sense %c.\n", uSense);
         abort();
     }
@@ -853,15 +866,15 @@ void lp_add_row(LinearProgram *lp, const int nz, const int *indexes, const doubl
     // making sure that gurobi defines are respected:
     switch (uSense)
     {
-        case 'E':
-            uSense = GRB_EQUAL;
-            break;
-        case 'L':
-            uSense = GRB_LESS_EQUAL;
-            break;
-        case 'G':
-            uSense = GRB_GREATER_EQUAL;
-            break;
+    case 'E':
+        uSense = GRB_EQUAL;
+        break;
+    case 'L':
+        uSense = GRB_LESS_EQUAL;
+        break;
+    case 'G':
+        uSense = GRB_GREATER_EQUAL;
+        break;
     }
 
     lp->tmpRows++;
@@ -874,16 +887,17 @@ void lp_add_row(LinearProgram *lp, const int nz, const int *indexes, const doubl
 
     glp_add_rows(lp->_lp, 1);
     glp_set_row_name(lp->_lp, currRow, name);
-    switch (uSense) {
-        case 'L' :
-            glp_set_row_bnds(lp->_lp, currRow, GLP_UP, 0.0, rhs);
-            break;
-        case 'G' :
-            glp_set_row_bnds(lp->_lp, currRow, GLP_LO, rhs, 0.0);
-            break;
-        case 'E' :
-            glp_set_row_bnds(lp->_lp, currRow, GLP_FX, rhs, 0.0);
-            break;
+    switch (uSense)
+    {
+    case 'L' :
+        glp_set_row_bnds(lp->_lp, currRow, GLP_UP, 0.0, rhs);
+        break;
+    case 'G' :
+        glp_set_row_bnds(lp->_lp, currRow, GLP_LO, rhs, 0.0);
+        break;
+    case 'E' :
+        glp_set_row_bnds(lp->_lp, currRow, GLP_FX, rhs, 0.0);
+        break;
     }
 
     register int *endIdx = indexes + nz;
@@ -901,19 +915,20 @@ void lp_add_row(LinearProgram *lp, const int nz, const int *indexes, const doubl
     int currRow = lp_rows(lp);
 
     double rLB = 0.0, rUB = COIN_DBL_MAX;
-    switch (uSense) {
-        case 'E':
-            rLB = rhs;
-            rUB = rhs;
-            break;
-        case 'L':
-            rLB = -COIN_DBL_MAX;
-            rUB = rhs;
-            break;
-        case 'G':
-            rLB = rhs;
-            rUB = COIN_DBL_MAX;
-            break;
+    switch (uSense)
+    {
+    case 'E':
+        rLB = rhs;
+        rUB = rhs;
+        break;
+    case 'L':
+        rLB = -COIN_DBL_MAX;
+        rUB = rhs;
+        break;
+    case 'G':
+        rLB = rhs;
+        rUB = COIN_DBL_MAX;
+        break;
     }
     lp->osiLP->addRow(nz, indexes, coefs, rLB, rUB);
     lp->osiLP->setRowName(currRow, name);
@@ -940,7 +955,8 @@ void lp_add_cols(LinearProgram *lp, const int count, double *obj, double *lb, do
     {
         if (obj[i]>=1e25 && (!warntl))
         {
-            fflush( stdout ); fflush( stderr );
+            fflush( stdout );
+            fflush( stderr );
             fprintf( stderr, "warning: variable %s has a coefficient in the objective function too large (>=1e25). reduce it to avoid numerical problems.\n", name[i] );
             warntl = true;
         }
@@ -954,11 +970,13 @@ void lp_add_cols(LinearProgram *lp, const int count, double *obj, double *lb, do
 
     vector< double > rLB;
     vector< double > rUB;
-    if (!_lb) {
+    if (!_lb)
+    {
         rLB.resize(count, 0.0);
         _lb = &rLB[0];
     }
-    if (!_ub) {
+    if (!_ub)
+    {
         rUB.resize(count, GRB_INFINITY );
         _ub = &rUB[0];
     }
@@ -969,24 +987,28 @@ void lp_add_cols(LinearProgram *lp, const int count, double *obj, double *lb, do
             _ub[i] = GRB_INFINITY;
     }
 
-    if (integer) {
+    if (integer)
+    {
         for (int i = 0 ; (i < count) ; ++i)
-            if (integer[i]) {
+            if (integer[i])
+            {
                 _lb[i] = floor(_lb[i] + 0.5);
 
                 if (_ub[i] != GRB_INFINITY)
                     _ub[i] = floor(_ub[i] + 0.5);
 
-                if ((fabs(_lb[i]) < EPS) && (fabs(_ub[i] - 1.0) < EPS)) {
+                if ((fabs(_lb[i]) < EPS) && (fabs(_ub[i] - 1.0) < EPS))
+                {
                     type[i] = GRB_BINARY;
                 }
-                else {
+                else
+                {
                     type[i] = GRB_INTEGER;
                 }
             }
     }
 
-    vector< int > vbeg( count+1 , 0 );
+    vector< int > vbeg( count+1, 0 );
     int vind[2] = { 0, 0 };
     double vval[2] = { 0, 0 };
     int grbError = GRBaddvars( lp->lp, count, 0, &vbeg[0], vind, vval, obj, lb, ub, &type[0], name );
@@ -1004,39 +1026,46 @@ void lp_add_cols(LinearProgram *lp, const int count, double *obj, double *lb, do
 
     vector< double > rLB;
     vector< double > rUB;
-    if (!_lb) {
+    if (!_lb)
+    {
         rLB.resize(count, 0.0);
         _lb = &rLB[0];
     }
-    if (!_ub) {
+    if (!_ub)
+    {
         rUB.resize(count, CPX_INFBOUND);
         _ub = &rUB[0];
     }
 
-    for (int i = 0 ; (i < count) ; i++) {
+    for (int i = 0 ; (i < count) ; i++)
+    {
         if (_ub[i] > CPX_INFBOUND)
             _ub[i] = CPX_INFBOUND;
     }
 
 
-    if (integer) {
+    if (integer)
+    {
         for (int i = 0 ; (i < count) ; ++i)
-            if (integer[i]) {
+            if (integer[i])
+            {
                 _lb[i] = floor(_lb[i] + 0.5);
 
                 if (_ub[i] != CPX_INFBOUND)
                     _ub[i] = floor(_ub[i] + 0.5);
 
-                if ((fabs(_lb[i]) < EPS) && (fabs(_ub[i] - 1.0) < EPS)) {
+                if ((fabs(_lb[i]) < EPS) && (fabs(_ub[i] - 1.0) < EPS))
+                {
                     type[i] = CPX_BINARY;
                 }
-                else {
+                else
+                {
                     type[i] = CPX_INTEGER;
                 }
             }
     }
 
-    cpxError = CPXnewcols(LPcpxDefaultEnv, lp->cpxLP, count, obj, _lb, _ub, &type[0] , name);
+    cpxError = CPXnewcols(LPcpxDefaultEnv, lp->cpxLP, count, obj, _lb, _ub, &type[0], name);
     lp_check_for_cpx_error(LPcpxDefaultEnv, cpxError, __FILE__, __LINE__);
 #endif // CPX
 #ifdef GLPK
@@ -1055,45 +1084,53 @@ void lp_add_cols(LinearProgram *lp, const int count, double *obj, double *lb, do
 
     if (integer)
         for (currCol = cols + 1, j = 0 ; (j < count) ; j++, currCol++)
-            if (integer[j]) {
+            if (integer[j])
+            {
                 if ((fabs(ub[j] - 1.0) <= EPS))
                     glp_set_col_kind(lp->_lp, currCol, GLP_BV);
                 else
                     glp_set_col_kind(lp->_lp, currCol, GLP_IV);
             }
 
-    for (currCol = cols + 1, j = 0 ; (j < count) ; j++, currCol++) {
-        if (((ub) && (lb))) {
+    for (currCol = cols + 1, j = 0 ; (j < count) ; j++, currCol++)
+    {
+        if (((ub) && (lb)))
+        {
             if ((lb[j] != -DBL_MAX) && (ub[j] != DBL_MAX))
             {
                 if ( fabs(lb[j]-ub[j]) <= 1e-10 )
-                    glp_set_col_bnds(lp->_lp, currCol, GLP_FX, lb[j] , ub[j]);
+                    glp_set_col_bnds(lp->_lp, currCol, GLP_FX, lb[j], ub[j]);
                 else
-                    glp_set_col_bnds(lp->_lp, currCol, GLP_DB, lb[j] , ub[j]);
+                    glp_set_col_bnds(lp->_lp, currCol, GLP_DB, lb[j], ub[j]);
             }
             else if ((ub[j] == DBL_MAX) && (lb[j] != -DBL_MAX))
-                glp_set_col_bnds(lp->_lp, currCol, GLP_LO, lb[j] , ub[j]);
+                glp_set_col_bnds(lp->_lp, currCol, GLP_LO, lb[j], ub[j]);
             else if ((ub[j] != DBL_MAX) && (lb[j] == -DBL_MAX))
-                glp_set_col_bnds(lp->_lp, currCol, GLP_UP, lb[j] , ub[j]);
+                glp_set_col_bnds(lp->_lp, currCol, GLP_UP, lb[j], ub[j]);
             else if ((ub[j] == DBL_MAX) && (lb[j] == -DBL_MAX))
-                glp_set_col_bnds(lp->_lp, currCol, GLP_FR, -DBL_MAX , DBL_MAX);
+                glp_set_col_bnds(lp->_lp, currCol, GLP_FR, -DBL_MAX, DBL_MAX);
         }   // both LB and UB informed
-        else {
-            if ((!lb) && (!ub)) {
-                glp_set_col_bnds(lp->_lp, currCol, GLP_LO, 0.0 , DBL_MAX);
+        else
+        {
+            if ((!lb) && (!ub))
+            {
+                glp_set_col_bnds(lp->_lp, currCol, GLP_LO, 0.0, DBL_MAX);
             }  // no LB and UB informed
-            else {
-                if (ub) {
+            else
+            {
+                if (ub)
+                {
                     if (ub[j] == DBL_MAX)
-                        glp_set_col_bnds(lp->_lp, currCol, GLP_LO, 0.0 , DBL_MAX);
+                        glp_set_col_bnds(lp->_lp, currCol, GLP_LO, 0.0, DBL_MAX);
                     else
-                        glp_set_col_bnds(lp->_lp, currCol, GLP_DB, 0.0 , ub[j]);
+                        glp_set_col_bnds(lp->_lp, currCol, GLP_DB, 0.0, ub[j]);
                 }
-                else if (lb) {
+                else if (lb)
+                {
                     if (lb[j] == -DBL_MAX)
-                        glp_set_col_bnds(lp->_lp, currCol, GLP_FR, -DBL_MAX , DBL_MAX);
+                        glp_set_col_bnds(lp->_lp, currCol, GLP_FR, -DBL_MAX, DBL_MAX);
                     else
-                        glp_set_col_bnds(lp->_lp, currCol, GLP_DB, lb[j] , DBL_MAX);
+                        glp_set_col_bnds(lp->_lp, currCol, GLP_DB, lb[j], DBL_MAX);
                 }
             }  // only LB or UB informed
         }
@@ -1105,7 +1142,7 @@ void lp_add_cols(LinearProgram *lp, const int count, double *obj, double *lb, do
     if ((integer) && (!ub))
         for (currCol = cols + 1, j = 0 ; (j < count) ; j++, currCol++)
             if (!integer[j])
-                glp_set_col_bnds(lp->_lp, currCol, GLP_LO, 0.0 , DBL_MAX);
+                glp_set_col_bnds(lp->_lp, currCol, GLP_LO, 0.0, DBL_MAX);
 #endif
 #ifdef CBC
     int cols = lp->osiLP->getNumCols();
@@ -1116,7 +1153,8 @@ void lp_add_cols(LinearProgram *lp, const int count, double *obj, double *lb, do
     }
 
 
-    if (integer) {
+    if (integer)
+    {
         for (int j = 0 ; (j < count) ; j++)
             if (integer[j])
                 lp->osiLP->setInteger(cols + j);
@@ -1193,7 +1231,7 @@ const double *lp_obj_coef( LinearProgram *lp )
 #ifdef GRB
     lp->_obj->resize( lp_cols(lp) );
     double *obj = &((*lp->_obj)[0]);
-    int grbError = GRBgetdblattrarray( lp->lp, GRB_DBL_ATTR_OBJ, 0, lp_cols(lp) , obj );
+    int grbError = GRBgetdblattrarray( lp->lp, GRB_DBL_ATTR_OBJ, 0, lp_cols(lp), obj );
     lp_check_for_grb_error( LPgrbDefaultEnv, grbError, __FILE__, __LINE__ );
 
     return obj;
@@ -1253,11 +1291,12 @@ char lp_is_integer(const LinearProgram *lp, const int j)
     LP_CHECK_COL_INDEX(lp, j);
 
 #ifdef GLPK
-    switch (glp_get_col_kind(lp->_lp, j + 1)) {
-        case GLP_IV:
-        case GLP_BV:
-            return 1;
-            break;
+    switch (glp_get_col_kind(lp->_lp, j + 1))
+    {
+    case GLP_IV:
+    case GLP_BV:
+        return 1;
+        break;
     }
 
     return 0;
@@ -1282,12 +1321,12 @@ char lp_is_integer(const LinearProgram *lp, const int j)
 
     switch (vType)
     {
-        case GRB_INTEGER :
-            return 1;
-        case GRB_BINARY :
-            return 1;
-        default :
-            return 0;
+    case GRB_INTEGER :
+        return 1;
+    case GRB_BINARY :
+        return 1;
+    default :
+        return 0;
     }
 
     return 0;
@@ -1323,7 +1362,8 @@ int lp_optimize(LinearProgram *lp)
 
     lp->solutionTime = 0.0;
 
-    time_t startT; time(&startT);
+    time_t startT;
+    time(&startT);
 
     // if needs to read mipstart
     if (strlen(lp->solInFN))
@@ -1396,7 +1436,8 @@ int lp_optimize(LinearProgram *lp)
         // solving linear relaxation
         int status = 1;
 
-        glp_smcp parm; glp_init_smcp(&parm);
+        glp_smcp parm;
+        glp_init_smcp(&parm);
 
         if (lp->silent)
             parm.msg_lev = GLP_MSG_OFF;
@@ -1404,170 +1445,178 @@ int lp_optimize(LinearProgram *lp)
         status = glp_simplex(lp->_lp, &parm);
 
         // checking error type
-        if (status) {
-            switch (status) {
-                case GLP_EBADB :
-                    sprintf(errorMsg,
-                            "Unable to start the search, because the initial basis specified in the problem object is\
+        if (status)
+        {
+            switch (status)
+            {
+            case GLP_EBADB :
+                sprintf(errorMsg,
+                        "Unable to start the search, because the initial basis specified in the problem object is\
                             invalid—the number of basic (auxiliary and structural) variables is not the same as the\
                             number of rows in the problem object.");
-                    errorLine = __LINE__;
-                    break;
-                case GLP_ESING :
-                    sprintf(errorMsg,
-                            "Unable to start the search, because the basis matrix corresponding\
+                errorLine = __LINE__;
+                break;
+            case GLP_ESING :
+                sprintf(errorMsg,
+                        "Unable to start the search, because the basis matrix corresponding\
                             to the initial basis is singular within the working precision.");
-                    errorLine = __LINE__;
-                    break;
-                case GLP_ECOND :
-                    sprintf(errorMsg,
-                            "Unable to start the search, because the basis matrix corresponding to the initial basis is\
+                errorLine = __LINE__;
+                break;
+            case GLP_ECOND :
+                sprintf(errorMsg,
+                        "Unable to start the search, because the basis matrix corresponding to the initial basis is\
                             ill-conditioned, i.e. its condition number is too large.");
-                    errorLine = __LINE__;
-                    break;
-                case GLP_EBOUND :
-                    sprintf(errorMsg,
-                            "Unable to start the search, because some double-bounded\
+                errorLine = __LINE__;
+                break;
+            case GLP_EBOUND :
+                sprintf(errorMsg,
+                        "Unable to start the search, because some double-bounded\
                             (auxiliary or structural) variables have incorrect bounds.");
-                    errorLine = __LINE__;
-                    break;
-                case GLP_EFAIL :
-                    sprintf(errorMsg,
-                            "The search was prematurely terminated due to the solver failure.");
-                    errorLine = __LINE__;
-                    break;
-                case GLP_EOBJLL :
-                    sprintf(errorMsg,
-                            "The search was prematurely terminated, because the objective function being maximized has reached its\
+                errorLine = __LINE__;
+                break;
+            case GLP_EFAIL :
+                sprintf(errorMsg,
+                        "The search was prematurely terminated due to the solver failure.");
+                errorLine = __LINE__;
+                break;
+            case GLP_EOBJLL :
+                sprintf(errorMsg,
+                        "The search was prematurely terminated, because the objective function being maximized has reached its\
                             lower limit and continues decreasing (the dual simplex only).");
-                    errorLine = __LINE__;
-                    break;
-                case GLP_EOBJUL :
-                    sprintf(errorMsg,
-                            "The search was prematurely terminated, because the objective function being minimized has reached its\
+                errorLine = __LINE__;
+                break;
+            case GLP_EOBJUL :
+                sprintf(errorMsg,
+                        "The search was prematurely terminated, because the objective function being minimized has reached its\
                             upper limit and continues increasing (the dual simplex only).");
-                    errorLine = __LINE__;
-                    break;
-                case GLP_EITLIM :
-                    sprintf(errorMsg,
-                            "The search was prematurely terminated, because the simplex iteration limit has been exceeded.");
-                    errorLine = __LINE__;
-                    break;
-                case GLP_ETMLIM :
-                    sprintf(errorMsg,
-                            "The search was prematurely terminated, because the time limit has been exceeded.");
-                    errorLine = __LINE__;
-                    break;
-                case GLP_ENOPFS :
-                    sprintf(errorMsg,
-                            "The LP problem instance has no primal feasible solution (only if the LP presolver is used).");
-                    errorLine = __LINE__;
-                    break;
-                case GLP_ENODFS :
-                    sprintf(errorMsg,
-                            "The LP problem instance has no dual feasible solution (only if the LP presolver is used).");
-                    errorLine = __LINE__;
-                    break;
+                errorLine = __LINE__;
+                break;
+            case GLP_EITLIM :
+                sprintf(errorMsg,
+                        "The search was prematurely terminated, because the simplex iteration limit has been exceeded.");
+                errorLine = __LINE__;
+                break;
+            case GLP_ETMLIM :
+                sprintf(errorMsg,
+                        "The search was prematurely terminated, because the time limit has been exceeded.");
+                errorLine = __LINE__;
+                break;
+            case GLP_ENOPFS :
+                sprintf(errorMsg,
+                        "The LP problem instance has no primal feasible solution (only if the LP presolver is used).");
+                errorLine = __LINE__;
+                break;
+            case GLP_ENODFS :
+                sprintf(errorMsg,
+                        "The LP problem instance has no dual feasible solution (only if the LP presolver is used).");
+                errorLine = __LINE__;
+                break;
             }
 
             goto OPTIMIZATION_ERROR;
         }
-        else {
+        else
+        {
             status = glp_get_status(lp->_lp);
 
-            switch (status) {
-                case GLP_OPT:
-                    if (!isMIP) {
-                        for (int i = 0 ; (i < lp_cols(lp)) ; ++i)
-                        {
-                            lp->_x->at(i) = glp_get_col_prim(lp->_lp, i + 1);
-                            lp->_rc->at(i) = glp_get_col_dual(lp->_lp, i + 1);
-                        }
-                        for (int i = 0 ; (i < lp_rows(lp)) ; ++i)
-                        {
-                            lp->_pi->at(i) = glp_get_row_dual(lp->_lp, i + 1);
-                            double activity = glp_get_row_prim( lp->_lp, i + 1 );
-                            double slack = DBL_MAX;
-                            switch (glp_get_row_type(lp->_lp, i + 1))
-                            {
-                                case GLP_LO:
-                                {
-                                    slack = activity - glp_get_row_lb(lp->_lp, i + 1);
-                                    break;
-                                }
-                                case GLP_UP:
-                                {
-                                    slack = glp_get_row_ub(lp->_lp, i + 1) - activity;
-                                    break;
-                                }
-                                case GLP_DB:
-                                {
-                                    double s1 = activity - glp_get_row_lb(lp->_lp, i + 1);
-                                    double s2 = glp_get_row_ub(lp->_lp, i + 1) - activity;
-                                    slack = std::min( s1, s2 );
-                                    break;
-                                }
-                                case GLP_FX:
-                                {
-                                    slack = 0.0;
-                                    break;
-                                }
-                            }
-                            lp->_slack->at(i) = slack;
-                        }
-
-                        lp->obj = glp_get_obj_val(lp->_lp);
-                        lp->status = LP_OPTIMAL;
-                        goto OPTIMIZATION_CONCLUDED;
+            switch (status)
+            {
+            case GLP_OPT:
+                if (!isMIP)
+                {
+                    for (int i = 0 ; (i < lp_cols(lp)) ; ++i)
+                    {
+                        lp->_x->at(i) = glp_get_col_prim(lp->_lp, i + 1);
+                        lp->_rc->at(i) = glp_get_col_dual(lp->_lp, i + 1);
                     }
-                    break;
-                case GLP_INFEAS:
-                case GLP_NOFEAS:
-                    lp->status = LP_INFEASIBLE;
+                    for (int i = 0 ; (i < lp_rows(lp)) ; ++i)
+                    {
+                        lp->_pi->at(i) = glp_get_row_dual(lp->_lp, i + 1);
+                        double activity = glp_get_row_prim( lp->_lp, i + 1 );
+                        double slack = DBL_MAX;
+                        switch (glp_get_row_type(lp->_lp, i + 1))
+                        {
+                        case GLP_LO:
+                        {
+                            slack = activity - glp_get_row_lb(lp->_lp, i + 1);
+                            break;
+                        }
+                        case GLP_UP:
+                        {
+                            slack = glp_get_row_ub(lp->_lp, i + 1) - activity;
+                            break;
+                        }
+                        case GLP_DB:
+                        {
+                            double s1 = activity - glp_get_row_lb(lp->_lp, i + 1);
+                            double s2 = glp_get_row_ub(lp->_lp, i + 1) - activity;
+                            slack = std::min( s1, s2 );
+                            break;
+                        }
+                        case GLP_FX:
+                        {
+                            slack = 0.0;
+                            break;
+                        }
+                        }
+                        lp->_slack->at(i) = slack;
+                    }
+
+                    lp->obj = glp_get_obj_val(lp->_lp);
+                    lp->status = LP_OPTIMAL;
                     goto OPTIMIZATION_CONCLUDED;
-                case GLP_UNBND:
-                    goto OPTIMIZATION_CONCLUDED;
-                    lp->status = LP_UNBOUNDED;
-                default:
-                    sprintf(errorMsg, "\n\nGLPK ERROR CALLING glp_simplex at file %s\n", __FILE__);
-                    errorLine = __LINE__;
-                    goto OPTIMIZATION_ERROR;
+                }
+                break;
+            case GLP_INFEAS:
+            case GLP_NOFEAS:
+                lp->status = LP_INFEASIBLE;
+                goto OPTIMIZATION_CONCLUDED;
+            case GLP_UNBND:
+                goto OPTIMIZATION_CONCLUDED;
+                lp->status = LP_UNBOUNDED;
+            default:
+                sprintf(errorMsg, "\n\nGLPK ERROR CALLING glp_simplex at file %s\n", __FILE__);
+                errorLine = __LINE__;
+                goto OPTIMIZATION_ERROR;
             }
         }
 
-        if (isMIP) {
+        if (isMIP)
+        {
             {
                 glp_iocp ioParams;
                 lp_config_glpk_params(lp, &ioParams);
                 status = glp_intopt(lp->_lp, &ioParams);
             }
 
-            switch (status) {
-                case GLP_EFAIL :
-                case GLP_EROOT :
-                case GLP_EBOUND :
-                    sprintf(errorMsg, "\n\nGLPK ERROR CALLING glp_intopt at file %s\n", __FILE__);
-                    errorLine = __LINE__;
-                    goto OPTIMIZATION_ERROR;
+            switch (status)
+            {
+            case GLP_EFAIL :
+            case GLP_EROOT :
+            case GLP_EBOUND :
+                sprintf(errorMsg, "\n\nGLPK ERROR CALLING glp_intopt at file %s\n", __FILE__);
+                errorLine = __LINE__;
+                goto OPTIMIZATION_ERROR;
             }
 
-            switch (glp_mip_status(lp->_lp)) {
-                case GLP_OPT:
-                    lp->status = LP_OPTIMAL;
-                    goto GLPK_GET_MIP_SOLUTION;
-                case GLP_FEAS:
-                    lp->status = LP_FEASIBLE;
-                    goto GLPK_GET_MIP_SOLUTION;
-                case GLP_NOFEAS:
-                    lp->status = LP_INFEASIBLE;
-                    goto OPTIMIZATION_CONCLUDED;
-                case GLP_UNDEF:
-                    lp->status = LP_NO_SOL_FOUND;
-                    goto OPTIMIZATION_CONCLUDED;
-                default:
-                    sprintf(errorMsg, "\n\nGLPK ERROR CALLING glp_mip_status at file %s\n", __FILE__);
-                    errorLine = __LINE__;
-                    goto OPTIMIZATION_ERROR;
+            switch (glp_mip_status(lp->_lp))
+            {
+            case GLP_OPT:
+                lp->status = LP_OPTIMAL;
+                goto GLPK_GET_MIP_SOLUTION;
+            case GLP_FEAS:
+                lp->status = LP_FEASIBLE;
+                goto GLPK_GET_MIP_SOLUTION;
+            case GLP_NOFEAS:
+                lp->status = LP_INFEASIBLE;
+                goto OPTIMIZATION_CONCLUDED;
+            case GLP_UNDEF:
+                lp->status = LP_NO_SOL_FOUND;
+                goto OPTIMIZATION_CONCLUDED;
+            default:
+                sprintf(errorMsg, "\n\nGLPK ERROR CALLING glp_mip_status at file %s\n", __FILE__);
+                errorLine = __LINE__;
+                goto OPTIMIZATION_ERROR;
             }
 
 GLPK_GET_MIP_SOLUTION:
@@ -1589,7 +1638,8 @@ GLPK_GET_MIP_SOLUTION:
         if ( lp->nOptimizations == 1 )
             lp->_lp->getModelPtr()->setPerturbation(50);
 
-        if (lp_isMIP(lp)) {
+        if (lp_isMIP(lp))
+        {
             linearProgram = lp->osiLP->clone();
             deleteLP = true;
         }
@@ -1605,40 +1655,47 @@ GLPK_GET_MIP_SOLUTION:
 
         if (lp_isMIP(lp))
             linearProgram->initialSolve();
-        else {
+        else
+        {
             if (lp->nOptimizations >= 2)
                 linearProgram->resolve();
             else
                 linearProgram->initialSolve();
         }
 
-        if (linearProgram->isAbandoned()) {
+        if (linearProgram->isAbandoned())
+        {
             sprintf(errorMsg, "Numerical difficulties, linear program abandoned.\n");
             errorLine = __LINE__;
             goto CBC_OPTIMIZATION_ERROR;
         }
-        if ((linearProgram->isProvenPrimalInfeasible()) || (linearProgram->isProvenDualInfeasible())) {
+        if ((linearProgram->isProvenPrimalInfeasible()) || (linearProgram->isProvenDualInfeasible()))
+        {
             lp->status = LP_INFEASIBLE;
             goto CBC_OPTIMIZATION_CONCLUDED;
         }
-        if (linearProgram->isIterationLimitReached()) {
+        if (linearProgram->isIterationLimitReached())
+        {
             sprintf(errorMsg, "Iteration limit for linear program reached, abandoning.\n");
             errorLine = __LINE__;
             goto CBC_OPTIMIZATION_ERROR;
         }
-        if (linearProgram->isPrimalObjectiveLimitReached()) {
+        if (linearProgram->isPrimalObjectiveLimitReached())
+        {
             sprintf(errorMsg, "Primal objective limit reached, abandoning.\n");
             errorLine = __LINE__;
             goto CBC_OPTIMIZATION_ERROR;
         }
-        if (linearProgram->isDualObjectiveLimitReached()) {
+        if (linearProgram->isDualObjectiveLimitReached())
+        {
             sprintf(errorMsg, "Dual objective limit reached, abandoning.\n");
             errorLine = __LINE__;
             goto CBC_OPTIMIZATION_ERROR;
         }
 
-        if ((!isMIP) && (linearProgram->isProvenOptimal())) {
-            memcpy(&((*(lp->_x))[0]) , linearProgram->getColSolution(), sizeof(double)*lp_cols(lp));
+        if ((!isMIP) && (linearProgram->isProvenOptimal()))
+        {
+            memcpy(&((*(lp->_x))[0]), linearProgram->getColSolution(), sizeof(double)*lp_cols(lp));
             memcpy(&((*(lp->_pi))[0]), linearProgram->getRowPrice(), sizeof(double)*lp_rows(lp));
             memcpy(&((*(lp->_rc))[0]), linearProgram->getReducedCost(), sizeof(double)*lp_cols(lp));
             /* computing slack */
@@ -1657,7 +1714,8 @@ GLPK_GET_MIP_SOLUTION:
             goto CBC_OPTIMIZATION_CONCLUDED;
         }
 
-        if (isMIP) {
+        if (isMIP)
+        {
             // Pass to Cbc initialize defaults
             CbcModel modelA(*linearProgram);
             if (lp->msVars>0)
@@ -1706,8 +1764,10 @@ GLPK_GET_MIP_SOLUTION:
                 char **cbcOptStr = NULL;
                 CbcMain0(modelA);
                 lp_config_cbc_params(lp, cbcP);
-                cbcOptStr = (char **) malloc(sizeof(char *)*cbcP.size()); assert(cbcOptStr);
-                cbcOptStr[0] = (char *)malloc(sizeof(char) * cbcP.size() * STR_OPT_SIZE); assert(cbcOptStr[0]);
+                cbcOptStr = (char **) malloc(sizeof(char *)*cbcP.size());
+                assert(cbcOptStr);
+                cbcOptStr[0] = (char *)malloc(sizeof(char) * cbcP.size() * STR_OPT_SIZE);
+                assert(cbcOptStr[0]);
                 for (int i = 1 ; (i < (int)cbcP.size()) ; i++) cbcOptStr[i] = cbcOptStr[i - 1] + STR_OPT_SIZE;
                 for (int i = 0 ; (i < (int)cbcP.size()) ; i++) strncpy(cbcOptStr[i], cbcP[i].c_str(), STR_OPT_SIZE);
 
@@ -1718,17 +1778,21 @@ GLPK_GET_MIP_SOLUTION:
                 if (cglCB)
                     delete cglCB;
 #undef STR_OPT_SIZE
-                free(cbcOptStr[0]); free(cbcOptStr); cbcOptStr = NULL;
+                free(cbcOptStr[0]);
+                free(cbcOptStr);
+                cbcOptStr = NULL;
             }
 
             lp->status = LP_NO_SOL_FOUND;
 
-            if (model->isAbandoned()) {
+            if (model->isAbandoned())
+            {
                 sprintf(errorMsg, "Model isAbandoned()\n");
                 errorLine = __LINE__;
                 goto CBC_OPTIMIZATION_ERROR;
             }
-            if ((model->isProvenInfeasible()) || (model->isProvenDualInfeasible())) {
+            if ((model->isProvenInfeasible()) || (model->isProvenDualInfeasible()))
+            {
                 lp->status = LP_INTINFEASIBLE;
                 goto CBC_OPTIMIZATION_CONCLUDED;
             }
@@ -1738,7 +1802,8 @@ GLPK_GET_MIP_SOLUTION:
             if (model->isProvenOptimal())
                 lp->status = LP_OPTIMAL;
 
-            if (model->bestSolution()) {
+            if (model->bestSolution())
+            {
                 memcpy(&((*(lp->_x))[0]), model->solver()->getColSolution(), sizeof(double)*lp_cols(lp));
                 for ( int i=0 ; (i<lp_rows(lp)) ; ++i )
                 {
@@ -1749,7 +1814,8 @@ GLPK_GET_MIP_SOLUTION:
                 }
 
 
-                for (int i = 0; (i < model->numberSavedSolutions()) ; i++) {
+                for (int i = 0; (i < model->numberSavedSolutions()) ; i++)
+                {
                     const double *si = model->savedSolution(i);
                     vector< double > ti;
                     ti.clear();
@@ -1764,14 +1830,16 @@ GLPK_GET_MIP_SOLUTION:
         }
     }
 CBC_OPTIMIZATION_CONCLUDED:
-    if (deleteLP) {
+    if (deleteLP)
+    {
         assert(linearProgram);
         delete linearProgram;
     }
 
     goto OPTIMIZATION_CONCLUDED;
 CBC_OPTIMIZATION_ERROR:
-    if (deleteLP) {
+    if (deleteLP)
+    {
         assert(linearProgram);
         delete linearProgram;
     }
@@ -1784,7 +1852,8 @@ CBC_OPTIMIZATION_ERROR:
 
     lp_config_cpx_params(lp);
 
-    if ((isMIP) && (!lp->optAsContinuous)) {
+    if ((isMIP) && (!lp->optAsContinuous))
+    {
         int cpxError = CPXmipopt(LPcpxDefaultEnv, lp->cpxLP);
         lp_check_for_cpx_error(LPcpxDefaultEnv, cpxError, __FILE__, __LINE__);
         int solStat = CPXgetstat(LPcpxDefaultEnv, lp->cpxLP);
@@ -1795,44 +1864,48 @@ CBC_OPTIMIZATION_ERROR:
         CPXsetdblparam( LPcpxDefaultEnv,  CPX_PARAM_EPAGAP, 1e-7 );
         CPXsetdblparam( LPcpxDefaultEnv,  CPX_PARAM_EPGAP, 1e-5 );
 
-        switch (solStat) {
-            case CPXMIP_OPTIMAL :
-            case CPXMIP_OPTIMAL_TOL :
+        switch (solStat)
+        {
+        case CPXMIP_OPTIMAL :
+        case CPXMIP_OPTIMAL_TOL :
+        {
+            hasSolution = true;
+            int status  = CPXgetobjval(LPcpxDefaultEnv, lp->cpxLP, &lp->obj);
+            if (status)
+            {
+                fprintf(stderr, "Could not get objval. At %s:%d.\n", __FILE__, __LINE__);
+                abort();
+            }
+
+            lp->status = LP_OPTIMAL;
+            break;
+        }
+        case CPX_STAT_INFEASIBLE :
+        case CPX_STAT_INForUNBD :
+        case CPXMIP_INFEASIBLE :
+        case CPXMIP_INForUNBD :
+            lp->status = LP_INFEASIBLE;
+            break;
+        case CPX_STAT_UNBOUNDED :
+        case CPXMIP_UNBOUNDED :
+            lp->status = LP_UNBOUNDED;
+            break;
+        default:
+        {
+            int status  = CPXgetobjval(LPcpxDefaultEnv, lp->cpxLP, &lp->obj);
+            if (status)
+                lp->status = LP_NO_SOL_FOUND;
+            else
             {
                 hasSolution = true;
-                int status  = CPXgetobjval(LPcpxDefaultEnv, lp->cpxLP, &lp->obj);
-                if (status) {
-                    fprintf(stderr, "Could not get objval. At %s:%d.\n", __FILE__, __LINE__);
-                    abort();
-                }
-
-                lp->status = LP_OPTIMAL;
-                break;
+                lp->status = LP_FEASIBLE;
             }
-            case CPX_STAT_INFEASIBLE :
-            case CPX_STAT_INForUNBD :
-            case CPXMIP_INFEASIBLE :
-            case CPXMIP_INForUNBD :
-                lp->status = LP_INFEASIBLE;
-                break;
-            case CPX_STAT_UNBOUNDED :
-            case CPXMIP_UNBOUNDED :
-                lp->status = LP_UNBOUNDED;
-                break;
-            default:
-            {
-                int status  = CPXgetobjval(LPcpxDefaultEnv, lp->cpxLP, &lp->obj);
-                if (status)
-                    lp->status = LP_NO_SOL_FOUND;
-                else {
-                    hasSolution = true;
-                    lp->status = LP_FEASIBLE;
-                }
-                break;
-            }
+            break;
+        }
         }
 
-        if (hasSolution) {
+        if (hasSolution)
+        {
             assert( ((int)lp->_x->size())>=lp_cols(lp) );
             // getting x
             int cpxError = CPXgetx(LPcpxDefaultEnv, lp->cpxLP, &((*(lp->_x))[0]), 0, lp_cols(lp) - 1);
@@ -1858,7 +1931,7 @@ CBC_OPTIMIZATION_ERROR:
                     lp_check_for_cpx_error(LPcpxDefaultEnv, cpxError, __FILE__, __LINE__);
                 }
             }
-         }
+        }
 
         if ( ( lp->status != LP_INFEASIBLE && lp->status != LP_UNBOUNDED ) )
         {
@@ -1868,9 +1941,11 @@ CBC_OPTIMIZATION_ERROR:
 
         goto OPTIMIZATION_CONCLUDED;
     }
-    else {
+    else
+    {
         int status = 0;
-        if (CPXgetprobtype(LPcpxDefaultEnv, lp->cpxLP) == CPXPROB_MILP) {
+        if (CPXgetprobtype(LPcpxDefaultEnv, lp->cpxLP) == CPXPROB_MILP)
+        {
             /* backing up column types */
             ctypes.resize( lp_cols(lp), CPX_CONTINUOUS );
             int cpxError = CPXgetctype( LPcpxDefaultEnv, lp->cpxLP, &ctypes[0], 0, lp_cols(lp)-1 );
@@ -1884,51 +1959,53 @@ CBC_OPTIMIZATION_ERROR:
         lp_check_for_cpx_error(LPcpxDefaultEnv, cpxError, __FILE__, __LINE__);
         int solStat = CPXgetstat(LPcpxDefaultEnv, lp->cpxLP);
 
-        switch (solStat) {
-            case CPX_STAT_OPTIMAL :
+        switch (solStat)
+        {
+        case CPX_STAT_OPTIMAL :
+        {
+            status = CPXgetobjval(LPcpxDefaultEnv, lp->cpxLP, &lp->obj);
+            if (status)
             {
-                status = CPXgetobjval(LPcpxDefaultEnv, lp->cpxLP, &lp->obj);
-                if (status) {
-                    sprintf(errorMsg, "Could not get objval.");
-                    errorLine = __LINE__;
-                    goto OPTIMIZATION_ERROR;
-                }
-
-                int cpxError = CPXgetx(LPcpxDefaultEnv, lp->cpxLP, &((*(lp->_x))[0]), 0, lp_cols(lp) - 1);
-                lp_check_for_cpx_error(LPcpxDefaultEnv, cpxError, __FILE__, __LINE__);
-
-                cpxError = CPXgetdj(LPcpxDefaultEnv, lp->cpxLP, &((*(lp->_rc))[0]), 0, lp_cols(lp) - 1);
-                lp_check_for_cpx_error(LPcpxDefaultEnv, cpxError, __FILE__, __LINE__);
-
-                cpxError = CPXgetpi(LPcpxDefaultEnv, lp->cpxLP, &((*(lp->_pi))[0]), 0, lp_rows(lp) - 1);
-                lp_check_for_cpx_error(LPcpxDefaultEnv, cpxError, __FILE__, __LINE__);
-
-                cpxError = CPXgetslack(LPcpxDefaultEnv, lp->cpxLP, &((*(lp->_slack))[0]), 0, lp_rows(lp) - 1);
-                lp_check_for_cpx_error(LPcpxDefaultEnv, cpxError, __FILE__, __LINE__);
-
-                lp->status = LP_OPTIMAL;
-                goto OPTIMIZATION_CONCLUDED;
+                sprintf(errorMsg, "Could not get objval.");
+                errorLine = __LINE__;
+                goto OPTIMIZATION_ERROR;
             }
 
-            case CPX_STAT_INFEASIBLE :
-                                    lp->status = LP_INFEASIBLE;
-                                    goto OPTIMIZATION_CONCLUDED;
-                                    break;
-            case CPX_STAT_INForUNBD :
-                                    lp->status = LP_INFEASIBLE;
-                                    goto OPTIMIZATION_CONCLUDED;
-                                    break;
-            case CPX_STAT_UNBOUNDED :
-                                    lp->status = LP_UNBOUNDED;
-                                    goto OPTIMIZATION_CONCLUDED;
-                                    break;
-            default :
-                                    char statStr[256];
-                                    CPXgetstatstring(LPcpxDefaultEnv, solStat, statStr);
-                                    sprintf(errorMsg, "CPLEX CPXlpopt returned unhandled optimization status %s.\n", statStr);
-                                    errorLine = __LINE__;
-                                    goto OPTIMIZATION_ERROR;
-                                    break;
+            int cpxError = CPXgetx(LPcpxDefaultEnv, lp->cpxLP, &((*(lp->_x))[0]), 0, lp_cols(lp) - 1);
+            lp_check_for_cpx_error(LPcpxDefaultEnv, cpxError, __FILE__, __LINE__);
+
+            cpxError = CPXgetdj(LPcpxDefaultEnv, lp->cpxLP, &((*(lp->_rc))[0]), 0, lp_cols(lp) - 1);
+            lp_check_for_cpx_error(LPcpxDefaultEnv, cpxError, __FILE__, __LINE__);
+
+            cpxError = CPXgetpi(LPcpxDefaultEnv, lp->cpxLP, &((*(lp->_pi))[0]), 0, lp_rows(lp) - 1);
+            lp_check_for_cpx_error(LPcpxDefaultEnv, cpxError, __FILE__, __LINE__);
+
+            cpxError = CPXgetslack(LPcpxDefaultEnv, lp->cpxLP, &((*(lp->_slack))[0]), 0, lp_rows(lp) - 1);
+            lp_check_for_cpx_error(LPcpxDefaultEnv, cpxError, __FILE__, __LINE__);
+
+            lp->status = LP_OPTIMAL;
+            goto OPTIMIZATION_CONCLUDED;
+        }
+
+        case CPX_STAT_INFEASIBLE :
+            lp->status = LP_INFEASIBLE;
+            goto OPTIMIZATION_CONCLUDED;
+            break;
+        case CPX_STAT_INForUNBD :
+            lp->status = LP_INFEASIBLE;
+            goto OPTIMIZATION_CONCLUDED;
+            break;
+        case CPX_STAT_UNBOUNDED :
+            lp->status = LP_UNBOUNDED;
+            goto OPTIMIZATION_CONCLUDED;
+            break;
+        default :
+            char statStr[256];
+            CPXgetstatstring(LPcpxDefaultEnv, solStat, statStr);
+            sprintf(errorMsg, "CPLEX CPXlpopt returned unhandled optimization status %s.\n", statStr);
+            errorLine = __LINE__;
+            goto OPTIMIZATION_ERROR;
+            break;
         }
     }
 #endif
@@ -1974,88 +2051,88 @@ CBC_OPTIMIZATION_ERROR:
 
     switch (optStatus)
     {
-        case GRB_OPTIMAL:
-        {
-            lp->status = LP_OPTIMAL;
-            hasSolution = true;
-            break;
-        }
-        case GRB_SUBOPTIMAL:
-        {
-            lp->status = LP_FEASIBLE;
-            hasSolution = true;
-            break;
-        }
-        case GRB_INFEASIBLE:
-        {
-            lp->status = LP_INFEASIBLE;
-            goto OPTIMIZATION_CONCLUDED;
-            break;
-        }
-        case GRB_INF_OR_UNBD:
-        {
-            lp->status = LP_INFEASIBLE;
-            goto OPTIMIZATION_CONCLUDED;
-            break;
-        }
-        case GRB_UNBOUNDED:
-        {
-            lp->status = LP_UNBOUNDED;
-            goto OPTIMIZATION_CONCLUDED;
-            break;
-        }
-        case GRB_NODE_LIMIT :
-        {
-            int nSol = 0, grbError = 0;
-            grbError = GRBgetintattr( lp->lp, "SolCount", &nSol );
-            lp_check_for_grb_error( LPgrbDefaultEnv, grbError, __FILE__, __LINE__ );
+    case GRB_OPTIMAL:
+    {
+        lp->status = LP_OPTIMAL;
+        hasSolution = true;
+        break;
+    }
+    case GRB_SUBOPTIMAL:
+    {
+        lp->status = LP_FEASIBLE;
+        hasSolution = true;
+        break;
+    }
+    case GRB_INFEASIBLE:
+    {
+        lp->status = LP_INFEASIBLE;
+        goto OPTIMIZATION_CONCLUDED;
+        break;
+    }
+    case GRB_INF_OR_UNBD:
+    {
+        lp->status = LP_INFEASIBLE;
+        goto OPTIMIZATION_CONCLUDED;
+        break;
+    }
+    case GRB_UNBOUNDED:
+    {
+        lp->status = LP_UNBOUNDED;
+        goto OPTIMIZATION_CONCLUDED;
+        break;
+    }
+    case GRB_NODE_LIMIT :
+    {
+        int nSol = 0, grbError = 0;
+        grbError = GRBgetintattr( lp->lp, "SolCount", &nSol );
+        lp_check_for_grb_error( LPgrbDefaultEnv, grbError, __FILE__, __LINE__ );
 
-            lp->status = (nSol>0) ? LP_FEASIBLE : LP_NO_SOL_FOUND;
-            hasSolution = (nSol>0);
-            break;
-        }
-        case GRB_TIME_LIMIT :
-        {
-            int nSol = 0, grbError = 0;
-            grbError = GRBgetintattr( lp->lp, "SolCount", &nSol );
-            lp_check_for_grb_error( LPgrbDefaultEnv, grbError, __FILE__, __LINE__ );
+        lp->status = (nSol>0) ? LP_FEASIBLE : LP_NO_SOL_FOUND;
+        hasSolution = (nSol>0);
+        break;
+    }
+    case GRB_TIME_LIMIT :
+    {
+        int nSol = 0, grbError = 0;
+        grbError = GRBgetintattr( lp->lp, "SolCount", &nSol );
+        lp_check_for_grb_error( LPgrbDefaultEnv, grbError, __FILE__, __LINE__ );
 
-            lp->status = (nSol>0) ? LP_FEASIBLE : LP_NO_SOL_FOUND;
-            hasSolution = (nSol>0);
-            break;
-         }
-        case GRB_SOLUTION_LIMIT :
-        {
-            int nSol = 0, grbError = 0;
-            grbError = GRBgetintattr( lp->lp, "SolCount", &nSol );
-            lp_check_for_grb_error( LPgrbDefaultEnv, grbError, __FILE__, __LINE__ );
-            lp->status = (nSol>0) ? LP_FEASIBLE : LP_NO_SOL_FOUND;
-            hasSolution = (nSol>0);
-            break;
-        }
-        case GRB_ITERATION_LIMIT:
-        {
-            int nSol = 0, grbError = 0;
-            grbError = GRBgetintattr( lp->lp, "SolCount", &nSol );
-            lp_check_for_grb_error( LPgrbDefaultEnv, grbError, __FILE__, __LINE__ );
-            lp->status = (nSol>0) ? LP_FEASIBLE : LP_NO_SOL_FOUND;
-            hasSolution = (nSol>0);
-            break;
-        }
-        case GRB_CUTOFF:
-        {
-            int nSol = 0, grbError = 0;
-            grbError = GRBgetintattr( lp->lp, "SolCount", &nSol );
-            lp_check_for_grb_error( LPgrbDefaultEnv, grbError, __FILE__, __LINE__ );
-            lp->status = (nSol>0) ? LP_FEASIBLE : LP_NO_SOL_FOUND;
-            fprintf( stderr, "[warning]: specified cutoff is better than optimal solution. no solution information is available.\n");
-            hasSolution = (nSol>0);
-            break;
-        }
+        lp->status = (nSol>0) ? LP_FEASIBLE : LP_NO_SOL_FOUND;
+        hasSolution = (nSol>0);
+        break;
+    }
+    case GRB_SOLUTION_LIMIT :
+    {
+        int nSol = 0, grbError = 0;
+        grbError = GRBgetintattr( lp->lp, "SolCount", &nSol );
+        lp_check_for_grb_error( LPgrbDefaultEnv, grbError, __FILE__, __LINE__ );
+        lp->status = (nSol>0) ? LP_FEASIBLE : LP_NO_SOL_FOUND;
+        hasSolution = (nSol>0);
+        break;
+    }
+    case GRB_ITERATION_LIMIT:
+    {
+        int nSol = 0, grbError = 0;
+        grbError = GRBgetintattr( lp->lp, "SolCount", &nSol );
+        lp_check_for_grb_error( LPgrbDefaultEnv, grbError, __FILE__, __LINE__ );
+        lp->status = (nSol>0) ? LP_FEASIBLE : LP_NO_SOL_FOUND;
+        hasSolution = (nSol>0);
+        break;
+    }
+    case GRB_CUTOFF:
+    {
+        int nSol = 0, grbError = 0;
+        grbError = GRBgetintattr( lp->lp, "SolCount", &nSol );
+        lp_check_for_grb_error( LPgrbDefaultEnv, grbError, __FILE__, __LINE__ );
+        lp->status = (nSol>0) ? LP_FEASIBLE : LP_NO_SOL_FOUND;
+        fprintf( stderr, "[warning]: specified cutoff is better than optimal solution. no solution information is available.\n");
+        hasSolution = (nSol>0);
+        break;
+    }
 
-         default:
-            sprintf( errorMsg, "Unknow status: %d\n", optStatus );
-            goto OPTIMIZATION_ERROR;
+    default:
+        sprintf( errorMsg, "Unknow status: %d\n", optStatus );
+        goto OPTIMIZATION_ERROR;
     }
 
     /* checking best bound for MIPs */
@@ -2074,11 +2151,11 @@ CBC_OPTIMIZATION_ERROR:
         lp_check_for_grb_error( LPgrbDefaultEnv, grbError, __FILE__, __LINE__ );
 
         double *x = &((*lp->_x)[0]);
-        grbError = GRBgetdblattrarray( lp->lp , GRB_DBL_ATTR_X, 0, lp_cols(lp), x );
+        grbError = GRBgetdblattrarray( lp->lp, GRB_DBL_ATTR_X, 0, lp_cols(lp), x );
         lp_check_for_grb_error( LPgrbDefaultEnv, grbError, __FILE__, __LINE__ );
 
         double *slack = &((*lp->_slack)[0]);
-        grbError = GRBgetdblattrarray( lp->lp , GRB_DBL_ATTR_SLACK, 0, lp_rows(lp), slack );
+        grbError = GRBgetdblattrarray( lp->lp, GRB_DBL_ATTR_SLACK, 0, lp_rows(lp), slack );
         for ( int i=0 ; (i<lp_rows(lp)) ; ++i )
             slack[i] = fabs(slack[i]);
 
@@ -2093,40 +2170,40 @@ CBC_OPTIMIZATION_ERROR:
             lp_check_for_grb_error( LPgrbDefaultEnv, grbError, __FILE__, __LINE__ );
 
             double *rc = &((*lp->_rc)[0]);
-            grbError = GRBgetdblattrarray( lp->lp , GRB_DBL_ATTR_RC, 0, lp_cols(lp), rc );
+            grbError = GRBgetdblattrarray( lp->lp, GRB_DBL_ATTR_RC, 0, lp_cols(lp), rc );
             lp_check_for_grb_error( LPgrbDefaultEnv, grbError, __FILE__, __LINE__ );
         }
         else
         {
 #if GRB_VERSION_MAJOR > 6
-{
-            // mip solution, checking solution pool
-            int nSols = 0;
-            grbError = GRBgetintattr( lp->lp , GRB_INT_ATTR_SOLCOUNT, &nSols );
-            lp_check_for_grb_error( LPgrbDefaultEnv, grbError, __FILE__, __LINE__ );
-
-            lp->_savedSol->resize( nSols, vector< double >( lp_cols(lp), 0.0 )  );
-            lp->_savedObj->resize( nSols, DBL_MAX );
-
-            GRBenv   *menv  = GRBgetenv(lp->lp);
-
-            for ( int i=0 ; (i<nSols) ; ++i )
             {
-                grbError = GRBsetintparam( menv, GRB_INT_PAR_SOLUTIONNUMBER, i );
+                // mip solution, checking solution pool
+                int nSols = 0;
+                grbError = GRBgetintattr( lp->lp, GRB_INT_ATTR_SOLCOUNT, &nSols );
                 lp_check_for_grb_error( LPgrbDefaultEnv, grbError, __FILE__, __LINE__ );
 
-                double *obj = &((*lp->_savedObj)[i]);
+                lp->_savedSol->resize( nSols, vector< double >( lp_cols(lp), 0.0 )  );
+                lp->_savedObj->resize( nSols, DBL_MAX );
 
-                grbError = GRBgetdblattr( lp->lp, GRB_DBL_ATTR_POOLOBJVAL , obj );
-                lp_check_for_grb_error( LPgrbDefaultEnv, grbError, __FILE__, __LINE__ );
+                GRBenv   *menv  = GRBgetenv(lp->lp);
 
-                double *x = &((*lp->_savedSol)[i][0]);
-                grbError = GRBgetdblattrarray( lp->lp, GRB_DBL_ATTR_XN, 0, lp_cols(lp), x );
+                for ( int i=0 ; (i<nSols) ; ++i )
+                {
+                    grbError = GRBsetintparam( menv, GRB_INT_PAR_SOLUTIONNUMBER, i );
+                    lp_check_for_grb_error( LPgrbDefaultEnv, grbError, __FILE__, __LINE__ );
+
+                    double *obj = &((*lp->_savedObj)[i]);
+
+                    grbError = GRBgetdblattr( lp->lp, GRB_DBL_ATTR_POOLOBJVAL, obj );
+                    lp_check_for_grb_error( LPgrbDefaultEnv, grbError, __FILE__, __LINE__ );
+
+                    double *x = &((*lp->_savedSol)[i][0]);
+                    grbError = GRBgetdblattrarray( lp->lp, GRB_DBL_ATTR_XN, 0, lp_cols(lp), x );
+                    lp_check_for_grb_error( LPgrbDefaultEnv, grbError, __FILE__, __LINE__ );
+                }
+                grbError = GRBsetintparam( menv, GRB_INT_PAR_SOLUTIONNUMBER, 0 );
                 lp_check_for_grb_error( LPgrbDefaultEnv, grbError, __FILE__, __LINE__ );
             }
-            grbError = GRBsetintparam( menv, GRB_INT_PAR_SOLUTIONNUMBER, 0 );
-            lp_check_for_grb_error( LPgrbDefaultEnv, grbError, __FILE__, __LINE__ );
-}
 #endif
         }
 
@@ -2156,7 +2233,8 @@ OPTIMIZATION_CONCLUDED:
     if ( (isMIP) && (lp->status == LP_OPTIMAL) )
         lp->bestBound = lp->obj;
 
-    time_t endT; time(&endT);
+    time_t endT;
+    time(&endT);
 
 #ifdef DEBUG_LP
     if (lp->status==LP_OPTIMAL || lp->status==LP_FEASIBLE)
@@ -2195,7 +2273,8 @@ OPTIMIZATION_ERROR:
 double lp_obj_value(LinearProgram *lp)
 {
     assert(lp != NULL);
-    if (lp->nOptimizations == 0) {
+    if (lp->nOptimizations == 0)
+    {
         fprintf(stderr, "No optimizations have been made with this model.\n");
         abort();
     }
@@ -2207,12 +2286,14 @@ double *lp_row_price(LinearProgram *lp)
 {
     assert(lp != NULL);
 
-    if (lp->nOptimizations == 0) {
+    if (lp->nOptimizations == 0)
+    {
         fprintf(stderr, "No optimizations have been made with this model.\n");
         abort();
     }
 
-    if (lp->status != LP_OPTIMAL) {
+    if (lp->status != LP_OPTIMAL)
+    {
         fprintf(stderr, "\n\nERROR: no dual solution available.\n At: %s:%d\n\n", __FILE__, __LINE__);
         abort();
     }
@@ -2224,12 +2305,14 @@ double *lp_row_slack( LinearProgram *lp )
 {
     assert(lp != NULL);
 
-    if (lp->nOptimizations == 0) {
+    if (lp->nOptimizations == 0)
+    {
         fprintf(stderr, "No optimizations have been made with this model.\n");
         abort();
     }
 
-    if (lp->status != LP_OPTIMAL && lp->status!=LP_FEASIBLE) {
+    if (lp->status != LP_OPTIMAL && lp->status!=LP_FEASIBLE)
+    {
         fprintf(stderr, "\n\nERROR: no solution available.\n At: %s:%d\n\n", __FILE__, __LINE__);
         abort();
     }
@@ -2241,12 +2324,14 @@ double *lp_x(LinearProgram *lp)
 {
     assert(lp != NULL);
 
-    if ((lp->status != LP_OPTIMAL) && (lp->status != LP_FEASIBLE)) {
+    if ((lp->status != LP_OPTIMAL) && (lp->status != LP_FEASIBLE))
+    {
         fprintf(stderr, "\n\nERROR: no solution available.\n At: %s:%d\n\n", __FILE__, __LINE__);
         abort();
     }
 
-    if (lp->nOptimizations == 0) {
+    if (lp->nOptimizations == 0)
+    {
         fprintf(stderr, "No optimizations have been made with this model.\n");
         abort();
     }
@@ -2456,12 +2541,15 @@ void lp_free(LinearProgramPtr *lp)
     glp_delete_prob((*lp)->_lp);
 #endif
 #ifdef CBC
-    if ((*lp)->justWrapOsi == 0) {
-        if ((*lp)->cglPP == NULL) {
+    if ((*lp)->justWrapOsi == 0)
+    {
+        if ((*lp)->cglPP == NULL)
+        {
             delete (*lp)->_lp;
             (*lp)->osiLP = NULL;
         }
-        else {
+        else
+        {
             delete (*lp)->cglPP;
             (*lp)->_lp = NULL;
             (*lp)->osiLP = NULL;
@@ -2477,8 +2565,8 @@ void lp_free(LinearProgramPtr *lp)
     CPXfreeprob(LPcpxDefaultEnv, &((*lp)->cpxLP));
 #endif // CPX
 #ifdef GRB
-  int grbError = GRBfreemodel( ((*lp)->lp) );
-  lp_check_for_grb_error( LPgrbDefaultEnv, grbError, __FILE__, __LINE__ );
+    int grbError = GRBfreemodel( ((*lp)->lp) );
+    lp_check_for_grb_error( LPgrbDefaultEnv, grbError, __FILE__, __LINE__ );
 #endif
 
     delete (*lp)->_x;
@@ -2537,7 +2625,8 @@ int lp_col( const LinearProgram *lp, int col, int *idx, double *coef )
     const int *ridx = cpmCol->getIndices() + starts[col];
     const double *rcoef = cpmCol->getElements() + starts[col];
 
-    for (int j = 0 ; (j < nzCol) ; ++j) {
+    for (int j = 0 ; (j < nzCol) ; ++j)
+    {
         idx[j] = ridx[j];
         coef[j] = rcoef[j];
     }
@@ -2583,7 +2672,8 @@ int lp_row(const LinearProgram *lp, int row, int *idx, double *coef)
     const CoinBigIndex *starts = cpmRow->getVectorStarts();
     const int *ridx = cpmRow->getIndices() + starts[row];
     const double *rcoef = cpmRow->getElements() + starts[row];
-    for (int j = 0 ; (j < nzRow) ; ++j) {
+    for (int j = 0 ; (j < nzRow) ; ++j)
+    {
         idx[j] = ridx[j];
         coef[j] = rcoef[j];
     }
@@ -2624,15 +2714,16 @@ double lp_rhs(const LinearProgram *lp, int row)
     return lp->osiLP->getRightHandSide()[row];
 #endif
 #ifdef GLPK
-    switch (glp_get_row_type(lp->_lp, row + 1)) {
-        case GLP_LO:
-            return glp_get_row_lb(lp->_lp, row + 1);
-        case GLP_UP:
-            return glp_get_row_ub(lp->_lp, row + 1);
-        case GLP_FX:
-            return glp_get_row_ub(lp->_lp, row + 1);
-        default:
-            abort();
+    switch (glp_get_row_type(lp->_lp, row + 1))
+    {
+    case GLP_LO:
+        return glp_get_row_lb(lp->_lp, row + 1);
+    case GLP_UP:
+        return glp_get_row_ub(lp->_lp, row + 1);
+    case GLP_FX:
+        return glp_get_row_ub(lp->_lp, row + 1);
+    default:
+        abort();
     }
 #endif
 
@@ -2650,15 +2741,15 @@ char lp_sense(const LinearProgram *lp, int row)
     lp_check_for_grb_error( LPgrbDefaultEnv, grbError, __FILE__, __LINE__ );
     switch (sense)
     {
-        case '<':
-            return 'L';
-        case '>':
-            return 'G';
-        case '=':
-            return 'E';
-        default:
-            fprintf( stderr, "Sense %c not recognized.\n", sense );
-            exit( EXIT_FAILURE );
+    case '<':
+        return 'L';
+    case '>':
+        return 'G';
+    case '=':
+        return 'E';
+    default:
+        fprintf( stderr, "Sense %c not recognized.\n", sense );
+        exit( EXIT_FAILURE );
     }
 
 #endif
@@ -2677,15 +2768,16 @@ char lp_sense(const LinearProgram *lp, int row)
     return lp->osiLP->getRowSense()[row];
 #endif
 #ifdef GLPK
-    switch (glp_get_row_type(lp->_lp, row + 1)) {
-        case GLP_LO:
-            return 'G';
-        case GLP_UP:
-            return 'L';
-        case GLP_FX:
-            return 'E';
-        default:
-            abort();
+    switch (glp_get_row_type(lp->_lp, row + 1))
+    {
+    case GLP_LO:
+        return 'G';
+    case GLP_UP:
+        return 'L';
+    case GLP_FX:
+        return 'E';
+    default:
+        abort();
     }
 #endif
 
@@ -2825,7 +2917,7 @@ void lp_set_obj(LinearProgram *lp, double *obj)
     assert(lp != NULL);
 
 #ifdef GRB
-    int grbError = GRBsetdblattrarray( lp->lp, "Obj", 0, lp_cols(lp) , obj );
+    int grbError = GRBsetdblattrarray( lp->lp, "Obj", 0, lp_cols(lp), obj );
     lp_check_for_grb_error( LPgrbDefaultEnv, grbError, __FILE__, __LINE__ );
     grbError = GRBupdatemodel( lp->lp );
     lp_check_for_grb_error( LPgrbDefaultEnv, grbError, __FILE__, __LINE__ );
@@ -2871,7 +2963,8 @@ void lp_add_col(LinearProgram *lp, double obj, double lb, double ub, char intege
 #endif
 #ifdef CPX
     char type = CPX_CONTINUOUS;
-    if (integer) {
+    if (integer)
+    {
         if ((fabs(lb) < EPS) && (fabs(ub - 1.0) < EPS))
             type = CPX_BINARY;
         else
@@ -2909,7 +3002,8 @@ void lp_add_col(LinearProgram *lp, double obj, double lb, double ub, char intege
 
     glp_set_obj_coef(lp->_lp, cols, obj);
 
-    if (integer) {
+    if (integer)
+    {
         if ((fabs(ub - 1.0) <= EPS) && (fabs(lb) <= EPS))
             glp_set_col_kind(lp->_lp, cols, GLP_BV);
         else
@@ -2917,13 +3011,13 @@ void lp_add_col(LinearProgram *lp, double obj, double lb, double ub, char intege
     }
 
     if ((lb != -DBL_MAX) && (ub != DBL_MAX))
-        glp_set_col_bnds(lp->_lp, cols, GLP_DB, lb , ub);
+        glp_set_col_bnds(lp->_lp, cols, GLP_DB, lb, ub);
     else if ((ub == DBL_MAX) && (lb != -DBL_MAX))
-        glp_set_col_bnds(lp->_lp, cols, GLP_LO, lb , ub);
+        glp_set_col_bnds(lp->_lp, cols, GLP_LO, lb, ub);
     else if ((ub != DBL_MAX) && (lb == -DBL_MAX))
-        glp_set_col_bnds(lp->_lp, cols, GLP_UP, lb , ub);
+        glp_set_col_bnds(lp->_lp, cols, GLP_UP, lb, ub);
     else if ((ub == DBL_MAX) && (lb == -DBL_MAX))
-        glp_set_col_bnds(lp->_lp, cols, GLP_FR, -DBL_MAX , DBL_MAX);
+        glp_set_col_bnds(lp->_lp, cols, GLP_FR, -DBL_MAX, DBL_MAX);
 
     for (int i = 0 ; (i < nz) ; ++i)
         rowIdx[i]++;
@@ -2966,38 +3060,40 @@ void lp_set_rhs(LinearProgram *lp, int row, double rhs)
 
 #ifdef CBC
     char sense = lp_sense(lp, row);
-    switch (sense) {
-        case 'E':
-            lp->osiLP->setRowBounds(row, rhs, rhs);
-            break;
-        case 'G':
-            lp->osiLP->setRowBounds(row, rhs, COIN_DBL_MAX);
-            break;
-        case 'L':
-            lp->osiLP->setRowBounds(row, -COIN_DBL_MAX, rhs);
-            break;
-        default:
-            fprintf(stderr, "Unknow sense: %c!\n", sense);
-            abort();
-            exit(1);
+    switch (sense)
+    {
+    case 'E':
+        lp->osiLP->setRowBounds(row, rhs, rhs);
+        break;
+    case 'G':
+        lp->osiLP->setRowBounds(row, rhs, COIN_DBL_MAX);
+        break;
+    case 'L':
+        lp->osiLP->setRowBounds(row, -COIN_DBL_MAX, rhs);
+        break;
+    default:
+        fprintf(stderr, "Unknow sense: %c!\n", sense);
+        abort();
+        exit(1);
     }
 #endif
 #ifdef GLPK
     char sense = lp_sense(lp, row);
-    switch (sense) {
-        case 'E':
-            glp_set_row_bnds(lp->_lp, row + 1, GLP_FX, rhs, rhs);
-            break;
-        case 'G':
-            glp_set_row_bnds(lp->_lp, row + 1, GLP_LO, rhs, DBL_MAX);
-            break;
-        case 'L':
-            glp_set_row_bnds(lp->_lp, row + 1, GLP_UP, -DBL_MAX, rhs);
-            break;
-        default :
-            fprintf(stderr, "Unknow sense: %c!\n", sense);
-            abort();
-            exit(1);
+    switch (sense)
+    {
+    case 'E':
+        glp_set_row_bnds(lp->_lp, row + 1, GLP_FX, rhs, rhs);
+        break;
+    case 'G':
+        glp_set_row_bnds(lp->_lp, row + 1, GLP_LO, rhs, DBL_MAX);
+        break;
+    case 'L':
+        glp_set_row_bnds(lp->_lp, row + 1, GLP_UP, -DBL_MAX, rhs);
+        break;
+    default :
+        fprintf(stderr, "Unknow sense: %c!\n", sense);
+        abort();
+        exit(1);
     }
 #endif
 #endif
@@ -3013,7 +3109,8 @@ double lp_solution_time(LinearProgram *lp)
 #ifdef CPX
 void lp_check_for_cpx_error(CPXENVptr env, int errorCode, const char *sourceFile, int sourceLine)
 {
-    if (errorCode) {
+    if (errorCode)
+    {
         char errorStr[256];
         CPXgeterrorstring(LPcpxDefaultEnv, errorCode, errorStr);
         fprintf(stderr, "CPLEX Error: %s\n", errorStr);
@@ -3026,7 +3123,8 @@ void lp_check_for_cpx_error(CPXENVptr env, int errorCode, const char *sourceFile
 #ifdef GRB
 void lp_check_for_grb_error(GRBenv* env, int errorCode, const char *sourceFile, int sourceLine)
 {
-    if (errorCode) {
+    if (errorCode)
+    {
         fprintf(stderr, "Gurobi Error: %s\n", GRBgeterrormsg( LPgrbDefaultEnv ) );
         fprintf(stderr, "Inside LP Library - %s:%d\n\n", sourceFile, sourceLine);
         abort();
@@ -3103,7 +3201,8 @@ void lp_config_cbc_params(LinearProgram *lp, vector<string> &cbcP)
     assert(lp != NULL);
 
     cbcP.push_back("someMIP"); // problem name
-    if (lp->cuts != INT_NOT_SET) {
+    if (lp->cuts != INT_NOT_SET)
+    {
         if (lp->cuts)
         {
             cbcP.push_back("-cuts");
@@ -3115,7 +3214,8 @@ void lp_config_cbc_params(LinearProgram *lp, vector<string> &cbcP)
             cbcP.push_back("off");
         }
     }
-    if (lp->printMessages != INT_NOT_SET) {
+    if (lp->printMessages != INT_NOT_SET)
+    {
         if (lp->printMessages)
         {
             cbcP.push_back("-log");
@@ -3201,7 +3301,8 @@ void lp_config_cbc_params(LinearProgram *lp, vector<string> &cbcP)
         cbcP.push_back("-passF");
         cbcP.push_back(SSTR(lp->heurFPPasses));
     }
-    if (lp->heurProx != INT_NOT_SET) {
+    if (lp->heurProx != INT_NOT_SET)
+    {
         if (lp->heurProx)
         {
             cbcP.push_back("-proximity");
@@ -3278,14 +3379,12 @@ void lp_set_col_bounds(LinearProgram *lp, int col, const double lb, const double
 #ifdef GLPK
     if ( fabs(l-u)<= EPS )
         glp_set_col_bnds(lp->_lp, col+1, GLP_FX, l, l);
+    else if ( (l==-DBL_MAX) || (l==DBL_MIN) )
+        glp_set_col_bnds( lp->_lp, col+1, GLP_UP, l, u );
+    else if ( u==DBL_MAX )
+        glp_set_col_bnds( lp->_lp, col+1, GLP_LO, l, u );
     else
-        if ( (l==-DBL_MAX) || (l==DBL_MIN) )
-            glp_set_col_bnds( lp->_lp, col+1, GLP_UP, l, u );
-        else
-            if ( u==DBL_MAX )
-                glp_set_col_bnds( lp->_lp, col+1, GLP_LO, l, u );
-            else
-                glp_set_col_bnds( lp->_lp, col+1, GLP_DB, l, u );
+        glp_set_col_bnds( lp->_lp, col+1, GLP_DB, l, u );
 #endif
 #ifdef CPX
     const int idx[] = { col };
@@ -3392,7 +3491,7 @@ LinearProgram *lp_clone(LinearProgram *lp)
                 result->msNames[i+1] = result->msNames[i]+strlen(result->msNames[i])+1;
             }
         }
-     }
+    }
 
 #ifdef GRB
     fprintf( stderr, "Call not implemented in LP yet.\n");
@@ -3435,7 +3534,7 @@ void lp_fix_col(LinearProgram *lp, int col, double val)
 #endif
 #ifdef CPX
     char lu = 'B';
-    int cpxError = CPXchgbds(LPcpxDefaultEnv , lp->cpxLP, 1, &col, &lu, &val);
+    int cpxError = CPXchgbds(LPcpxDefaultEnv, lp->cpxLP, 1, &col, &lu, &val);
     lp_check_for_cpx_error(LPcpxDefaultEnv, cpxError, __FILE__, __LINE__);
 #endif
 #ifdef GLPK
@@ -3642,17 +3741,18 @@ void lp_config_glpk_params(LinearProgram *lp, glp_iocp *iocp)
 
     if ( lp->mipEmphasis != LP_ME_DEFAULT )
     {
-        switch (lp->mipEmphasis) {
-            case LP_ME_OPTIMALITY:
-                iocp->presolve  = GLP_ON;
-                iocp->pp_tech   = GLP_PP_ALL;
-                iocp->gmi_cuts  = GLP_ON;
-                iocp->mir_cuts  = GLP_ON;
-                iocp->cov_cuts  = GLP_ON;
-                iocp->clq_cuts  = GLP_ON;
-                iocp->fp_heur   = GLP_ON;
+        switch (lp->mipEmphasis)
+        {
+        case LP_ME_OPTIMALITY:
+            iocp->presolve  = GLP_ON;
+            iocp->pp_tech   = GLP_PP_ALL;
+            iocp->gmi_cuts  = GLP_ON;
+            iocp->mir_cuts  = GLP_ON;
+            iocp->cov_cuts  = GLP_ON;
+            iocp->clq_cuts  = GLP_ON;
+            iocp->fp_heur   = GLP_ON;
 
-                break;
+            break;
         }
     }
     if (lp->maxSeconds != INT_NOT_SET)
@@ -3715,17 +3815,17 @@ void lp_config_grb_params(LinearProgram *lp)
     {
         switch ( lp->mipEmphasis )
         {
-            case LP_ME_FEASIBILITY:
-            {
-                GRBsetintparam( env, "MIPFocus", 1 );
-                break;
-            }
-            case LP_ME_OPTIMALITY:
-            {
-                int grbError = GRBsetintparam( env, "MIPFocus", 2 );
-                lp_check_for_grb_error( env, grbError, __FILE__, __LINE__ );
-                break;
-            }
+        case LP_ME_FEASIBILITY:
+        {
+            GRBsetintparam( env, "MIPFocus", 1 );
+            break;
+        }
+        case LP_ME_OPTIMALITY:
+        {
+            int grbError = GRBsetintparam( env, "MIPFocus", 2 );
+            lp_check_for_grb_error( env, grbError, __FILE__, __LINE__ );
+            break;
+        }
         }
     }
 }
@@ -3782,8 +3882,8 @@ void lp_config_cpx_params(LinearProgram *lp)
 
     if ( lp->mipEmphasis != LP_ME_DEFAULT )
     {
-    switch (lp->mipEmphasis)
-    {
+        switch (lp->mipEmphasis)
+        {
         case LP_ME_OPTIMALITY:
         {
             CPXsetintparam(LPcpxDefaultEnv, CPX_PARAM_MIPEMPHASIS, CPX_MIPEMPHASIS_BESTBOUND );
@@ -3794,7 +3894,7 @@ void lp_config_cpx_params(LinearProgram *lp)
             CPXsetintparam(LPcpxDefaultEnv, CPX_PARAM_MIPEMPHASIS, CPX_MIPEMPHASIS_FEASIBILITY );
             break;
         }
-    }
+        }
 
     }
 
@@ -3803,14 +3903,16 @@ void lp_config_cpx_params(LinearProgram *lp)
 
     if ( lp->absMIPGap != DBL_MAX )
     {
-        double agap;  CPXgetdblparam( LPcpxDefaultEnv, CPXPARAM_MIP_Tolerances_AbsMIPGap, &agap );
+        double agap;
+        CPXgetdblparam( LPcpxDefaultEnv, CPXPARAM_MIP_Tolerances_AbsMIPGap, &agap );
         printf("changing absolute MIP GAP from %g to %g\n", agap, lp->absMIPGap );
         CPXsetdblparam( LPcpxDefaultEnv, CPXPARAM_MIP_Tolerances_AbsMIPGap, lp->absMIPGap );
     }
 
     if ( lp->relMIPGap != DBL_MAX )
     {
-        double rgap;  CPXgetdblparam( LPcpxDefaultEnv, CPXPARAM_MIP_Tolerances_MIPGap, &rgap );
+        double rgap;
+        CPXgetdblparam( LPcpxDefaultEnv, CPXPARAM_MIP_Tolerances_MIPGap, &rgap );
         printf("changing relative MIP GAP from %g to %g\n", rgap, lp->relMIPGap );
         CPXsetdblparam( LPcpxDefaultEnv, CPXPARAM_MIP_Tolerances_MIPGap, lp->relMIPGap );
     }
@@ -3829,7 +3931,7 @@ void lp_config_cpx_params(LinearProgram *lp)
         const int nNz = lp->msVars;
 
         int cpxError = CPXaddmipstarts( LPcpxDefaultEnv, lp->cpxLP, 1, nNz, beg, idx, coef,
-                effort, NULL );
+                                        effort, NULL );
         lp_check_for_cpx_error(LPcpxDefaultEnv, cpxError, __FILE__, __LINE__);
     }
 }
@@ -3841,13 +3943,15 @@ void lp_write_sol(LinearProgram *lp, const char *fileName)
     assert( lp != NULL );
     assert( lp_cols(lp)>0 );
 
-    if ( lp_obj_value(lp) == DBL_MAX ) {
+    if ( lp_obj_value(lp) == DBL_MAX )
+    {
         fprintf(stderr, "No solution to write.\n");
         abort();
     }
 
     FILE *fsol = fopen(fileName, "w");
-    if (fsol == NULL) {
+    if (fsol == NULL)
+    {
         fprintf(stderr, "Could not open file %s.\n", fileName);
         abort();
     }
@@ -3861,7 +3965,8 @@ void lp_write_sol(LinearProgram *lp, const char *fileName)
     const double *x = lp_x(lp);
     const double *obj = lp_obj_coef( lp );
     char cName[256];
-    for (int i = 0 ; (i < nCols) ; ++i) {
+    for (int i = 0 ; (i < nCols) ; ++i)
+    {
         double xv = x[i];
 
         if (fabs(xv)<EPS)
@@ -3877,7 +3982,8 @@ void lp_write_sol(LinearProgram *lp, const char *fileName)
 
 void lp_parse_options(LinearProgram *lp, int argc, const char **argv)
 {
-    for (int i = 0 ; (i < argc) ; ++i) {
+    for (int i = 0 ; (i < argc) ; ++i)
+    {
         if (argv[i][0] != '-')
             continue;
 
@@ -3887,18 +3993,22 @@ void lp_parse_options(LinearProgram *lp, int argc, const char **argv)
         for (int j = 0 ; (j < len) ; ++j)
             optLower[j] = tolower(optLower[j]);
 
-        if (strstr(optLower, "allinteger")) {
+        if (strstr(optLower, "allinteger"))
+        {
             lp->allInteger = 1;
             printf("solving as a pure integer program\n");
             continue;
         }
-        if (strstr(optLower, "nomip")) {
+        if (strstr(optLower, "nomip"))
+        {
             lp->optAsContinuous = 1;
             printf( "solving only root node relaxation.\n" );
             continue;
         }
-        if (strstr(optLower, "maxsec")) {
-            if (i + 1 == argc) {
+        if (strstr(optLower, "maxsec"))
+        {
+            if (i + 1 == argc)
+            {
                 fprintf(stderr, "enter number of seconds.\n");
                 exit(EXIT_FAILURE);
             }
@@ -3910,8 +4020,10 @@ void lp_parse_options(LinearProgram *lp, int argc, const char **argv)
             lp_set_max_seconds(lp, sec);
             continue;
         }
-        if (strstr(optLower, "maxnodes")) {
-            if (i + 1 == argc) {
+        if (strstr(optLower, "maxnodes"))
+        {
+            if (i + 1 == argc)
+            {
                 fprintf(stderr, "enter number of nodes.\n");
                 exit(EXIT_FAILURE);
             }
@@ -3924,8 +4036,10 @@ void lp_parse_options(LinearProgram *lp, int argc, const char **argv)
             continue;
         }
 
-        if (strstr(optLower, "mipemphasis")) {
-            if (i + 1 == argc) {
+        if (strstr(optLower, "mipemphasis"))
+        {
+            if (i + 1 == argc)
+            {
                 fprintf(stderr, "enter MIP emphasis.\n");
                 exit(EXIT_FAILURE);
             }
@@ -3946,8 +4060,10 @@ void lp_parse_options(LinearProgram *lp, int argc, const char **argv)
             fprintf( stderr, "MIP emphasis not valid: %s. Valid values are: {optimality,feasibility}. ", argv[i+1]);
             exit(EXIT_FAILURE);
         }
-        if (strstr(optLower, "maxsol")) {
-            if (i + 1 == argc) {
+        if (strstr(optLower, "maxsol"))
+        {
+            if (i + 1 == argc)
+            {
                 fprintf(stderr, "enter number of solutions.\n");
                 exit(EXIT_FAILURE);
             }
@@ -3959,8 +4075,10 @@ void lp_parse_options(LinearProgram *lp, int argc, const char **argv)
             lp_set_max_solutions(lp, sol);
             continue;
         }
-        if (strstr(optLower, "absgap")) {
-            if (i + 1 == argc) {
+        if (strstr(optLower, "absgap"))
+        {
+            if (i + 1 == argc)
+            {
                 fprintf(stderr, "enter the allowed absolute MIP gap.\n");
                 exit(EXIT_FAILURE);
             }
@@ -3970,8 +4088,10 @@ void lp_parse_options(LinearProgram *lp, int argc, const char **argv)
             lp_set_abs_mip_gap( lp, agap );
             continue;
         }
-        if (strstr(optLower, "relgap")) {
-            if (i + 1 == argc) {
+        if (strstr(optLower, "relgap"))
+        {
+            if (i + 1 == argc)
+            {
                 fprintf(stderr, "enter the relative MIP gap.\n");
                 exit(EXIT_FAILURE);
             }
@@ -3981,8 +4101,10 @@ void lp_parse_options(LinearProgram *lp, int argc, const char **argv)
             lp_set_rel_mip_gap( lp, rgap );
             continue;
         }
-        if (strstr(optLower, "soloutfn")) {
-            if (i + 1 == argc) {
+        if (strstr(optLower, "soloutfn"))
+        {
+            if (i + 1 == argc)
+            {
                 fprintf(stderr, "enter solution file name.\n");
                 exit(EXIT_FAILURE);
             }
@@ -3992,8 +4114,10 @@ void lp_parse_options(LinearProgram *lp, int argc, const char **argv)
             lp_set_sol_out_file_name(lp, argv[i + 1]);
             continue;
         }
-        if (strstr(optLower, "solinfn")) {
-            if (i + 1 == argc) {
+        if (strstr(optLower, "solinfn"))
+        {
+            if (i + 1 == argc)
+            {
                 fprintf(stderr, "enter solution file name.\n");
                 exit(EXIT_FAILURE);
             }
@@ -4164,7 +4288,8 @@ int lp_read_mip_start( LinearProgram *lp, const char *fileName )
 
     int nLine = 0;
 
-    vector< string > cNames; vector< double > cValues;
+    vector< string > cNames;
+    vector< double > cValues;
     while (fgets( line, STR_SIZE, f ))
     {
         ++nLine;
@@ -4295,11 +4420,10 @@ int lp_row_type( LinearProgram *lp, const int row )
         maxc = std::max( maxc, coef[j] );
         if (lp_is_binary(lp,idx[j]))
             nbinaries++;
+        else if (lp_is_integer(lp,idx[j]))
+            nint++;
         else
-            if (lp_is_integer(lp,idx[j]))
-                nint++;
-            else
-                ncont++;
+            ncont++;
         nIntCoef += is_integer( coef[j] );
     }
     char sense = lp_sense( lp, row );
@@ -4312,50 +4436,47 @@ int lp_row_type( LinearProgram *lp, const int row )
     {
         switch (sense)
         {
-            case 'E':
+        case 'E':
+        {
+            if (allOneLHS )
             {
-                if (allOneLHS )
-                {
-                    if ( rhsOne )
-                        result = CONS_PARTITIONING;
-                    else
-                        if ( rhs >= 1.99 )
-                            result = CONS_CARDINALITY;
-                }
+                if ( rhsOne )
+                    result = CONS_PARTITIONING;
+                else if ( rhs >= 1.99 )
+                    result = CONS_CARDINALITY;
+            }
+            goto RETURN_POINT;
+        }
+        case 'L':
+        {
+            if ( (allOneLHS) && (rhsOne) )
+            {
+                result = CONS_PACKING;
                 goto RETURN_POINT;
             }
-            case 'L':
+            else if (allOneLHS)
             {
-                if ( (allOneLHS) && (rhsOne) )
-                {
-                    result = CONS_PACKING;
-                    goto RETURN_POINT;
-                }
-                else
-                if (allOneLHS)
-                {
-                    result = CONS_INV_KNAPSACK;
-                    goto RETURN_POINT;
-                }
-                else
-                if ( (maxc>=1.99) && (rhs>=1.99) )
-                {
-                    result = CONS_KNAPSACK;
-                    goto RETURN_POINT;
-                }
-
-               goto RETURN_POINT;
-            }
-            case 'G':
-            {
-                if( (allOneLHS) && (rhsOne) )
-                {
-                    result = CONS_COVERING;
-                    goto RETURN_POINT;
-                }
+                result = CONS_INV_KNAPSACK;
                 goto RETURN_POINT;
-
             }
+            else if ( (maxc>=1.99) && (rhs>=1.99) )
+            {
+                result = CONS_KNAPSACK;
+                goto RETURN_POINT;
+            }
+
+            goto RETURN_POINT;
+        }
+        case 'G':
+        {
+            if( (allOneLHS) && (rhsOne) )
+            {
+                result = CONS_COVERING;
+                goto RETURN_POINT;
+            }
+            goto RETURN_POINT;
+
+        }
         }
     }
 
@@ -4412,7 +4533,7 @@ void lp_set_integer( LinearProgram *lp, int nCols, int cols[] )
 #ifdef GLPK
     for ( int i=0 ; i<nCols ; ++i )
     {
-    if ((lp_col_lb(lp,i)<=-1e-5)||(lp_col_ub(lp,i)>=1.0+1e-5))
+        if ((lp_col_lb(lp,i)<=-1e-5)||(lp_col_ub(lp,i)>=1.0+1e-5))
             glp_set_col_kind( lp->_lp, cols[i]+1, GLP_IV);
         else
             glp_set_col_kind( lp->_lp, cols[i]+1, GLP_BV);
@@ -4524,7 +4645,7 @@ bool dbl_equal( const double v1, const double v2 )
 
 double round( const double v )
 {
-   return (double) ( (long long) (v+0.5) );
+    return (double) ( (long long) (v+0.5) );
 }
 
 bool is_integer( const double v )
@@ -4555,12 +4676,14 @@ double* lp_reduced_cost(const LinearProgram* lp)
 {
     assert(lp != NULL);
 
-    if (lp->nOptimizations == 0) {
+    if (lp->nOptimizations == 0)
+    {
         fprintf(stderr, "No optimizations have been made with this model.\n");
         abort();
     }
 
-    if (lp->status != LP_OPTIMAL) {
+    if (lp->status != LP_OPTIMAL)
+    {
         fprintf(stderr, "\n\nERROR: no dual solution available.\n At: %s:%d\n\n", __FILE__, __LINE__);
         abort();
     }
@@ -4660,7 +4783,8 @@ void lp_remove_rows( LinearProgram *lp, int nRows, int *rows )
 
 void lp_set_branching_priorities( LinearProgram *lp, int *priorities )
 {
-    assert( lp ); assert( priorities );
+    assert( lp );
+    assert( priorities );
 
     lp->_priorities->resize( lp_cols(lp) );
     memcpy( &((*lp->_priorities)[0]), priorities, sizeof(int)*lp_cols(lp) );
@@ -4680,11 +4804,14 @@ void lp_add_cutoff( LinearProgram *lp, double cutoff, char addConstraint )
 void lp_fix_mipstart( LinearProgram *lp )
 {
     lp_check_mipstart( lp );
-    vector< double > lb; vector< double > ub;
+    vector< double > lb;
+    vector< double > ub;
 
     for ( int i=0 ; (i<lp->msVars) ; ++i )
     {
-        printf("fixing %s (%d) to %g\n", lp->msNames[i], lp->msIdx[i], lp->msVal[i] ); fflush(stdout); fflush(stderr);
+        printf("fixing %s (%d) to %g\n", lp->msNames[i], lp->msIdx[i], lp->msVal[i] );
+        fflush(stdout);
+        fflush(stderr);
         lb.push_back( lp_col_lb( lp, lp->msIdx[i] ) );
         ub.push_back( lp_col_ub( lp, lp->msIdx[i] ) );
         lp_fix_col( lp, lp->msIdx[i], lp->msVal[i] );
@@ -4731,23 +4858,20 @@ void fill_rc(const LinearProgram *lp, double *rc)
 }
 
 extern "C" {
-    #include "clique_separation.h"
-    #include "oddhs.h"
+#include "clique_separation.h"
+#include "oddhs.h"
 }
 #include "knapsack_separation.hpp"
 int lp_generate_clique_cuts(LinearProgram *lp, const CGraph *cg, CutPool *cutPool, int argc, const char **argv)
 {
     const int numCols = lp_cols(lp);
-    double *ones = new double[numCols*2];
     double *x = new double[numCols*2];
     double *rc = new double[numCols*2];
     int *idxs = new int[numCols*2];
     double *coefs = new double[numCols*2];
-    int newCuts = 0;
+    int cutsBefore = cut_pool_size(cutPool);
 
     assert(numCols == cgraph_size(cg)/2);
-
-    fill(ones, ones + (numCols*2), 1);
 
     CliqueSeparation *sep = clq_sep_create(cg);
     clq_sep_set_params_parse_cmd_line(sep, argc, argv);
@@ -4764,18 +4888,25 @@ int lp_generate_clique_cuts(LinearProgram *lp, const CGraph *cg, CutPool *cutPoo
     const CliqueSet *clqSet = clq_sep_get_cliques(sep);
     for(int i = 0; i < clq_set_number_of_cliques(clqSet); i++)
     {
+        int dup = 0;
         const int clqSize = clq_set_clique_size(clqSet, i);
         const int *el = clq_set_clique_elements(clqSet, i);
         double lhs = 0.0;
         double rhs = 1.0;
+        char *iv = new char[numCols*2]();
 
         for(int j = 0; j < clqSize; j++)
         {
+            assert(iv[el[j]] == 0);
+            iv[el[j]] = 1;
             if(el[j] < numCols)
             {
                 coefs[j] = 1.0;
                 idxs[j] = el[j];
                 lhs += x[idxs[j]];
+
+                if(iv[el[j]+numCols] == 1)
+                    dup++;
             }
             else
             {
@@ -4783,25 +4914,44 @@ int lp_generate_clique_cuts(LinearProgram *lp, const CGraph *cg, CutPool *cutPoo
                 idxs[j] = el[j]-numCols;
                 rhs -= 1.0;
                 lhs -= x[idxs[j]];
+
+                if(iv[el[j]-numCols] == 1)
+                    dup++;
             }
         }
+        assert(dup <= 1);
+        if(dup)
+        {
+            for(int j = 0; j < clqSize; j++)
+            {
+                int var = idxs[j];
+                int complement = var + numCols;
+                if(iv[var] && iv[complement])
+                    continue;
 
-        Cut *cut = cut_create(idxs, coefs, clqSize, rhs, lp_x(lp));
+                if(coefs[j] == -1.0)
+                    lp_set_col_bounds(lp, var, 1.0, 1.0);
+                else
+                    lp_set_col_bounds(lp, var, 0.0, 0.0);
+            }
 
-        if(!cut_pool_insert(cutPool, cut))
-            cut_free(&cut);
-        else newCuts++;
+        }
+        else
+        {
+            Cut *cut = cut_create(idxs, coefs, clqSize, rhs, lp_x(lp));
+            if(!cut_pool_insert(cutPool, cut))
+                cut_free(&cut);
+        }
     }
 
     clq_sep_free(&sep);
 
-    delete []ones;
     delete []x;
     delete []rc;
     delete []idxs;
     delete []coefs;
 
-    return newCuts;
+    return (cut_pool_size(cutPool) - cutsBefore);
 }
 
 int lp_generate_odd_hole_cuts(LinearProgram *lp, const CGraph *cg, CutPool *cutPool)
@@ -4812,10 +4962,10 @@ int lp_generate_odd_hole_cuts(LinearProgram *lp, const CGraph *cg, CutPool *cutP
     int *idx = new int[numCols*2];
     int *idxMap = new int[numCols*2];
     double *coef = new double[numCols*2];
-	OddHoleSep *oddhs = oddhs_create();
-	int newCuts = 0;
+    OddHoleSep *oddhs = oddhs_create();
+    int cutsBefore = cut_pool_size(cutPool);
 
-	assert(numCols == cgraph_size(cg)/2);
+    assert(numCols == cgraph_size(cg)/2);
 
     fill_x(lp, x);
     fill_rc(lp, rc);
@@ -4907,7 +5057,6 @@ int lp_generate_odd_hole_cuts(LinearProgram *lp, const CGraph *cg, CutPool *cutP
         Cut *cut = cut_create(idx, coef, realSize, rhs, lp_x(lp));
         if(!cut_pool_insert(cutPool, cut))
             cut_free(&cut);
-        else newCuts++;
     }
 
     oddhs_free( &oddhs );
@@ -4917,27 +5066,28 @@ int lp_generate_odd_hole_cuts(LinearProgram *lp, const CGraph *cg, CutPool *cutP
     delete[] idxMap;
     delete[] coef;
 
-    return newCuts;
+    return (cut_pool_size(cutPool) - cutsBefore);
 }
 
-int lp_generate_knapsack_cuts(LinearProgram *lp, const CGraph *cg, CutPool *cutPool)
+int lp_generate_knapsack_cuts(LinearProgram *lp, const CGraph *cg, CutPool *cutPool, int argc, const char **argv)
 {
     const int numCols = lp_cols(lp);
     KnapsackSeparation *ksep = knapsack_sep_create(lp);
     double *x = new double[numCols*2];
     double *rc = new double[numCols*2];
-    int newCuts = 0;
+    int cutsBefore = cut_pool_size(cutPool);
 
     assert(numCols == cgraph_size(cg)/2);
 
     fill_x(lp, x);
     fill_rc(lp, rc);
     knapsack_sep_set_graph(ksep, cg);
+    knapsack_sep_set_params_parse_cmd_line(ksep, argc, argv);
     knapsack_sep_separate(ksep, x, rc, cutPool);
 
     delete[] x;
     delete[] rc;
     knapsack_sep_free(&ksep);
 
-    return newCuts;
+    return (cut_pool_size(cutPool) - cutsBefore);
 }

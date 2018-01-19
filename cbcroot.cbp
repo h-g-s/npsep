@@ -11,7 +11,7 @@
 				<Option object_output="obj/Debug/" />
 				<Option type="1" />
 				<Option compiler="gcc" />
-				<Option parameters="instances/air04.mps.gz -extendC=4 -aggrClique=on -oddHole=on -knapsack=on" />
+				<Option parameters="instances/air04.mps.gz -extendC=3 -maxItBK=50000 -aggrClique=on -oddHole=on -knapsack=on" />
 				<Compiler>
 					<Add option="-g" />
 				</Compiler>

@@ -213,6 +213,6 @@ void lp_set_store_names( char store );
 /* cuts based on conflict graphs */
 int lp_generate_clique_cuts(LinearProgram *lp, const CGraph *cg, CutPool *cutPool, int argc, const char **argv);
 int lp_generate_odd_hole_cuts(LinearProgram *lp, const CGraph *cg, CutPool *cutPool);
-int lp_generate_knapsack_cuts(LinearProgram *lp, const CGraph *cg, CutPool *cutPool);
+int lp_generate_knapsack_cuts(LinearProgram *lp, const CGraph *cg, CutPool *cutPool, int argc, const char **argv);
 
 #endif

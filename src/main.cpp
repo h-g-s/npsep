@@ -205,11 +205,13 @@ int main( int argc, char **argv )
     lp_set_print_messages(mip, 0);
     const int numCols = lp_cols(mip), numRows = lp_rows(mip);
     int pass = 0, newCuts = 0, totalCuts = 0;
+    int cliqueCuts = 0, knpCuts = 0, oddCuts = 0;
     double opt, pTime;
 
-    clock_t graphTime = clock();
+    clock_t cgClock = clock();
     CGraph *cgraph = build_cgraph_lp(mip);
-    printf("Conflict graph built in %.2lf seconds.\n", ((double)(clock()-graphTime)) / ((double)CLOCKS_PER_SEC));
+    double cgTime = ((double)(clock()-cgClock)) / ((double)CLOCKS_PER_SEC);
+//    printf("Conflict graph built in %.2lf seconds.\n", ((double)(clock()-graphTime)) / ((double)CLOCKS_PER_SEC));
 
     if(!optFile.empty())
     {
@@ -222,7 +224,7 @@ int main( int argc, char **argv )
         opt = optimals[problemName];
     }
 
-    printf("numcols %d numrows %d\n", numCols, numRows);
+//    printf("numcols %d numrows %d\n", numCols, numRows);
 
     int status = lp_optimize_as_continuous(mip);
 
@@ -253,12 +255,12 @@ int main( int argc, char **argv )
     }
 
     double initialBound = lp_obj_value(mip);
-    printf("%.2lf %d %d %.7lf", ((double)(clock()-start)) / ((double)CLOCKS_PER_SEC), pass, 0, initialBound);
-    if(!optFile.empty())
-    {
-        printf(" %.7lf %.7lf", opt, abs_mip_gap(initialBound, opt));
-    }
-    printf("\n");
+////    printf("%.2lf %d %d %.7lf", ((double)(clock()-start)) / ((double)CLOCKS_PER_SEC), pass, 0, initialBound);
+//    if(!optFile.empty())
+//    {
+//        printf(" %.7lf %.7lf", opt, abs_mip_gap(initialBound, opt));
+//    }
+//    printf("\n");
 
     do
     {
@@ -268,13 +270,13 @@ int main( int argc, char **argv )
         CutPool *cutPool = cut_pool_create(numCols);
 
         if(aggrClique)
-            lp_generate_clique_cuts(mip, cgraph, cutPool, argc, (const char**)argv);
+            cliqueCuts += lp_generate_clique_cuts(mip, cgraph, cutPool, argc, (const char**)argv);
 
         if(oddHole)
-            lp_generate_odd_hole_cuts(mip, cgraph, cutPool);
+            oddCuts += lp_generate_odd_hole_cuts(mip, cgraph, cutPool);
 
         if(knapsack)
-            lp_generate_knapsack_cuts(mip, cgraph, cutPool);
+            knpCuts += lp_generate_knapsack_cuts(mip, cgraph, cutPool, argc, (const char**)argv);
 
         cut_pool_update(cutPool);
         newCuts = cut_pool_size(cutPool);
@@ -305,6 +307,8 @@ int main( int argc, char **argv )
                     fprintf(stderr, "LP_UNBOUNDED");
                     exit(EXIT_FAILURE);
                 case LP_INFEASIBLE:
+                    sprintf(name, "%s_with_cuts.lp", problemName);
+                    lp_write_lp(mip, name);
                     fprintf(stderr, "LP_INFEASIBLE");
                     exit(EXIT_FAILURE);
                 case LP_FEASIBLE:
@@ -323,28 +327,31 @@ int main( int argc, char **argv )
                     exit(EXIT_FAILURE);
             }
 
-            double sepTime = ((double)(clock()-start)) / ((double)CLOCKS_PER_SEC);
-            printf("%.2lf %d %d %.7lf", sepTime, pass, newCuts, lp_obj_value(mip));
-            if(!optFile.empty())
-                printf(" %.7lf %.7lf", opt, abs_mip_gap(lp_obj_value(mip), opt));
-            printf("\n");
+//            double sepTime = ((double)(clock()-start)) / ((double)CLOCKS_PER_SEC);
+//            printf("%.2lf %d %d %.7lf", sepTime, pass, newCuts, lp_obj_value(mip));
+//            if(!optFile.empty())
+//                printf(" %.7lf %.7lf", opt, abs_mip_gap(lp_obj_value(mip), opt));
+//            printf("\n");
         }
     }
     while ( (newCuts>0) && (pass<MAX_PASSES) ) ;
 
     double totalTime = ((double)(clock()-start)) / ((double)CLOCKS_PER_SEC);
-    printf("%s %.2lf %d %d %.7lf", problemName, totalTime, pass - 1, totalCuts, lp_obj_value(mip));
+//    printf("%s %.2lf %d %d %.7lf", problemName, totalTime, pass - 1, totalCuts, lp_obj_value(mip));
 
-    if(log)
-    {
-        fprintf(log, "%s %.2lf %d %d %.7lf", problemName, totalTime, pass - 1, totalCuts, lp_obj_value(mip));
-        if(!optFile.empty())
-            fprintf(log, " %.7lf", abs_mip_gap(lp_obj_value(mip), opt));
-        fprintf(log, "\n");
-    }
+//    if(log)
+//    {
+//        fprintf(log, "%s %.2lf %d %d %.7lf", problemName, totalTime, pass - 1, totalCuts, lp_obj_value(mip));
+//        if(!optFile.empty())
+//            fprintf(log, " %.7lf", abs_mip_gap(lp_obj_value(mip), opt));
+//        fprintf(log, "\n");
+//    }
 
-    sprintf(name, "%s_with_cuts.lp", problemName);
-    lp_write_lp(mip, name);
+    printf("%s %.7lf %.7lf %.2lf %.2lf ", problemName, initialBound, lp_obj_value(mip), totalTime, cgTime);
+    printf("%d %d %d %d\n", pass-1, cliqueCuts, oddCuts, knpCuts);
+
+//    sprintf(name, "%s_with_cuts.lp", problemName);
+//    lp_write_lp(mip, name);
 
    	lp_free(&mip);
     cgraph_free(&cgraph);

@@ -14,13 +14,12 @@
 #include "macros.h"
 #include "node_heap.h"
 
-#define EPSILON 1e-5             // minimum to a variable to be considered active
-#define MIN_FRAC 0.001
-
+// minimum to a variable to be considered active
+#define EPSILON             1e-5
+#define ODD_DEF_MIN_FRAC    0.001
 #define DIST_INF 33554432    // not INT_MAX to not cause overflow (2^25)
-
 #define DIST_MAX 16384       // maximum  distance for nodes with conflicts
-// (< infinity) in the distance graph
+                            // (< infinity) in the distance graph
 
 #define MAX_WHEEL_CENTERS 256
 
@@ -711,7 +710,7 @@ int oddhs_find_wheel_centers( const int cols, const double *x, const double rc[]
          continue;
 
       int priority = INT_MAX / 2;
-      if ( x[i] >= MIN_FRAC )
+      if ( x[i] >= ODD_DEF_MIN_FRAC )
          priority = (int)(x[i] * 1000.0);
       else /* avoiding negative numbers */
          priority = (int)(1000000.0 + rc[i]);
@@ -784,7 +783,7 @@ void oddhs_make_maximal_cliques( OddHoleSep *oddhs, const CGraph *cgraph, const 
       {
          const int idxn = neighs[i];
          const double fp = oddhs_frac_part( x[idxn] );
-         if ( (fp<MIN_FRAC) || (vint_set_find( clq, idxn )) || (cgraph_degree(cgraph, idxn)<3) )
+         if ( (fp<ODD_DEF_MIN_FRAC) || (vint_set_find( clq, idxn )) || (cgraph_degree(cgraph, idxn)<3) )
             continue;
          const int ifp = 501 - (int)(fp*1000.0);
          nh_update( nh, idxn, ifp );

@@ -97,6 +97,10 @@ int clqe_get_best_candidates_clique_insertion( CliqueExtender *clqe, const IntSe
     const int cliqueSize = vint_set_size( clique ), *cliqueEl = vint_set_get_elements( clique );
 
     const CGraph *cgraph = clqe->cgraph;
+    const int cgSize = cgraph_size(cgraph);
+    const int nCols = cgSize/2;
+    assert( (cgSize % 2) == 0 );
+    char *iv = xcalloc(cgSize, sizeof(char));
 
     /* picking node with the smallest degree */
     for ( i=0 ; (i<cliqueSize) ; ++i )
@@ -123,13 +127,16 @@ int clqe_get_best_candidates_clique_insertion( CliqueExtender *clqe, const IntSe
 
         while ( ( (selected=nit_next(nit))!=INT_MAX ) && (nCandidates<clqe->maxCandidates) )
         {
-            if(costs[selected] > clqe->maxCost)
+            if( (costs != NULL && costs[selected] > clqe->maxCost) || iv[selected] == 1)
                 continue;
 
             /* need to have conflict with all nodes in clique and all others inserted */
-            for ( i=0 ; (i<cliqueSize) ; ++i )
-                if ( (!cgraph_conflicting_nodes( cgraph, cliqueEl[i], selected )) || (selected==cliqueEl[i]) )
+            for(i = 0; i < cliqueSize; i++)
+            {
+                int complement = (cliqueEl[i] < nCols) ? (cliqueEl[i] + nCols) : (cliqueEl[i] - nCols);
+                if ( (!cgraph_conflicting_nodes( cgraph, cliqueEl[i], selected )) || (selected==cliqueEl[i]) || (selected==complement) )
                     break;
+            }
             if (i<cliqueSize)
                 continue;
             for ( i=0 ; (i<nCandidates) ; ++i )
@@ -138,6 +145,10 @@ int clqe_get_best_candidates_clique_insertion( CliqueExtender *clqe, const IntSe
             if (i<nCandidates)
                 continue;
             candidates[nCandidates++] = selected;
+
+            int complement = (selected < nCols) ? (selected + nCols) : (selected - nCols);
+            iv[selected] = 1;
+            iv[complement] = 1;
         }
     }
     else if(clqem == CLQEM_MAX_DEGREE)
@@ -153,12 +164,15 @@ int clqe_get_best_candidates_clique_insertion( CliqueExtender *clqe, const IntSe
 
         while ( ( (selected=nit_next(nit))!=INT_MAX ) && (nCandidates<clqe->maxCandidates) )
         {
-            if(costs != NULL && costs[selected] > clqe->maxCost)
+            if( (costs != NULL && costs[selected] > clqe->maxCost) || iv[selected] == 1)
                 continue;
 
             for(i = 0; i < cliqueSize; i++)
-                if ( (!cgraph_conflicting_nodes( cgraph, cliqueEl[i], selected )) || (selected==cliqueEl[i]) )
+            {
+                int complement = (cliqueEl[i] < nCols) ? (cliqueEl[i] + nCols) : (cliqueEl[i] - nCols);
+                if ( (!cgraph_conflicting_nodes( cgraph, cliqueEl[i], selected )) || (selected==cliqueEl[i]) || (selected==complement) )
                     break;
+            }
             if (i < cliqueSize)
                 continue;
             for(i = 0; i < nCandidates; i++)
@@ -167,6 +181,10 @@ int clqe_get_best_candidates_clique_insertion( CliqueExtender *clqe, const IntSe
             if (i < nCandidates)
                 continue;
             candidates[nCandidates++] = selected;
+
+            int complement = (selected < nCols) ? (selected + nCols) : (selected - nCols);
+            iv[selected] = 1;
+            iv[complement] = 1;
         }
         free(degree);
     }
@@ -182,12 +200,15 @@ int clqe_get_best_candidates_clique_insertion( CliqueExtender *clqe, const IntSe
             {
                 selected = neighs[i];
 
-                if(costs != NULL && costs[selected] > clqe->maxCost)
+                if( (costs != NULL && costs[selected] > clqe->maxCost) || iv[selected] == 1)
                     continue;
 
                 for(j = 0; j < cliqueSize; j++)
-                    if((!cgraph_conflicting_nodes(cgraph, cliqueEl[j], selected)) || (selected == cliqueEl[j]))
+                {
+                    int complement = (cliqueEl[j] < nCols) ? (cliqueEl[j] + nCols) : (cliqueEl[j] - nCols);
+                    if ( (!cgraph_conflicting_nodes( cgraph, cliqueEl[j], selected )) || (selected==cliqueEl[j]) || (selected==complement) )
                         break;
+                }
                 if(j < cliqueSize)
                     continue;
                 for(j = 0; j < nCandidates; j++)
@@ -196,6 +217,10 @@ int clqe_get_best_candidates_clique_insertion( CliqueExtender *clqe, const IntSe
                 if(j < nCandidates)
                     continue;
                 candidates[nCandidates++] = selected;
+
+                int complement = (selected < nCols) ? (selected + nCols) : (selected - nCols);
+                iv[selected] = 1;
+                iv[complement] = 1;
             }
         }
         else
@@ -214,12 +239,15 @@ int clqe_get_best_candidates_clique_insertion( CliqueExtender *clqe, const IntSe
                 isSelected[r] = 1;
                 remaining--;
 
-                if(costs != NULL && costs[selected] > clqe->maxCost)
+                if( (costs != NULL && costs[selected] > clqe->maxCost) || iv[selected] == 1)
                     continue;
 
                 for(j = 0; j < cliqueSize; j++)
-                    if((!cgraph_conflicting_nodes(cgraph, cliqueEl[j], selected)) || (selected == cliqueEl[j]))
+                {
+                    int complement = (cliqueEl[j] < nCols) ? (cliqueEl[j] + nCols) : (cliqueEl[j] - nCols);
+                    if ( (!cgraph_conflicting_nodes( cgraph, cliqueEl[j], selected )) || (selected==cliqueEl[j]) || (selected==complement) )
                         break;
+                }
                 if(j < cliqueSize)
                     continue;
                 for(j = 0; j < nCandidates; j++)
@@ -228,12 +256,18 @@ int clqe_get_best_candidates_clique_insertion( CliqueExtender *clqe, const IntSe
                 if(j < nCandidates)
                     continue;
                 candidates[nCandidates++] = selected;
+
+                int complement = (selected < nCols) ? (selected + nCols) : (selected - nCols);
+                iv[selected] = 1;
+                iv[complement] = 1;
             }
             free(isSelected);
         }
 
         free(neighs);
     }
+
+    free(iv);
 
     return nCandidates;
 }
@@ -262,6 +296,9 @@ int exact_clique_extension( CliqueExtender *clqe, const IntSet *clique, const in
     int nodeSD = -1, degree = INT_MAX;
     int minRC =  INT_MAX, maxRC = -INT_MAX;
     int *newClique = xmalloc(sizeof(int) * cgSize);
+    const int nCols = cgSize/2;
+    assert( (cgSize % 2) == 0 );
+    char *iv = xcalloc(cgSize, sizeof(char));
 
     for(i = 0; i < cgSize; i++)
         nindexes[i] = -1;
@@ -283,17 +320,24 @@ int exact_clique_extension( CliqueExtender *clqe, const IntSet *clique, const in
     {
         int neigh = neighs[i];
 
-        if(clqe->costs[neigh] > clqe->maxCost)
+        if(clqe->costs[neigh] > clqe->maxCost || iv[neigh] == 1)
             continue;
 
         for(j = 0; j < clqSize; j++)
-            if( (neigh == clqEl[j]) || (!cgraph_conflicting_nodes(clqe->cgraph, clqEl[j], neigh)) )
+        {
+            int complement = (clqEl[j] < nCols) ? (clqEl[j] + nCols) : (clqEl[j] - nCols);
+            if( (neigh == clqEl[j]) || (neigh == complement) || (!cgraph_conflicting_nodes(clqe->cgraph, clqEl[j], neigh)) )
                 break;
+        }
         if(j >= clqSize)
         {
             candidates[nCandidates++] = neigh;
             minRC = MIN(minRC, clqe->costs[neigh]);
             maxRC = MAX(maxRC, clqe->costs[neigh]);
+
+            int complement = (neigh < nCols) ? (neigh + nCols) : (neigh - nCols);
+            iv[neigh] = 1;
+            iv[complement] = 1;
         }
     }
 
@@ -312,6 +356,7 @@ int exact_clique_extension( CliqueExtender *clqe, const IntSet *clique, const in
     {
         free(newClique);
         free(nindexes);
+        free(iv);
         return 0;
     }
 
@@ -384,6 +429,7 @@ int exact_clique_extension( CliqueExtender *clqe, const IntSet *clique, const in
     bk_free(bk);
     cgraph_free(&cg);
     free(newClique);
+    free(iv);
 
     return newCliques;
 }

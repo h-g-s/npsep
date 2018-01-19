@@ -78,7 +78,7 @@ struct _CliqueSeparation
     void *bk;
 
     /* max iterations for bron-kerbosch */
-    size_t maxItBK;
+    int maxItBK;
 
     int verbose;
 };
@@ -428,7 +428,7 @@ void clq_sep_params_print( const CliqueSeparation *clqsp )
     printf( "\tverbose                   : %d\n", clqsp->verbose );
     printf( "\tminimum violation         : %.4lf\n", clqsp->minViol );
     printf( "\tminimum frac. val         : %.4lf\n", clqsp->minFrac );
-    printf( "\tmaximum iterations bk     : %ld\n", clqsp->maxItBK );
+    printf( "\tmaximum iterations bk     : %d\n", clqsp->maxItBK );
     printf( "\textend cliques            : %d\n", clqsp->extendCliques );
     printf( "\tmaximum rc                : %.4lf\n", clqsp->maxRC);
     printf( "\tmaximum clqs in exact sep : %d\n", clqe_get_max_clq_gen(clqsp->clqe) );
