@@ -147,14 +147,6 @@
 	"cgraph.h"
 	"cut.h"
 
-1515013350 /home/samuel/Downloads/npsep/include/clique_separation.h
-	"cgraph.h"
-	"clique.h"
-	"clique_extender.h"
-
-1515013350 /home/samuel/Downloads/npsep/include/clique_extender.h
-	"cgraph.h"
-
 1515013350 /home/samuel/Downloads/npsep/include/cut.h
 
 1516388490 source:/home/samuel/Downloads/npsep/src/cgraph.c
@@ -217,6 +209,9 @@
 	"macros.h"
 	"bron_kerbosch.h"
 
+1515013350 /home/samuel/Downloads/npsep/include/clique_extender.h
+	"cgraph.h"
+
 1516387163 source:/home/samuel/Downloads/npsep/src/clique_separation.c
 	<stdio.h>
 	<string.h>
@@ -235,6 +230,11 @@
 	"vint_queue.h"
 	"strutils.h"
 
+1515013350 /home/samuel/Downloads/npsep/include/clique_separation.h
+	"cgraph.h"
+	"clique.h"
+	"clique_extender.h"
+
 1515013350 /home/samuel/Downloads/npsep/include/vint_queue.h
 
 1515013350 source:/home/samuel/Downloads/npsep/src/cut.c
@@ -244,6 +244,24 @@
 	<string.h>
 	<assert.h>
 	<float.h>
+
+1516387173 source:/home/samuel/Downloads/npsep/src/knapsack_separation.cpp
+	"knapsack_separation.hpp"
+	<float.h>
+	<assert.h>
+	<string.h>
+	<limits.h>
+	<map>
+	"macros.h"
+	"clique.h"
+	"bron_kerbosch.h"
+	"strutils.h"
+
+1515013350 /home/samuel/Downloads/npsep/include/knapsack_separation.hpp
+	"cut.h"
+	"cgraph.h"
+	"lp.h"
+	<OsiSolverInterface.hpp>
 
 1516386869 source:/home/samuel/Downloads/npsep/src/lp.cpp
 	<cstddef>
@@ -606,16 +624,6 @@
 1514896672 /usr/include/coin/CoinMessage.hpp
 	"CoinMessageHandler.hpp"
 
-1479834719 /opt/ibm/ILOG/CPLEX_Studio127/cplex/include/ilcplex/cplex.h
-	"cpxconst.h"
-	"cpxconst.h"
-
-1479834719 /opt/ibm/ILOG/CPLEX_Studio127/cplex/include/ilcplex/cpxconst.h
-	<stdint.h>
-	<stdlib.h>
-	<limits.h>
-	<stdio.h>
-
 1514896675 /usr/include/coin/CglKnapsackCover.hpp
 	<string>
 	"CglCutGenerator.hpp"
@@ -697,6 +705,10 @@
 1514896675 /usr/include/coin/CglGMIParam.hpp
 	"CglParam.hpp"
 
+1515013350 /home/samuel/Downloads/npsep/include/oddhs.h
+	"cgraph.h"
+	"clique.h"
+
 1516388663 source:/home/samuel/Downloads/npsep/src/main.cpp
 	<stdio.h>
 	<stdlib.h>
@@ -724,39 +736,6 @@
 	"memory.h"
 	"node_heap.h"
 	<execinfo.h>
-
-1515013350 source:/home/samuel/Downloads/npsep/src/strutils.c
-	<stdio.h>
-	<stdlib.h>
-	<ctype.h>
-	"macros.h"
-	"strutils.h"
-
-1515013350 source:/home/samuel/Downloads/npsep/src/vectormgm.c
-	<stdlib.h>
-	<stdio.h>
-	"memory.h"
-
-1515013350 source:/home/samuel/Downloads/npsep/src/vint_queue.c
-	<stdlib.h>
-	<stdio.h>
-	"vint_queue.h"
-	"memory.h"
-
-1515013350 source:/home/samuel/Downloads/npsep/src/vint_set.c
-	<stdlib.h>
-	<assert.h>
-	<stdio.h>
-	<string.h>
-	<limits.h>
-	<stddef.h>
-	"memory.h"
-	"macros.h"
-	"vint_set.h"
-
-1515013350 /home/samuel/Downloads/npsep/include/oddhs.h
-	"cgraph.h"
-	"clique.h"
 
 1516387034 source:/home/samuel/Downloads/npsep/src/oddhs.c
 	<float.h>
@@ -794,21 +773,32 @@
 
 1515013350 /home/samuel/Downloads/npsep/include/digraph.h
 
-1515013350 /home/samuel/Downloads/npsep/include/knapsack_separation.hpp
-	"cut.h"
-	"cgraph.h"
-	"lp.h"
-	<OsiSolverInterface.hpp>
+1515013350 source:/home/samuel/Downloads/npsep/src/strutils.c
+	<stdio.h>
+	<stdlib.h>
+	<ctype.h>
+	"macros.h"
+	"strutils.h"
 
-1516387173 source:/home/samuel/Downloads/npsep/src/knapsack_separation.cpp
-	"knapsack_separation.hpp"
-	<float.h>
+1515013350 source:/home/samuel/Downloads/npsep/src/vectormgm.c
+	<stdlib.h>
+	<stdio.h>
+	"memory.h"
+
+1515013350 source:/home/samuel/Downloads/npsep/src/vint_queue.c
+	<stdlib.h>
+	<stdio.h>
+	"vint_queue.h"
+	"memory.h"
+
+1515013350 source:/home/samuel/Downloads/npsep/src/vint_set.c
+	<stdlib.h>
 	<assert.h>
+	<stdio.h>
 	<string.h>
 	<limits.h>
-	<map>
+	<stddef.h>
+	"memory.h"
 	"macros.h"
-	"clique.h"
-	"bron_kerbosch.h"
-	"strutils.h"
+	"vint_set.h"
 

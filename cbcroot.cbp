@@ -34,12 +34,10 @@
 			<Add option="`pkg-config --cflags cbc` -fopenmp" />
 			<Add option="-DCBC" />
 			<Add option="-DPRECISE" />
-			<Add directory="/opt/ibm/ILOG/CPLEX_Studio127/cplex/include/ilcplex" />
 			<Add directory="include" />
 		</Compiler>
 		<Linker>
 			<Add option="`pkg-config --libs cbc` -lgomp" />
-			<Add library="/opt/ibm/ILOG/CPLEX_Studio127/cplex/lib/x86-64_linux/static_pic/libcplex.a" />
 			<Add library="pthread" />
 		</Linker>
 		<Unit filename="include/BKGraph.hpp" />
@@ -112,6 +110,7 @@
 		<Extensions>
 			<code_completion />
 			<debugger />
+			<envvars />
 		</Extensions>
 	</Project>
 </CodeBlocks_project_file>
