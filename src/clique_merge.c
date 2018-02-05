@@ -560,8 +560,10 @@ void merge_cliques( LinearProgram *mip, CGraph *cgraph, int maxExtensions )
                     double rhs = lp_rhs( mip, i );
                     char rname[256];
                     lp_row_name( mip, i, rname );
+                    char nrname[512];
+                    sprintf( nrname, "%sEp", rname );
                     addRow(  &nrRows, &nrCapRows, &nrNz, &nrCapNz, &nrStart, &nrIdx, &nrCoef, &nrSense, &nrRhs,
-                        nz, idx, coef, 'G', rhs, rname, &nrNames, &nrnLines, &nrnLinesCap, &nrnChars, &nrnCharsCap );
+                        nz, idx, coef, 'G', rhs, nrname, &nrNames, &nrnLines, &nrnLinesCap, &nrnChars, &nrnCharsCap );
                 }
                 toRemove[nToRemove++] = i;
             }

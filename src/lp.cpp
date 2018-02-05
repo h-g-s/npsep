@@ -5098,8 +5098,10 @@ void lp_add_rows( LinearProgram *lp, int nRows, int *starts, int *idx, double *c
     int nrbeg = lp_rows( lp );
 #endif
 #ifdef DEBUG_LP
+    set< string > rnames;
     assert( lp );
     assert( lp_cols(lp) );
+    char warnedNames = false;
     for ( int i=0 ; (i<nRows) ; ++i )
     {
         const int *idxr = idx + starts[i];
@@ -5112,6 +5114,24 @@ void lp_add_rows( LinearProgram *lp, int nRows, int *starts, int *idx, double *c
             assert( idxr[j] < lp_cols(lp) );
             assert( fabs(coef[j]) >= 1e-30 );
         }
+        if ( rnames.find(names[i])!=rnames.end() && warnedNames==false )
+        {
+            fflush( stdout ); fflush( stderr );
+            fprintf( stderr, "LP Warning: repeated names included in row names: %s.\n", names[i] );
+            warnedNames = true;
+            fflush( stdout ); fflush( stderr );
+        }
+        else
+        {
+            if (lp_row_index( lp, names[i])!=-1 && warnedNames==false )
+            {
+                fflush( stdout ); fflush( stderr );
+                fprintf( stderr, "LP Warning: trying to add row with name already included : %s.\n", names[i] );
+                warnedNames = true;
+                fflush( stdout ); fflush( stderr );
+            }
+        }
+        rnames.insert( names[i] );
     }
 #endif
 #ifdef CBC
