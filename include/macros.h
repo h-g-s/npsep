@@ -66,8 +66,8 @@
 
 /* fills from start until the last element before end */
 #define FILL( vector, start, end, value ) { \
-    int i; \
-    for ( i=start ; (i<end) ; ++i ) vector[i] = value; \
+    int iii; \
+    for ( iii=start ; (iii<end) ; ++iii ) vector[iii] = value; \
 } \
 
 #define EPS 1e-8

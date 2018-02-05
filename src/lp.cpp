@@ -816,7 +816,7 @@ void lp_add_cut( LinearProgram *lp, int nz, int *cutIdx, double *cutCoef, const 
 void lp_add_row(LinearProgram *lp, const int nz, const int *indexes, const double *coefs, const char *name, const char sense, const double rhs)
 {
 #ifdef DEBUG_LP
-    lp_validate_row_data( lp, nz, indexes, coefs, name, sense, rhs );
+    lp_validate_row_data( lp, nz, ( int *) indexes, (double*) coefs, name, sense, rhs );
 
     static std::set< string > rowNames;
     static int nWarnings = 0;
@@ -5091,3 +5091,128 @@ int lp_generate_knapsack_cuts(LinearProgram *lp, const CGraph *cg, CutPool *cutP
 
     return (cut_pool_size(cutPool) - cutsBefore);
 }
+
+void lp_add_rows( LinearProgram *lp, int nRows, int *starts, int *idx, double *coef, char *sense, double *rhs, const char **names )
+{
+#ifdef NEED_OWN_INDEX
+    int nrbeg = lp_rows( lp );
+#endif
+#ifdef DEBUG_LP
+    assert( lp );
+    assert( lp_cols(lp) );
+    for ( int i=0 ; (i<nRows) ; ++i )
+    {
+        const int *idxr = idx + starts[i];
+        const double *coefr = coef + starts[i];
+        int nzr = starts[i+1]-starts[i];
+        assert( nzr >= 1 && nzr < lp_cols(lp) );
+        for ( int j=0 ; j<nzr ; ++j )
+        {
+            assert( idxr[j] >= 0 );
+            assert( idxr[j] < lp_cols(lp) );
+            assert( fabs(coef[j]) >= 1e-30 );
+        }
+    }
+#endif
+#ifdef CBC
+    double *rlb, *rub;
+    rlb = new double[nRows*2];
+    rub = rlb + nRows;
+
+    for ( int i=0 ; (i<nRows) ; ++i )
+    {
+        switch (toupper(sense[i]))
+        {
+            case 'E':
+                rlb[i] = rub[i] = rhs[i];
+                break;
+            case 'L':
+                rub[i] = rhs[i];
+                rlb[i] = -DBL_MAX;
+                break;
+            case 'G':
+                rlb[i] = rhs[i];
+                rub[i] = DBL_MAX;
+                break;
+            default:
+                fprintf( stderr, "Sense %c not handled.\n", sense[i] );
+                abort();
+         }
+    }
+
+    int rt = lp_rows( lp );
+
+    lp->osiLP->addRows( nRows, starts, idx, coef, rlb, rub );
+
+    if (names)
+        for ( int i=0 ; (i<nRows) ; ++i )
+            lp->osiLP->setRowName( rt+i, string(names[i]) );
+
+    delete[] rlb;
+#endif
+#ifdef GRB
+    int nz = 0;
+    for ( int i=0 ; i<nRows ; ++i )
+        nz += starts[i+1]-starts[i];
+    
+    int grbError = GRBaddconstrs( lp->lp, nRows, nz, starts, idx, coef, sense, rhs, ((char **)names) );
+    lp_check_for_grb_error( LPgrbDefaultEnv, grbError, __FILE__, __LINE__ );
+
+    lp->nModelChanges++;
+#endif
+#ifdef CPX
+    int nz = 0;
+    for ( int i=0 ; i<nRows ; ++i )
+        nz += starts[i+1]-starts[i];
+     
+    int cpxError = CPXaddrows( LPcpxDefaultEnv, lp->cpxLP, 0, nRows, nz, rhs, sense, starts, idx, coef, NULL, (char **)names );
+    lp_check_for_cpx_error( LPcpxDefaultEnv, cpxError, __FILE__, __LINE__ );
+#endif
+#ifdef GLPK
+    int r = lp_rows( lp );
+
+    glp_add_rows( lp->_lp, nRows );
+
+    for ( int i=0 ; (i<nRows) ; ++i )
+    {
+        switch (toupper(sense[i]))
+        {
+            case 'E':
+                glp_set_row_bnds( lp->_lp, r+i+1, GLP_FX, rhs[i], rhs[i] );
+                break;
+            case 'L':
+                glp_set_row_bnds( lp->_lp, r+i+1, GLP_UP, -DBL_MAX, rhs[i] );
+                break;
+            case 'G':
+                glp_set_row_bnds( lp->_lp, r+i+1, GLP_LO, rhs[i], DBL_MAX );
+                break;
+            default:
+                fprintf( stderr, "Sense %c not handled.\n", sense[i] );
+                abort();
+        }
+
+        int *idxr = idx + starts[i];
+        const double *coefr = coef + starts[i];
+        int nzr = starts[i+1]-starts[i];
+        for ( int j=0 ; (j<nzr) ; ++j )
+            ++idxr[j];
+
+        glp_set_mat_row( lp->_lp, r+i+1, nzr, idxr-1, coefr-1 );
+        
+        if (names)
+            glp_set_row_name( lp->_lp, r+i+1, names[i] );
+
+        for ( int j=0 ; (j<nzr) ; ++j )
+            --idxr[j];
+    }
+#endif
+#ifdef NEED_OWN_INDEX
+    if (names)
+    {
+        for ( int i=0 ; (i<nRows) ; ++i )
+            (*lp->rowNameIdx)[string(names[i])] = nrbeg+i;
+    }
+#endif
+}
+
+

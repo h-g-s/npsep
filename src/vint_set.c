@@ -271,7 +271,8 @@ int vint_set_equals( const IntSet *is1, const IntSet *is2 )
 
 void vint_set_clear( IntSet *iset )
 {
-   iset->size = 0;
+    assert( iset!=NULL );
+    iset->size = 0;
 }
 
 inline void vint_set_check_capacity( IntSet *iset, const size_t required )
