@@ -198,7 +198,7 @@ void BKGraph::algoritmoBronKerbosch(Clique *C, Clique*P, Clique *S, unsigned mas
         return;
     it++;
 
-    if((vazio(P) == 1) && (vazio1(S, vertices.size()) == 0))
+    if((vazio(P) == 1) && (vazio1(S, (int)vertices.size()) == 0))
     {
         if(retornarPeso(C) >= minWeight)
         {
@@ -249,9 +249,9 @@ void BKGraph::algoritmoBronKerbosch(Clique *C, Clique*P, Clique *S, unsigned mas
         for(cont = 1; cont < P_sem_vizinhos_U[0]; ++cont)
         {
             int v = P_sem_vizinhos_U[P_sem_vizinhos_U[0]-cont];
-            Paux = criarClique(vertices.size()+1);
-            Saux = criarClique(vertices.size()/INT_SIZE + 1);
-            Caux = criarClique(vertices.size()/INT_SIZE + 1);
+            Paux = criarClique((int)vertices.size()+1);
+            Saux = criarClique((int)vertices.size()/INT_SIZE + 1);
+            Caux = criarClique((int)vertices.size()/INT_SIZE + 1);
             intersecaoOrdenado(P, v, Paux, (P_sem_vizinhos_U[0]-cont), P_sem_vizinhos_U);
             //intersecao(P, matriz, v, Paux);
             intersecao1(S, Saux, bit, v, mask);
@@ -329,9 +329,9 @@ void BKGraph::insereOrdenado (Clique* P, int vertice)
 int BKGraph::execute()
 {
     unsigned int i;
-    Clique* C = criarClique(vertices.size()/INT_SIZE + 1);
-    Clique* P = criarClique(vertices.size());
-    Clique* S = criarClique(vertices.size()/INT_SIZE + 1);
+    Clique* C = criarClique((int)vertices.size()/INT_SIZE + 1);
+    Clique* P = criarClique((int)vertices.size());
+    Clique* S = criarClique((int)vertices.size()/INT_SIZE + 1);
     unsigned mask[INT_SIZE];
     mask[0] = 1;
     for(unsigned h=1; h<INT_SIZE; h++)
@@ -359,7 +359,7 @@ int BKGraph::execute()
             }
         }
     }
-
+    
     algoritmoBronKerbosch(C, P, S, mask, bit);
 
     for(i = 0; i < vertices.size(); ++i)
@@ -391,7 +391,7 @@ void BKGraph::setMinWeight(int _minWeight)
     minWeight = _minWeight;
 }
 
-void BKGraph::setMaxIt(size_t _maxIt)
+void BKGraph::setMaxIt(int _maxIt)
 {
     assert(_maxIt > 0);
     maxIt = _maxIt;

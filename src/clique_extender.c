@@ -18,7 +18,7 @@
 #define CLQE_DEF_MAX_GEN          5
 #define CLQE_DEF_RC_PERCENTAGE    0.6
 
-#define CLQE_DEF_BK_MAX_IT        5000
+#define CLQE_DEF_MAX_IT_BK        INT_MAX/10
 
 /* additional space for candidates */
 #define CANDIDATES_SLACK 100
@@ -35,6 +35,7 @@ struct _CliqueExtender
     int maxCandidates;
     int maxCost;
     int maxClqGen;
+    int maxItBK;
     double rcPercentage;
 
     NeighIterator *nit;
@@ -84,6 +85,7 @@ CliqueExtender *clqe_create()
     clqe->maxCost = CLQE_DEF_MAX_COST;
     clqe->maxClqGen = CLQE_DEF_MAX_GEN;
     clqe->rcPercentage = CLQE_DEF_RC_PERCENTAGE;
+    clqe->maxItBK = CLQE_DEF_MAX_IT_BK;
 
     return clqe;
 }
@@ -375,7 +377,7 @@ int exact_clique_extension( CliqueExtender *clqe, const IntSet *clique, const in
         }
 
     BronKerbosch *bk = bk_create(cg);
-    bk_set_max_it(bk, CLQE_DEF_BK_MAX_IT);
+    bk_set_max_it(bk, clqe->maxItBK);
     bk_set_min_weight(bk, 0);
     bk_run(bk);
     const CliqueSet *clqSet = bk_get_clq_set(bk);
@@ -573,4 +575,14 @@ void clqe_set_rc_percentage( CliqueExtender *clqe, const double rcPercentage )
 double clqe_get_rc_percentage( CliqueExtender *clqe )
 {
     return clqe->rcPercentage;
+}
+
+int clqe_get_max_it_bk( CliqueExtender *clqe )
+{
+    return clqe->maxItBK;
+}
+
+void clqe_set_max_it_bk( CliqueExtender *clqe, int maxItBK )
+{
+    clqe->maxItBK = maxItBK;
 }

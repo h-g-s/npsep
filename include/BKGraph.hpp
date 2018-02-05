@@ -56,11 +56,11 @@ public:
     int getMaxWeight();
 
     void setMinWeight(int _minWeight);
-    void setMaxIt(size_t _maxIt);
+    void setMaxIt(int _maxIt);
 
 private:
     int minWeight, maxWeight;
-    size_t it, maxIt;
+    int it, maxIt;
 
     const CGraph *cgraph;
     std::vector<BKVertex> vertices;

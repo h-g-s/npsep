@@ -42,11 +42,10 @@ void clq_sep_set_params_parse_cmd_line( CliqueSeparation *clqsp, const int argc,
 
 void clq_sep_params_help_cmd_line();
 
-int clq_sep_get_max_passes( const CliqueSeparation *clqSep );
-
-double clq_sep_get_max_time_bk( const CliqueSeparation *clqSep );
-
-void clq_sep_set_max_time_bk( CliqueSeparation *clqSep, const double maxTime );
+double clq_sep_get_max_it_bk( const CliqueSeparation *clqSep );
+void clq_sep_set_max_it_bk( CliqueSeparation *clqSep, int maxItBK );
+double clq_sep_get_max_it_bk_ext( const CliqueSeparation *clqSep );
+void clq_sep_set_max_it_bk_ext( CliqueSeparation *clqSep, int maxItBK );
 
 #endif
 

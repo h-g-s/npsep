@@ -12,7 +12,7 @@ extern "C"
 
 typedef struct _KnapsackSeparation KnapsackSeparation;
 
-KnapsackSeparation* knapsack_sep_create(const OsiSolverInterface &si);
+//KnapsackSeparation* knapsack_sep_create(const OsiSolverInterface &si);
 KnapsackSeparation* knapsack_sep_create(const LinearProgram *lp);
 void knapsack_sep_free(KnapsackSeparation **_ksep);
 int knapsack_sep_separate(KnapsackSeparation *ksep, const double *x, const double *rc, CutPool *cutPool);

@@ -9,7 +9,7 @@ struct _BronKerbosch
     BKGraph *bkg;
     CliqueSet *clqSet;
     int minWeight;
-    size_t maxIt;
+    int maxIt;
 };
 
 BronKerbosch *bk_create(const CGraph *cgraph)
@@ -29,7 +29,7 @@ int bk_run(BronKerbosch *bk)
     }
 
     int status = bk->bkg->execute();
-    bk->clqSet =bk->bkg->getCliqueSet();
+    bk->clqSet = bk->bkg->getCliqueSet();
 
     return status;
 }
@@ -40,7 +40,7 @@ void bk_set_min_weight(BronKerbosch *bk, int minWeight)
     bk->bkg->setMinWeight(minWeight);
 }
 
-void bk_set_max_it(BronKerbosch *bk, size_t maxIt)
+void bk_set_max_it(BronKerbosch *bk, int maxIt)
 {
     bk->maxIt = maxIt;
     bk->bkg->setMaxIt(maxIt);

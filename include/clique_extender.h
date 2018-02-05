@@ -7,6 +7,7 @@
  **/
 
 #include "cgraph.h"
+#include "clique.h"
 
 typedef struct _CliqueExtender CliqueExtender;
 
@@ -49,5 +50,8 @@ void clqe_set_max_clq_gen( CliqueExtender *clqe, const int maxClqGen );
 int clqe_get_max_clq_gen( CliqueExtender *clqe );
 void clqe_set_rc_percentage( CliqueExtender *clqe, const double rcPercentage );
 double clqe_get_rc_percentage( CliqueExtender *clqe );
+
+int clqe_get_max_it_bk( CliqueExtender *clqe );
+void clqe_set_max_it_bk( CliqueExtender *clqe, int maxItBK );
 
 #endif

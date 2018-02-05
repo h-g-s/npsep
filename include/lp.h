@@ -1,9 +1,6 @@
 #ifndef LP_HEADER
 #define LP_HEADER
 
-#include "cgraph.h"
-#include "cut.h"
-
 #define LP_ME_DEFAULT     0
 #define LP_ME_OPTIMALITY  1
 #define LP_ME_FEASIBILITY 2
@@ -210,6 +207,8 @@ void lp_set_callback( LinearProgram *lp, lp_cb callback, void *data );
 // global flag indicating if variable/row names will be stored, can save some memory when off
 void lp_set_store_names( char store );
 
+#include "cgraph.h"
+#include "cut.h"
 /* cuts based on conflict graphs */
 int lp_generate_clique_cuts(LinearProgram *lp, const CGraph *cg, CutPool *cutPool, int argc, const char **argv);
 int lp_generate_odd_hole_cuts(LinearProgram *lp, const CGraph *cg, CutPool *cutPool);

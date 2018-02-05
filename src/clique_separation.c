@@ -21,8 +21,8 @@
 #define CLQ_SEP_DEF_MIN_VIOL            0.02
 #define CLQ_SEP_DEF_MIN_FRAC            0.001
 #define CLQ_SEP_DEF_MAX_IT_BK           INT_MAX/10
-#define CLQ_SEP_DEF_CLQE_EXTEND         CLQEM_PRIORITY_GREEDY
-#define CLQ_SEP_DEF_CLQE_MAX_RC         DBL_MAX
+#define CLQ_SEP_DEF_CLQE_EXTEND         CLQEM_EXACT
+#define CLQ_SEP_DEF_CLQE_MAX_RC         500.0
 
 /* command line param names */
 #define CLQ_SEP_STR_VERBOSE              "verbose"
@@ -474,9 +474,19 @@ double clq_sep_get_max_it_bk( const CliqueSeparation *clqSep )
     return clqSep->maxItBK;
 }
 
-void clq_sep_set_max_it_bk( CliqueSeparation *clqSep, size_t maxItBk )
+void clq_sep_set_max_it_bk( CliqueSeparation *clqSep, int maxItBK )
 {
-    clqSep->maxItBK = maxItBk;
+    clqSep->maxItBK = maxItBK;
+}
+
+double clq_sep_get_max_it_bk_ext( const CliqueSeparation *clqSep )
+{
+    return clqe_get_max_it_bk(clqSep->clqe);
+}
+
+void clq_sep_set_max_it_bk_ext( CliqueSeparation *clqSep, int maxItBK )
+{
+    clqe_set_max_it_bk(clqSep->clqe, maxItBK);
 }
 
 void clq_sep_set_min_viol( CliqueSeparation *sep, const double viol )

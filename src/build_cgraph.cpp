@@ -7,16 +7,15 @@
 #include <vector>
 #include <assert.h>
 #include <stdio.h>
-#include <omp.h>
 #include "OsiSolverInterface.hpp"
 #include "CoinTime.hpp"
 
 extern "C"
 {
-	#include "memory.h"
-	#include "node_heap.h"
-	#include "build_cgraph.h"
-	#include "lp.h"
+#include "memory.h"
+#include "node_heap.h"
+#include "build_cgraph.h"
+#include "lp.h"
 }
 
 using namespace std;
@@ -122,12 +121,8 @@ void processClique( const int n, const int *idx, CGraph *cgraph, vector< pair< i
         vidx.resize(n);
 
         memcpy( &(vidx[0]), idx, sizeof(int)*n );
-
-        //#pragma omp critical(build_cgraph_lock)
-        {
-            cgraph_add_clique( cgraph, &(vidx[0]), n );
-            recomputeDegree = 1;
-        }
+        cgraph_add_clique( cgraph, &(vidx[0]), n );
+        recomputeDegree = 1;
     }
     else
     {
@@ -145,7 +140,7 @@ void fetchConflicts( const bool lastTime, CGraph *cgraph, vector< pair< int, int
     if ( (!lastTime) && (cvec.size()<CVEC_FLUSH) )
         return;
 
-    if ( cvec.size() == 0 )
+    if ( cvec.empty() )
         return;
     pair< int, int > last;
     int currNode;
@@ -159,24 +154,21 @@ void fetchConflicts( const bool lastTime, CGraph *cgraph, vector< pair< int, int
     currNode = cvec.begin()->first;
     last = pair< int,int >( -1, -1 );
 
-    //#pragma omp critical(build_cgraph_lock)
+    for ( vIt=cvec.begin() ; (vIt!=cvec.end()) ; last=*vIt,++vIt )
     {
-        for ( vIt=cvec.begin() ; (vIt!=cvec.end()) ; last=*vIt,++vIt )
-        {
-            if (last == *vIt)  // skipping repetitions
-                continue;
+        if (last == *vIt)  // skipping repetitions
+            continue;
 
-            if ( vIt->first!=currNode )
+        if ( vIt->first!=currNode )
+        {
+            if (neighs.size() > 0)
             {
-                if (neighs.size())
-                {
-                    cgraph_add_node_conflicts_no_sim( cgraph, currNode, &(neighs[0]), neighs.size() );
-                    neighs.clear();
-                }
-                currNode = vIt->first;
+                cgraph_add_node_conflicts_no_sim( cgraph, currNode, &(neighs[0]), (int)neighs.size() );
+                neighs.clear();
             }
-            neighs.push_back( vIt->second );
+            currNode = vIt->first;
         }
+        neighs.push_back( vIt->second );
     }
 
     neighs.clear();
@@ -184,24 +176,21 @@ void fetchConflicts( const bool lastTime, CGraph *cgraph, vector< pair< int, int
     currNode = cvec.begin()->second;
     last = pair< int,int >( -1, -1 );
 
-    //#pragma omp critical(build_cgraph_lock)
+    for ( vIt=cvec.begin() ; (vIt!=cvec.end()) ; last=*vIt,++vIt )
     {
-        for ( vIt=cvec.begin() ; (vIt!=cvec.end()) ; last=*vIt,++vIt )
-        {
-            if (last == *vIt)  // skipping repetitions
-                continue;
+        if (last == *vIt)  // skipping repetitions
+            continue;
 
-            if ( vIt->second!=currNode )
+        if ( vIt->second!=currNode )
+        {
+            if (neighs.size() > 0)
             {
-                if (neighs.size())
-                {
-                    cgraph_add_node_conflicts_no_sim( cgraph, currNode, &(neighs[0]), neighs.size() );
-                    neighs.clear();
-                }
-                currNode = vIt->second;
+                cgraph_add_node_conflicts_no_sim( cgraph, currNode, &(neighs[0]), (int)neighs.size() );
+                neighs.clear();
             }
-            neighs.push_back( vIt->first );
+            currNode = vIt->second;
         }
+        neighs.push_back( vIt->first );
     }
 
     cvec.clear();
@@ -414,9 +403,9 @@ void mixedCliqueDetection(CGraph* cgraph, const vector<pair<int, double> >& colu
 CGraph *build_cgraph_osi( const void *_solver )
 {
     recomputeDegree = 0;
-	startCG = CoinCpuTime();
-    const int threads = max(4, omp_get_num_procs());
-    vector<vector< pair< int, int > > > cvecs(threads);
+    startCG = CoinCpuTime();
+    vector< pair< int, int > > cvec;
+    cvec.reserve( CVEC_CAP );
 
     const OsiSolverInterface *solver = (const OsiSolverInterface *) _solver;
 
@@ -433,25 +422,17 @@ CGraph *build_cgraph_osi( const void *_solver )
     int nRows = solver->getNumRows();
     int idxRow;
 
-    for(int i = 0; i < threads; i++)
-        cvecs[i].reserve( CVEC_CAP );
-
     for(int i = 0; i < nCols; i++)
-    {
         /* inserting trivial conflicts: variable-complement */
         if(ctype[i] == 1) //consider only binary variables
-            cvecs[0].push_back( pair<int, int>(i, i + nCols) );
-    }
+            cvec.push_back( pair<int, int>(i, i + nCols) );
 
-    //const int chunk = max(1, nRows / (threads * 10));
-    //#pragma omp parallel for schedule(dynamic,chunk)
     for(idxRow = 0; idxRow < nRows; idxRow++)
     {
 
-    	/*if(CoinCpuTime() - startCG >= MAX_TIME_CG)
-    		break;*/
+        if(CoinCpuTime() - startCG >= MAX_TIME_CG)
+            break;
 
-        const int numThread = omp_get_thread_num();
         const CoinShallowPackedVector &row = M->getVector(idxRow);
         const int nElements = row.getNumElements();
         const int *idx = row.getIndices();
@@ -496,18 +477,18 @@ CGraph *build_cgraph_osi( const void *_solver )
 
         /* special case: GUB constraints */
         if ( DBL_EQUAL( minCoef, maxCoef ) &&  DBL_EQUAL( maxCoef, rhs[idxRow] * mult ) &&
-            DBL_EQUAL(minCoef, 1.0) && ((sense[idxRow]=='E') || (sense[idxRow]=='L'))
-            && (row.getNumElements() > 3) )
+                DBL_EQUAL(minCoef, 1.0) && ((sense[idxRow]=='E') || (sense[idxRow]=='L'))
+                && (row.getNumElements() > 3) )
         {
-            processClique( row.getNumElements(), (const int *)idx, cgraph, cvecs[numThread] );
+            processClique( row.getNumElements(), (const int *)idx, cgraph, cvec );
         }
 
         else
         {
             sort(columns.begin(), columns.end(), sort_columns());
-            cliqueDetection(cgraph, columns, sumNegCoefs, rhs[idxRow] * mult, cvecs[numThread]);
-            cliqueComplementDetection(cgraph, columns, sumNegCoefs, rhs[idxRow] * mult, cvecs[numThread]);
-            mixedCliqueDetection(cgraph, columns, sumNegCoefs, rhs[idxRow] * mult, cvecs[numThread]);
+            cliqueDetection(cgraph, columns, sumNegCoefs, rhs[idxRow] * mult, cvec);
+            cliqueComplementDetection(cgraph, columns, sumNegCoefs, rhs[idxRow] * mult, cvec);
+            mixedCliqueDetection(cgraph, columns, sumNegCoefs, rhs[idxRow] * mult, cvec);
 
             /*equality constraints are converted into two inequality constraints (<=).
             the first one is analyzed above and the second (multiplying the constraint by -1) is analyzed below.
@@ -524,15 +505,14 @@ CGraph *build_cgraph_osi( const void *_solver )
                         sumNegCoefs += newColumns[i].second;
                 }
 
-                cliqueDetection(cgraph, newColumns, sumNegCoefs, -1.0 * rhs[idxRow], cvecs[numThread]);
-                cliqueComplementDetection(cgraph, newColumns, sumNegCoefs, -1.0 * rhs[idxRow], cvecs[numThread]);
-                mixedCliqueDetection(cgraph, newColumns, sumNegCoefs, -1.0 * rhs[idxRow], cvecs[numThread]);
+                cliqueDetection(cgraph, newColumns, sumNegCoefs, -1.0 * rhs[idxRow], cvec);
+                cliqueComplementDetection(cgraph, newColumns, sumNegCoefs, -1.0 * rhs[idxRow], cvec);
+                mixedCliqueDetection(cgraph, newColumns, sumNegCoefs, -1.0 * rhs[idxRow], cvec);
             }
         }
     }
 
-    for(int i = 0; i < threads; i++)
-        fetchConflicts(true, cgraph, cvecs[i]);
+    fetchConflicts(true, cgraph, cvec);
 
     if(recomputeDegree)
         cgraph_recompute_degree( cgraph );
@@ -545,9 +525,9 @@ CGraph *build_cgraph_osi( const void *_solver )
 CGraph *build_cgraph_lp( const void *_mip )
 {
     recomputeDegree = 0;
-	startCG = CoinCpuTime();
-    const int threads = max(4, omp_get_num_procs());
-    vector<vector< pair< int, int > > > cvecs(threads);
+    startCG = CoinCpuTime();
+    vector< pair< int, int > > cvec;
+    cvec.reserve( CVEC_CAP );
 
     const LinearProgram *mip = (const LinearProgram *) _mip;
 
@@ -561,25 +541,13 @@ CGraph *build_cgraph_lp( const void *_mip )
     int *idxs = new int[nCols];
     double *coefs = new double[nCols];
 
-    for(int i = 0; i < threads; i++)
-        cvecs[i].reserve( CVEC_CAP );
-
     for(int i = 0; i < nCols; i++)
-    {
         /* inserting trivial conflicts: variable-complement */
         if(lp_is_binary(mip, i))//consider only binary variables
-            cvecs[0].push_back( pair<int, int>(i, i + nCols) );
-    }
+            cvec.push_back( pair<int, int>(i, i + nCols) );
 
-    //const int chunk = max(1, nRows / (threads * 10));
-    //#pragma omp parallel for schedule(dynamic,chunk)
     for(int idxRow = 0; idxRow < nRows; idxRow++)
     {
-
-    	/*if(CoinCpuTime() - startCG >= MAX_TIME_CG)
-    		break;*/
-
-        const int numThread = omp_get_thread_num();
         const int nElements = lp_row(mip, idxRow, idxs, coefs);
         const double rhs = lp_rhs(mip, idxRow);
         const char sense = lp_sense(mip, idxRow);
@@ -622,18 +590,18 @@ CGraph *build_cgraph_lp( const void *_mip )
 
         /* special case: GUB constraints */
         if ( DBL_EQUAL( minCoef, maxCoef ) &&  DBL_EQUAL( maxCoef, rhs * mult ) &&
-            DBL_EQUAL(minCoef, 1.0) && ((sense=='E') || (sense=='L'))
-            && (nElements > 3) )
+                DBL_EQUAL(minCoef, 1.0) && ((sense=='E') || (sense=='L'))
+                && (nElements > 3) )
         {
-            processClique( nElements, idxs, cgraph, cvecs[numThread] );
+            processClique( nElements, idxs, cgraph, cvec );
         }
 
         else
         {
             sort(columns.begin(), columns.end(), sort_columns());
-            cliqueDetection(cgraph, columns, sumNegCoefs, rhs * mult, cvecs[numThread]);
-            cliqueComplementDetection(cgraph, columns, sumNegCoefs, rhs * mult, cvecs[numThread]);
-            mixedCliqueDetection(cgraph, columns, sumNegCoefs, rhs * mult, cvecs[numThread]);
+            cliqueDetection(cgraph, columns, sumNegCoefs, rhs * mult, cvec);
+            cliqueComplementDetection(cgraph, columns, sumNegCoefs, rhs * mult, cvec);
+            mixedCliqueDetection(cgraph, columns, sumNegCoefs, rhs * mult, cvec);
 
             /*equality constraints are converted into two inequality constraints (<=).
             the first one is analyzed above and the second (multiplying the constraint by -1) is analyzed below.
@@ -650,15 +618,14 @@ CGraph *build_cgraph_lp( const void *_mip )
                         sumNegCoefs += newColumns[i].second;
                 }
 
-                cliqueDetection(cgraph, newColumns, sumNegCoefs, -1.0 * rhs, cvecs[numThread]);
-                cliqueComplementDetection(cgraph, newColumns, sumNegCoefs, -1.0 * rhs, cvecs[numThread]);
-                mixedCliqueDetection(cgraph, newColumns, sumNegCoefs, -1.0 * rhs, cvecs[numThread]);
+                cliqueDetection(cgraph, newColumns, sumNegCoefs, -1.0 * rhs, cvec);
+                cliqueComplementDetection(cgraph, newColumns, sumNegCoefs, -1.0 * rhs, cvec);
+                mixedCliqueDetection(cgraph, newColumns, sumNegCoefs, -1.0 * rhs, cvec);
             }
         }
     }
 
-    for(int i = 0; i < threads; i++)
-        fetchConflicts(true, cgraph, cvecs[i]);
+    fetchConflicts(true, cgraph, cvec);
 
     if(recomputeDegree)
         cgraph_recompute_degree( cgraph );

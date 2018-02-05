@@ -19,7 +19,7 @@ int bk_get_max_weight( BronKerbosch *bk );
 void bk_free( BronKerbosch *bk );
 
 void bk_set_min_weight(BronKerbosch *bk, int minWeight);
-void bk_set_max_it(BronKerbosch *bk, size_t maxIt);
+void bk_set_max_it(BronKerbosch *bk, int maxIt);
 
 
 #endif
