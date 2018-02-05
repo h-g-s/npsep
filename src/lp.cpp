@@ -4942,6 +4942,8 @@ int lp_generate_clique_cuts(LinearProgram *lp, const CGraph *cg, CutPool *cutPoo
             if(!cut_pool_insert(cutPool, cut))
                 cut_free(&cut);
         }
+
+        delete[] iv;
     }
 
     clq_sep_free(&sep);
@@ -5154,7 +5156,7 @@ void lp_add_rows( LinearProgram *lp, int nRows, int *starts, int *idx, double *c
     int nz = 0;
     for ( int i=0 ; i<nRows ; ++i )
         nz += starts[i+1]-starts[i];
-    
+
     int grbError = GRBaddconstrs( lp->lp, nRows, nz, starts, idx, coef, sense, rhs, ((char **)names) );
     lp_check_for_grb_error( LPgrbDefaultEnv, grbError, __FILE__, __LINE__ );
 
@@ -5164,7 +5166,7 @@ void lp_add_rows( LinearProgram *lp, int nRows, int *starts, int *idx, double *c
     int nz = 0;
     for ( int i=0 ; i<nRows ; ++i )
         nz += starts[i+1]-starts[i];
-     
+
     int cpxError = CPXaddrows( LPcpxDefaultEnv, lp->cpxLP, 0, nRows, nz, rhs, sense, starts, idx, coef, NULL, (char **)names );
     lp_check_for_cpx_error( LPcpxDefaultEnv, cpxError, __FILE__, __LINE__ );
 #endif
@@ -5198,7 +5200,7 @@ void lp_add_rows( LinearProgram *lp, int nRows, int *starts, int *idx, double *c
             ++idxr[j];
 
         glp_set_mat_row( lp->_lp, r+i+1, nzr, idxr-1, coefr-1 );
-        
+
         if (names)
             glp_set_row_name( lp->_lp, r+i+1, names[i] );
 

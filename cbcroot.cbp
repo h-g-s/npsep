@@ -14,7 +14,11 @@
 				<Option parameters="instances/air04.mps.gz -extendC=3 -maxItBK=50000 -aggrClique=on -oddHole=on -knapsack=on" />
 				<Compiler>
 					<Add option="-g" />
+					<Add option="-fsanitize=address" />
 				</Compiler>
+				<Linker>
+					<Add option="-fsanitize=address" />
+				</Linker>
 			</Target>
 			<Target title="Release">
 				<Option output="bin/Release/cbcroot" prefix_auto="1" extension_auto="1" />
@@ -47,6 +51,7 @@
 		<Unit filename="include/cgraph.h" />
 		<Unit filename="include/clique.h" />
 		<Unit filename="include/clique_extender.h" />
+		<Unit filename="include/clique_merge.h" />
 		<Unit filename="include/clique_separation.h" />
 		<Unit filename="include/cut.h" />
 		<Unit filename="include/digraph.h" />
@@ -72,6 +77,9 @@
 			<Option compilerVar="CC" />
 		</Unit>
 		<Unit filename="src/clique_extender.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="src/clique_merge.c">
 			<Option compilerVar="CC" />
 		</Unit>
 		<Unit filename="src/clique_separation.c">

@@ -61,7 +61,7 @@
 	"build_cgraph.h"
 	"lp.h"
 
-1517570624 /usr/include/coin/OsiSolverInterface.hpp
+1517835111 /usr/include/coin/OsiSolverInterface.hpp
 	<cstdlib>
 	<string>
 	<vector>
@@ -75,14 +75,14 @@
 	"OsiCollections.hpp"
 	"OsiSolverParameters.hpp"
 
-1517570624 /usr/include/coin/CoinTypes.hpp
+1517835110 /usr/include/coin/CoinTypes.hpp
 	"CoinUtilsConfig.h"
 	<stdint.h>
 	<cstdint>
 
-1517570623 /usr/include/coin/CoinUtilsConfig.h
+1517835109 /usr/include/coin/CoinUtilsConfig.h
 
-1517570624 /usr/include/coin/CoinMessageHandler.hpp
+1517835110 /usr/include/coin/CoinMessageHandler.hpp
 	"CoinUtilsConfig.h"
 	"CoinPragma.hpp"
 	"CoinTypes.hpp"
@@ -91,15 +91,15 @@
 	<string>
 	<vector>
 
-1517570624 /usr/include/coin/CoinPragma.hpp
+1517835110 /usr/include/coin/CoinPragma.hpp
 
-1517570624 /usr/include/coin/CoinPackedVectorBase.hpp
+1517835110 /usr/include/coin/CoinPackedVectorBase.hpp
 	<set>
 	<map>
 	"CoinPragma.hpp"
 	"CoinError.hpp"
 
-1517570624 /usr/include/coin/CoinError.hpp
+1517835110 /usr/include/coin/CoinError.hpp
 	<string>
 	<iostream>
 	<cassert>
@@ -107,27 +107,27 @@
 	"CoinUtilsConfig.h"
 	"CoinPragma.hpp"
 
-1517570624 /usr/include/coin/CoinPackedMatrix.hpp
+1517835110 /usr/include/coin/CoinPackedMatrix.hpp
 	"CoinError.hpp"
 	"CoinTypes.hpp"
 	"CoinPackedVectorBase.hpp"
 	"CoinShallowPackedVector.hpp"
 
-1517570624 /usr/include/coin/CoinShallowPackedVector.hpp
+1517835110 /usr/include/coin/CoinShallowPackedVector.hpp
 	"CoinError.hpp"
 	"CoinPackedVectorBase.hpp"
 
-1517570624 /usr/include/coin/CoinWarmStart.hpp
+1517835110 /usr/include/coin/CoinWarmStart.hpp
 
-1517570624 /usr/include/coin/CoinFinite.hpp
+1517835110 /usr/include/coin/CoinFinite.hpp
 	<limits>
 
-1517570624 /usr/include/coin/OsiCollections.hpp
+1517835111 /usr/include/coin/OsiCollections.hpp
 	<vector>
 
-1517570624 /usr/include/coin/OsiSolverParameters.hpp
+1517835111 /usr/include/coin/OsiSolverParameters.hpp
 
-1517570624 /usr/include/coin/CoinTime.hpp
+1517835110 /usr/include/coin/CoinTime.hpp
 	<ctime>
 	<sys/time.h>
 	<sys/resource.h>
@@ -308,7 +308,7 @@
 	"oddhs.h"
 	"knapsack_separation.hpp"
 
-1517570631 /usr/include/coin/OsiCbcSolverInterface.hpp
+1517835118 /usr/include/coin/OsiCbcSolverInterface.hpp
 	<string>
 	<cfloat>
 	<map>
@@ -318,7 +318,7 @@
 	"CbcStrategy.hpp"
 	"CoinWarmStartBasis.hpp"
 
-1517570631 /usr/include/coin/CbcModel.hpp
+1517835118 /usr/include/coin/CbcModel.hpp
 	<string>
 	<vector>
 	"CoinMessageHandler.hpp"
@@ -332,14 +332,14 @@
 	"CbcEventHandler.hpp"
 	"ClpDualRowPivot.hpp"
 
-1517570624 /usr/include/coin/OsiBranchingObject.hpp
+1517835111 /usr/include/coin/OsiBranchingObject.hpp
 	<cassert>
 	<string>
 	<vector>
 	"CoinError.hpp"
 	"CoinTypes.hpp"
 
-1517570624 /usr/include/coin/OsiCuts.hpp
+1517835111 /usr/include/coin/OsiCuts.hpp
 	"CoinPragma.hpp"
 	<cmath>
 	<cfloat>
@@ -348,48 +348,48 @@
 	"OsiColCut.hpp"
 	"CoinFloatEqual.hpp"
 
-1517570624 /usr/include/coin/OsiRowCut.hpp
+1517835111 /usr/include/coin/OsiRowCut.hpp
 	"CoinPackedVector.hpp"
 	"OsiCollections.hpp"
 	"OsiCut.hpp"
 
-1517570624 /usr/include/coin/CoinPackedVector.hpp
+1517835110 /usr/include/coin/CoinPackedVector.hpp
 	<map>
 	"CoinPragma.hpp"
 	"CoinPackedVectorBase.hpp"
 	"CoinSort.hpp"
 
-1517570624 /usr/include/coin/CoinSort.hpp
+1517835110 /usr/include/coin/CoinSort.hpp
 	<functional>
 	<new>
 	<algorithm>
 	"CoinDistance.hpp"
 
-1517570624 /usr/include/coin/CoinDistance.hpp
+1517835110 /usr/include/coin/CoinDistance.hpp
 	<iterator>
 
-1517570624 /usr/include/coin/OsiCut.hpp
+1517835111 /usr/include/coin/OsiCut.hpp
 	"OsiCollections.hpp"
 	"OsiSolverInterface.hpp"
 
-1517570624 /usr/include/coin/OsiColCut.hpp
+1517835111 /usr/include/coin/OsiColCut.hpp
 	<string>
 	"CoinPackedVector.hpp"
 	"OsiCollections.hpp"
 	"OsiCut.hpp"
 
-1517570624 /usr/include/coin/CoinFloatEqual.hpp
+1517835110 /usr/include/coin/CoinFloatEqual.hpp
 	<algorithm>
 	<cmath>
 	"CoinFinite.hpp"
 
-1517570624 /usr/include/coin/CoinWarmStartBasis.hpp
+1517835110 /usr/include/coin/CoinWarmStartBasis.hpp
 	<vector>
 	"CoinSort.hpp"
 	"CoinHelperFunctions.hpp"
 	"CoinWarmStart.hpp"
 
-1517570624 /usr/include/coin/CoinHelperFunctions.hpp
+1517835110 /usr/include/coin/CoinHelperFunctions.hpp
 	"CoinUtilsConfig.h"
 	<direct.h>
 	<cctype>
@@ -401,11 +401,11 @@
 	"CoinTypes.hpp"
 	"CoinError.hpp"
 
-1517570631 /usr/include/coin/CbcCompareBase.hpp
+1517835117 /usr/include/coin/CbcCompareBase.hpp
 	"CbcNode.hpp"
 	"CbcConfig.h"
 
-1517570631 /usr/include/coin/CbcNode.hpp
+1517835118 /usr/include/coin/CbcNode.hpp
 	<string>
 	<vector>
 	"CoinWarmStartBasis.hpp"
@@ -415,7 +415,7 @@
 	"CbcFullNodeInfo.hpp"
 	"CbcPartialNodeInfo.hpp"
 
-1517570624 /usr/include/coin/CoinSearchTree.hpp
+1517835110 /usr/include/coin/CoinSearchTree.hpp
 	<vector>
 	<algorithm>
 	<cmath>
@@ -423,7 +423,7 @@
 	"CoinFinite.hpp"
 	"CoinHelperFunctions.hpp"
 
-1517570630 /usr/include/coin/CbcBranchBase.hpp
+1517835117 /usr/include/coin/CbcBranchBase.hpp
 	<string>
 	<vector>
 	"OsiBranchingObject.hpp"
@@ -433,41 +433,33 @@
 	"CbcConsequence.hpp"
 	"CbcObjectUpdateData.hpp"
 
-1517570631 /usr/include/coin/CbcObject.hpp
+1517835118 /usr/include/coin/CbcObject.hpp
 	<string>
 	<vector>
 	"OsiBranchingObject.hpp"
 
-1517570631 /usr/include/coin/CbcBranchingObject.hpp
+1517835117 /usr/include/coin/CbcBranchingObject.hpp
 	<string>
 	<vector>
 	"CbcBranchBase.hpp"
 	"OsiBranchingObject.hpp"
 
-1517570631 /usr/include/coin/CbcBranchDecision.hpp
+1517835117 /usr/include/coin/CbcBranchDecision.hpp
 	"CbcBranchBase.hpp"
 
-1517570631 /usr/include/coin/CbcConsequence.hpp
+1517835117 /usr/include/coin/CbcConsequence.hpp
 
-1517570631 /usr/include/coin/CbcObjectUpdateData.hpp
+1517835118 /usr/include/coin/CbcObjectUpdateData.hpp
 	"CbcObject.hpp"
 
-1517570631 /usr/include/coin/CbcNodeInfo.hpp
+1517835118 /usr/include/coin/CbcNodeInfo.hpp
 	<string>
 	<vector>
 	"CoinWarmStartBasis.hpp"
 	"CoinSearchTree.hpp"
 	"CbcBranchBase.hpp"
 
-1517570631 /usr/include/coin/CbcFullNodeInfo.hpp
-	<string>
-	<vector>
-	"CoinWarmStartBasis.hpp"
-	"CoinSearchTree.hpp"
-	"CbcBranchBase.hpp"
-	"CbcNodeInfo.hpp"
-
-1517570631 /usr/include/coin/CbcPartialNodeInfo.hpp
+1517835118 /usr/include/coin/CbcFullNodeInfo.hpp
 	<string>
 	<vector>
 	"CoinWarmStartBasis.hpp"
@@ -475,23 +467,31 @@
 	"CbcBranchBase.hpp"
 	"CbcNodeInfo.hpp"
 
-1517570630 /usr/include/coin/CbcConfig.h
+1517835118 /usr/include/coin/CbcPartialNodeInfo.hpp
+	<string>
+	<vector>
+	"CoinWarmStartBasis.hpp"
+	"CoinSearchTree.hpp"
+	"CbcBranchBase.hpp"
+	"CbcNodeInfo.hpp"
 
-1517570631 /usr/include/coin/CbcCountRowCut.hpp
+1517835117 /usr/include/coin/CbcConfig.h
 
-1517570631 /usr/include/coin/CbcMessage.hpp
+1517835117 /usr/include/coin/CbcCountRowCut.hpp
+
+1517835118 /usr/include/coin/CbcMessage.hpp
 	"CoinMessageHandler.hpp"
 
-1517570631 /usr/include/coin/CbcEventHandler.hpp
+1517835117 /usr/include/coin/CbcEventHandler.hpp
 	<cstddef>
 	<map>
 
-1517570626 /usr/include/coin/ClpDualRowPivot.hpp
+1517835113 /usr/include/coin/ClpDualRowPivot.hpp
 
-1517570631 /usr/include/coin/CbcStrategy.hpp
+1517835118 /usr/include/coin/CbcStrategy.hpp
 	"CbcModel.hpp"
 
-1517570627 /usr/include/coin/OsiClpSolverInterface.hpp
+1517835113 /usr/include/coin/OsiClpSolverInterface.hpp
 	<string>
 	<cfloat>
 	<map>
@@ -505,7 +505,7 @@
 	"CoinIndexedVector.hpp"
 	"CoinFinite.hpp"
 
-1517570626 /usr/include/coin/ClpSimplex.hpp
+1517835113 /usr/include/coin/ClpSimplex.hpp
 	<iostream>
 	<cfloat>
 	"ClpModel.hpp"
@@ -518,7 +518,7 @@
 	<cilk/cilk.h>
 	<pthread.h>
 
-1517570626 /usr/include/coin/ClpModel.hpp
+1517835113 /usr/include/coin/ClpModel.hpp
 	"ClpConfig.h"
 	<iostream>
 	<cassert>
@@ -533,34 +533,34 @@
 	"ClpParameters.hpp"
 	"ClpObjective.hpp"
 
-1517570626 /usr/include/coin/ClpConfig.h
+1517835113 /usr/include/coin/ClpConfig.h
 
-1517570626 /usr/include/coin/ClpPackedMatrix.hpp
+1517835113 /usr/include/coin/ClpPackedMatrix.hpp
 	"CoinPragma.hpp"
 	"ClpMatrixBase.hpp"
 	"ClpPrimalColumnSteepest.hpp"
 	<pthread.h>
 
-1517570626 /usr/include/coin/ClpMatrixBase.hpp
+1517835113 /usr/include/coin/ClpMatrixBase.hpp
 	"CoinPragma.hpp"
 	"CoinTypes.hpp"
 	"CoinPackedMatrix.hpp"
 
-1517570626 /usr/include/coin/ClpPrimalColumnSteepest.hpp
+1517835113 /usr/include/coin/ClpPrimalColumnSteepest.hpp
 	"ClpPrimalColumnPivot.hpp"
 	<bitset>
 
-1517570626 /usr/include/coin/ClpPrimalColumnPivot.hpp
+1517835113 /usr/include/coin/ClpPrimalColumnPivot.hpp
 
-1517570626 /usr/include/coin/ClpParameters.hpp
+1517835113 /usr/include/coin/ClpParameters.hpp
 
-1517570626 /usr/include/coin/ClpObjective.hpp
+1517835113 /usr/include/coin/ClpObjective.hpp
 
-1517570626 /usr/include/coin/ClpSolve.hpp
+1517835113 /usr/include/coin/ClpSolve.hpp
 	"ClpConfig.h"
 	"AbcCommon.hpp"
 
-1517570624 /usr/include/coin/CoinIndexedVector.hpp
+1517835110 /usr/include/coin/CoinIndexedVector.hpp
 	<map>
 	"CoinFinite.hpp"
 	"CoinPackedVectorBase.hpp"
@@ -568,21 +568,21 @@
 	"CoinHelperFunctions.hpp"
 	<cassert>
 
-1517570626 /usr/include/coin/ClpLinearObjective.hpp
+1517835113 /usr/include/coin/ClpLinearObjective.hpp
 	"ClpObjective.hpp"
 
-1517570626 /usr/include/coin/ClpEventHandler.hpp
+1517835113 /usr/include/coin/ClpEventHandler.hpp
 	"ClpSimplex.hpp"
 
-1517570626 /usr/include/coin/ClpNode.hpp
+1517835113 /usr/include/coin/ClpNode.hpp
 	"CoinPragma.hpp"
 
-1517570624 /usr/include/coin/CoinBuild.hpp
+1517835110 /usr/include/coin/CoinBuild.hpp
 	"CoinPragma.hpp"
 	"CoinTypes.hpp"
 	"CoinFinite.hpp"
 
-1517570627 /usr/include/coin/CglPreProcess.hpp
+1517835114 /usr/include/coin/CglPreProcess.hpp
 	<string>
 	<vector>
 	"CoinMessageHandler.hpp"
@@ -591,25 +591,25 @@
 	"OsiPresolve.hpp"
 	"CglCutGenerator.hpp"
 
-1517570628 /usr/include/coin/CglStored.hpp
+1517835115 /usr/include/coin/CglStored.hpp
 	<string>
 	"CglCutGenerator.hpp"
 
-1517570628 /usr/include/coin/CglCutGenerator.hpp
+1517835115 /usr/include/coin/CglCutGenerator.hpp
 	"OsiCuts.hpp"
 	"OsiSolverInterface.hpp"
 	"CglTreeInfo.hpp"
 
-1517570628 /usr/include/coin/CglTreeInfo.hpp
+1517835115 /usr/include/coin/CglTreeInfo.hpp
 	"OsiCuts.hpp"
 	"OsiSolverInterface.hpp"
 	"CoinHelperFunctions.hpp"
 
-1517570624 /usr/include/coin/OsiPresolve.hpp
+1517835111 /usr/include/coin/OsiPresolve.hpp
 	"OsiSolverInterface.hpp"
 	"CoinPresolveMatrix.hpp"
 
-1517570624 /usr/include/coin/CoinPresolveMatrix.hpp
+1517835110 /usr/include/coin/CoinPresolveMatrix.hpp
 	"CoinPragma.hpp"
 	"CoinPackedMatrix.hpp"
 	"CoinMessage.hpp"
@@ -621,37 +621,37 @@
 	<cstdlib>
 	"CoinFinite.hpp"
 
-1517570624 /usr/include/coin/CoinMessage.hpp
+1517835110 /usr/include/coin/CoinMessage.hpp
 	"CoinMessageHandler.hpp"
 
-1517570627 /usr/include/coin/CglKnapsackCover.hpp
+1517835114 /usr/include/coin/CglKnapsackCover.hpp
 	<string>
 	"CglCutGenerator.hpp"
 	"CglTreeInfo.hpp"
 
-1517570627 /usr/include/coin/CglFlowCover.hpp
+1517835114 /usr/include/coin/CglFlowCover.hpp
 	<iostream>
 	"CoinError.hpp"
 	"CglCutGenerator.hpp"
 
-1517570627 /usr/include/coin/CglZeroHalf.hpp
+1517835114 /usr/include/coin/CglZeroHalf.hpp
 	<string>
 	"CglCutGenerator.hpp"
 	"CoinPackedMatrix.hpp"
 	"Cgl012cut.hpp"
 
-1517570627 /usr/include/coin/Cgl012cut.hpp
+1517835114 /usr/include/coin/Cgl012cut.hpp
 	<cstdio>
 	<cstdlib>
 	<cmath>
 
-1517570627 /usr/include/coin/CglMixedIntegerRounding.hpp
+1517835114 /usr/include/coin/CglMixedIntegerRounding.hpp
 	<iostream>
 	<fstream>
 	"CoinError.hpp"
 	"CglCutGenerator.hpp"
 
-1517570627 /usr/include/coin/CglTwomir.hpp
+1517835114 /usr/include/coin/CglTwomir.hpp
 	<string>
 	"CglCutGenerator.hpp"
 	"CoinFactorization.hpp"
@@ -663,7 +663,7 @@
 	<cassert>
 	<iostream.h>
 
-1517570624 /usr/include/coin/CoinFactorization.hpp
+1517835110 /usr/include/coin/CoinFactorization.hpp
 	<iostream>
 	<string>
 	<cassert>
@@ -672,37 +672,37 @@
 	"CoinTypes.hpp"
 	"CoinIndexedVector.hpp"
 
-1517570627 /usr/include/coin/CglLandP.hpp
+1517835114 /usr/include/coin/CglLandP.hpp
 	"CglLandPValidator.hpp"
 	"CglCutGenerator.hpp"
 	"CglParam.hpp"
 	<iostream>
 
-1517570627 /usr/include/coin/CglLandPValidator.hpp
+1517835114 /usr/include/coin/CglLandPValidator.hpp
 	"OsiSolverInterface.hpp"
 	"CglParam.hpp"
 	<vector>
 
-1517570628 /usr/include/coin/CglParam.hpp
+1517835115 /usr/include/coin/CglParam.hpp
 	"CglConfig.h"
 	"CoinFinite.hpp"
 
-1517570627 /usr/include/coin/CglConfig.h
+1517835114 /usr/include/coin/CglConfig.h
 
-1517570627 /usr/include/coin/CglRedSplit.hpp
+1517835114 /usr/include/coin/CglRedSplit.hpp
 	"CglCutGenerator.hpp"
 	"CglRedSplitParam.hpp"
 
-1517570627 /usr/include/coin/CglRedSplitParam.hpp
+1517835114 /usr/include/coin/CglRedSplitParam.hpp
 	"CglParam.hpp"
 
-1517570627 /usr/include/coin/CglGMI.hpp
+1517835114 /usr/include/coin/CglGMI.hpp
 	"CglCutGenerator.hpp"
 	"CglGMIParam.hpp"
 	"CoinWarmStartBasis.hpp"
 	"CoinFactorization.hpp"
 
-1517570627 /usr/include/coin/CglGMIParam.hpp
+1517835114 /usr/include/coin/CglGMIParam.hpp
 	"CglParam.hpp"
 
 1515013350 /home/samuel/Downloads/npsep/include/oddhs.h
@@ -846,7 +846,7 @@
 	"cgraph.h"
 	"clique.h"
 
-1517569255 source:/home/samuel/Documentos/npsep/src/build_cgraph.cpp
+1517835433 source:/home/samuel/Documentos/npsep/src/build_cgraph.cpp
 	<cstring>
 	<cmath>
 	<limits>
@@ -868,7 +868,7 @@
 1515013350 /home/samuel/Documentos/npsep/include/build_cgraph.h
 	"cgraph.h"
 
-1517569746 /home/samuel/Documentos/npsep/include/lp.h
+1517834565 /home/samuel/Documentos/npsep/include/lp.h
 	"cgraph.h"
 	"cut.h"
 
@@ -894,7 +894,7 @@
 	<stdlib.h>
 	<stdio.h>
 
-1515013350 /home/samuel/Documentos/npsep/include/macros.h
+1517834565 /home/samuel/Documentos/npsep/include/macros.h
 	<stdlib.h>
 	<stdio.h>
 	<math.h>
@@ -918,7 +918,7 @@
 	<string.h>
 	<ctype.h>
 
-1517414283 source:/home/samuel/Documentos/npsep/src/clique_extender.c
+1517834565 source:/home/samuel/Documentos/npsep/src/clique_extender.c
 	<stdlib.h>
 	<assert.h>
 	<limits.h>
@@ -933,9 +933,11 @@
 	"vectormgm.h"
 	"macros.h"
 	"bron_kerbosch.h"
+	"vint_set.h"
 
-1517571926 /home/samuel/Documentos/npsep/include/clique_extender.h
+1517834607 /home/samuel/Documentos/npsep/include/clique_extender.h
 	"cgraph.h"
+	"vint_set.h"
 	"clique.h"
 
 1517414303 source:/home/samuel/Documentos/npsep/src/clique_separation.c
@@ -989,7 +991,7 @@
 	"lp.h"
 	<OsiSolverInterface.hpp>
 
-1517331664 source:/home/samuel/Documentos/npsep/src/lp.cpp
+1517835631 source:/home/samuel/Documentos/npsep/src/lp.cpp
 	<cstddef>
 	<cstring>
 	<cstdlib>
@@ -1120,7 +1122,7 @@
 	"vint_queue.h"
 	"memory.h"
 
-1515013350 source:/home/samuel/Documentos/npsep/src/vint_set.c
+1517834565 source:/home/samuel/Documentos/npsep/src/vint_set.c
 	<stdlib.h>
 	<assert.h>
 	<stdio.h>
@@ -1131,7 +1133,7 @@
 	"macros.h"
 	"vint_set.h"
 
-1517570624 /usr//include/coin/OsiSolverInterface.hpp
+1517835111 /usr//include/coin/OsiSolverInterface.hpp
 	<cstdlib>
 	<string>
 	<vector>
@@ -1145,14 +1147,14 @@
 	"OsiCollections.hpp"
 	"OsiSolverParameters.hpp"
 
-1517570624 /usr//include/coin/CoinTypes.hpp
+1517835110 /usr//include/coin/CoinTypes.hpp
 	"CoinUtilsConfig.h"
 	<stdint.h>
 	<cstdint>
 
-1517570623 /usr//include/coin/CoinUtilsConfig.h
+1517835109 /usr//include/coin/CoinUtilsConfig.h
 
-1517570624 /usr//include/coin/CoinMessageHandler.hpp
+1517835110 /usr//include/coin/CoinMessageHandler.hpp
 	"CoinUtilsConfig.h"
 	"CoinPragma.hpp"
 	"CoinTypes.hpp"
@@ -1161,15 +1163,15 @@
 	<string>
 	<vector>
 
-1517570624 /usr//include/coin/CoinPragma.hpp
+1517835110 /usr//include/coin/CoinPragma.hpp
 
-1517570624 /usr//include/coin/CoinPackedVectorBase.hpp
+1517835110 /usr//include/coin/CoinPackedVectorBase.hpp
 	<set>
 	<map>
 	"CoinPragma.hpp"
 	"CoinError.hpp"
 
-1517570624 /usr//include/coin/CoinError.hpp
+1517835110 /usr//include/coin/CoinError.hpp
 	<string>
 	<iostream>
 	<cassert>
@@ -1177,27 +1179,27 @@
 	"CoinUtilsConfig.h"
 	"CoinPragma.hpp"
 
-1517570624 /usr//include/coin/CoinPackedMatrix.hpp
+1517835110 /usr//include/coin/CoinPackedMatrix.hpp
 	"CoinError.hpp"
 	"CoinTypes.hpp"
 	"CoinPackedVectorBase.hpp"
 	"CoinShallowPackedVector.hpp"
 
-1517570624 /usr//include/coin/CoinShallowPackedVector.hpp
+1517835110 /usr//include/coin/CoinShallowPackedVector.hpp
 	"CoinError.hpp"
 	"CoinPackedVectorBase.hpp"
 
-1517570624 /usr//include/coin/CoinWarmStart.hpp
+1517835110 /usr//include/coin/CoinWarmStart.hpp
 
-1517570624 /usr//include/coin/CoinFinite.hpp
+1517835110 /usr//include/coin/CoinFinite.hpp
 	<limits>
 
-1517570624 /usr//include/coin/OsiCollections.hpp
+1517835111 /usr//include/coin/OsiCollections.hpp
 	<vector>
 
-1517570624 /usr//include/coin/OsiSolverParameters.hpp
+1517835111 /usr//include/coin/OsiSolverParameters.hpp
 
-1517570624 /usr//include/coin/CoinTime.hpp
+1517835110 /usr//include/coin/CoinTime.hpp
 	<ctime>
 	<sys/time.h>
 	<sys/resource.h>
@@ -1208,7 +1210,7 @@
 	<windows.h>
 	<fstream>
 
-1517570631 /usr//include/coin/OsiCbcSolverInterface.hpp
+1517835118 /usr//include/coin/OsiCbcSolverInterface.hpp
 	<string>
 	<cfloat>
 	<map>
@@ -1218,7 +1220,7 @@
 	"CbcStrategy.hpp"
 	"CoinWarmStartBasis.hpp"
 
-1517570631 /usr//include/coin/CbcModel.hpp
+1517835118 /usr//include/coin/CbcModel.hpp
 	<string>
 	<vector>
 	"CoinMessageHandler.hpp"
@@ -1232,14 +1234,14 @@
 	"CbcEventHandler.hpp"
 	"ClpDualRowPivot.hpp"
 
-1517570624 /usr//include/coin/OsiBranchingObject.hpp
+1517835111 /usr//include/coin/OsiBranchingObject.hpp
 	<cassert>
 	<string>
 	<vector>
 	"CoinError.hpp"
 	"CoinTypes.hpp"
 
-1517570624 /usr//include/coin/OsiCuts.hpp
+1517835111 /usr//include/coin/OsiCuts.hpp
 	"CoinPragma.hpp"
 	<cmath>
 	<cfloat>
@@ -1248,48 +1250,48 @@
 	"OsiColCut.hpp"
 	"CoinFloatEqual.hpp"
 
-1517570624 /usr//include/coin/OsiRowCut.hpp
+1517835111 /usr//include/coin/OsiRowCut.hpp
 	"CoinPackedVector.hpp"
 	"OsiCollections.hpp"
 	"OsiCut.hpp"
 
-1517570624 /usr//include/coin/CoinPackedVector.hpp
+1517835110 /usr//include/coin/CoinPackedVector.hpp
 	<map>
 	"CoinPragma.hpp"
 	"CoinPackedVectorBase.hpp"
 	"CoinSort.hpp"
 
-1517570624 /usr//include/coin/CoinSort.hpp
+1517835110 /usr//include/coin/CoinSort.hpp
 	<functional>
 	<new>
 	<algorithm>
 	"CoinDistance.hpp"
 
-1517570624 /usr//include/coin/CoinDistance.hpp
+1517835110 /usr//include/coin/CoinDistance.hpp
 	<iterator>
 
-1517570624 /usr//include/coin/OsiCut.hpp
+1517835111 /usr//include/coin/OsiCut.hpp
 	"OsiCollections.hpp"
 	"OsiSolverInterface.hpp"
 
-1517570624 /usr//include/coin/OsiColCut.hpp
+1517835111 /usr//include/coin/OsiColCut.hpp
 	<string>
 	"CoinPackedVector.hpp"
 	"OsiCollections.hpp"
 	"OsiCut.hpp"
 
-1517570624 /usr//include/coin/CoinFloatEqual.hpp
+1517835110 /usr//include/coin/CoinFloatEqual.hpp
 	<algorithm>
 	<cmath>
 	"CoinFinite.hpp"
 
-1517570624 /usr//include/coin/CoinWarmStartBasis.hpp
+1517835110 /usr//include/coin/CoinWarmStartBasis.hpp
 	<vector>
 	"CoinSort.hpp"
 	"CoinHelperFunctions.hpp"
 	"CoinWarmStart.hpp"
 
-1517570624 /usr//include/coin/CoinHelperFunctions.hpp
+1517835110 /usr//include/coin/CoinHelperFunctions.hpp
 	"CoinUtilsConfig.h"
 	<direct.h>
 	<cctype>
@@ -1301,11 +1303,11 @@
 	"CoinTypes.hpp"
 	"CoinError.hpp"
 
-1517570631 /usr//include/coin/CbcCompareBase.hpp
+1517835117 /usr//include/coin/CbcCompareBase.hpp
 	"CbcNode.hpp"
 	"CbcConfig.h"
 
-1517570631 /usr//include/coin/CbcNode.hpp
+1517835118 /usr//include/coin/CbcNode.hpp
 	<string>
 	<vector>
 	"CoinWarmStartBasis.hpp"
@@ -1315,7 +1317,7 @@
 	"CbcFullNodeInfo.hpp"
 	"CbcPartialNodeInfo.hpp"
 
-1517570624 /usr//include/coin/CoinSearchTree.hpp
+1517835110 /usr//include/coin/CoinSearchTree.hpp
 	<vector>
 	<algorithm>
 	<cmath>
@@ -1323,7 +1325,7 @@
 	"CoinFinite.hpp"
 	"CoinHelperFunctions.hpp"
 
-1517570630 /usr//include/coin/CbcBranchBase.hpp
+1517835117 /usr//include/coin/CbcBranchBase.hpp
 	<string>
 	<vector>
 	"OsiBranchingObject.hpp"
@@ -1333,41 +1335,33 @@
 	"CbcConsequence.hpp"
 	"CbcObjectUpdateData.hpp"
 
-1517570631 /usr//include/coin/CbcObject.hpp
+1517835118 /usr//include/coin/CbcObject.hpp
 	<string>
 	<vector>
 	"OsiBranchingObject.hpp"
 
-1517570631 /usr//include/coin/CbcBranchingObject.hpp
+1517835117 /usr//include/coin/CbcBranchingObject.hpp
 	<string>
 	<vector>
 	"CbcBranchBase.hpp"
 	"OsiBranchingObject.hpp"
 
-1517570631 /usr//include/coin/CbcBranchDecision.hpp
+1517835117 /usr//include/coin/CbcBranchDecision.hpp
 	"CbcBranchBase.hpp"
 
-1517570631 /usr//include/coin/CbcConsequence.hpp
+1517835117 /usr//include/coin/CbcConsequence.hpp
 
-1517570631 /usr//include/coin/CbcObjectUpdateData.hpp
+1517835118 /usr//include/coin/CbcObjectUpdateData.hpp
 	"CbcObject.hpp"
 
-1517570631 /usr//include/coin/CbcNodeInfo.hpp
+1517835118 /usr//include/coin/CbcNodeInfo.hpp
 	<string>
 	<vector>
 	"CoinWarmStartBasis.hpp"
 	"CoinSearchTree.hpp"
 	"CbcBranchBase.hpp"
 
-1517570631 /usr//include/coin/CbcFullNodeInfo.hpp
-	<string>
-	<vector>
-	"CoinWarmStartBasis.hpp"
-	"CoinSearchTree.hpp"
-	"CbcBranchBase.hpp"
-	"CbcNodeInfo.hpp"
-
-1517570631 /usr//include/coin/CbcPartialNodeInfo.hpp
+1517835118 /usr//include/coin/CbcFullNodeInfo.hpp
 	<string>
 	<vector>
 	"CoinWarmStartBasis.hpp"
@@ -1375,23 +1369,31 @@
 	"CbcBranchBase.hpp"
 	"CbcNodeInfo.hpp"
 
-1517570630 /usr//include/coin/CbcConfig.h
+1517835118 /usr//include/coin/CbcPartialNodeInfo.hpp
+	<string>
+	<vector>
+	"CoinWarmStartBasis.hpp"
+	"CoinSearchTree.hpp"
+	"CbcBranchBase.hpp"
+	"CbcNodeInfo.hpp"
 
-1517570631 /usr//include/coin/CbcCountRowCut.hpp
+1517835117 /usr//include/coin/CbcConfig.h
 
-1517570631 /usr//include/coin/CbcMessage.hpp
+1517835117 /usr//include/coin/CbcCountRowCut.hpp
+
+1517835118 /usr//include/coin/CbcMessage.hpp
 	"CoinMessageHandler.hpp"
 
-1517570631 /usr//include/coin/CbcEventHandler.hpp
+1517835117 /usr//include/coin/CbcEventHandler.hpp
 	<cstddef>
 	<map>
 
-1517570626 /usr//include/coin/ClpDualRowPivot.hpp
+1517835113 /usr//include/coin/ClpDualRowPivot.hpp
 
-1517570631 /usr//include/coin/CbcStrategy.hpp
+1517835118 /usr//include/coin/CbcStrategy.hpp
 	"CbcModel.hpp"
 
-1517570627 /usr//include/coin/OsiClpSolverInterface.hpp
+1517835113 /usr//include/coin/OsiClpSolverInterface.hpp
 	<string>
 	<cfloat>
 	<map>
@@ -1405,7 +1407,7 @@
 	"CoinIndexedVector.hpp"
 	"CoinFinite.hpp"
 
-1517570626 /usr//include/coin/ClpSimplex.hpp
+1517835113 /usr//include/coin/ClpSimplex.hpp
 	<iostream>
 	<cfloat>
 	"ClpModel.hpp"
@@ -1418,7 +1420,7 @@
 	<cilk/cilk.h>
 	<pthread.h>
 
-1517570626 /usr//include/coin/ClpModel.hpp
+1517835113 /usr//include/coin/ClpModel.hpp
 	"ClpConfig.h"
 	<iostream>
 	<cassert>
@@ -1433,34 +1435,34 @@
 	"ClpParameters.hpp"
 	"ClpObjective.hpp"
 
-1517570626 /usr//include/coin/ClpConfig.h
+1517835113 /usr//include/coin/ClpConfig.h
 
-1517570626 /usr//include/coin/ClpPackedMatrix.hpp
+1517835113 /usr//include/coin/ClpPackedMatrix.hpp
 	"CoinPragma.hpp"
 	"ClpMatrixBase.hpp"
 	"ClpPrimalColumnSteepest.hpp"
 	<pthread.h>
 
-1517570626 /usr//include/coin/ClpMatrixBase.hpp
+1517835113 /usr//include/coin/ClpMatrixBase.hpp
 	"CoinPragma.hpp"
 	"CoinTypes.hpp"
 	"CoinPackedMatrix.hpp"
 
-1517570626 /usr//include/coin/ClpPrimalColumnSteepest.hpp
+1517835113 /usr//include/coin/ClpPrimalColumnSteepest.hpp
 	"ClpPrimalColumnPivot.hpp"
 	<bitset>
 
-1517570626 /usr//include/coin/ClpPrimalColumnPivot.hpp
+1517835113 /usr//include/coin/ClpPrimalColumnPivot.hpp
 
-1517570626 /usr//include/coin/ClpParameters.hpp
+1517835113 /usr//include/coin/ClpParameters.hpp
 
-1517570626 /usr//include/coin/ClpObjective.hpp
+1517835113 /usr//include/coin/ClpObjective.hpp
 
-1517570626 /usr//include/coin/ClpSolve.hpp
+1517835113 /usr//include/coin/ClpSolve.hpp
 	"ClpConfig.h"
 	"AbcCommon.hpp"
 
-1517570624 /usr//include/coin/CoinIndexedVector.hpp
+1517835110 /usr//include/coin/CoinIndexedVector.hpp
 	<map>
 	"CoinFinite.hpp"
 	"CoinPackedVectorBase.hpp"
@@ -1468,21 +1470,21 @@
 	"CoinHelperFunctions.hpp"
 	<cassert>
 
-1517570626 /usr//include/coin/ClpLinearObjective.hpp
+1517835113 /usr//include/coin/ClpLinearObjective.hpp
 	"ClpObjective.hpp"
 
-1517570626 /usr//include/coin/ClpEventHandler.hpp
+1517835113 /usr//include/coin/ClpEventHandler.hpp
 	"ClpSimplex.hpp"
 
-1517570626 /usr//include/coin/ClpNode.hpp
+1517835113 /usr//include/coin/ClpNode.hpp
 	"CoinPragma.hpp"
 
-1517570624 /usr//include/coin/CoinBuild.hpp
+1517835110 /usr//include/coin/CoinBuild.hpp
 	"CoinPragma.hpp"
 	"CoinTypes.hpp"
 	"CoinFinite.hpp"
 
-1517570627 /usr//include/coin/CglPreProcess.hpp
+1517835114 /usr//include/coin/CglPreProcess.hpp
 	<string>
 	<vector>
 	"CoinMessageHandler.hpp"
@@ -1491,25 +1493,25 @@
 	"OsiPresolve.hpp"
 	"CglCutGenerator.hpp"
 
-1517570628 /usr//include/coin/CglStored.hpp
+1517835115 /usr//include/coin/CglStored.hpp
 	<string>
 	"CglCutGenerator.hpp"
 
-1517570628 /usr//include/coin/CglCutGenerator.hpp
+1517835115 /usr//include/coin/CglCutGenerator.hpp
 	"OsiCuts.hpp"
 	"OsiSolverInterface.hpp"
 	"CglTreeInfo.hpp"
 
-1517570628 /usr//include/coin/CglTreeInfo.hpp
+1517835115 /usr//include/coin/CglTreeInfo.hpp
 	"OsiCuts.hpp"
 	"OsiSolverInterface.hpp"
 	"CoinHelperFunctions.hpp"
 
-1517570624 /usr//include/coin/OsiPresolve.hpp
+1517835111 /usr//include/coin/OsiPresolve.hpp
 	"OsiSolverInterface.hpp"
 	"CoinPresolveMatrix.hpp"
 
-1517570624 /usr//include/coin/CoinPresolveMatrix.hpp
+1517835110 /usr//include/coin/CoinPresolveMatrix.hpp
 	"CoinPragma.hpp"
 	"CoinPackedMatrix.hpp"
 	"CoinMessage.hpp"
@@ -1521,37 +1523,37 @@
 	<cstdlib>
 	"CoinFinite.hpp"
 
-1517570624 /usr//include/coin/CoinMessage.hpp
+1517835110 /usr//include/coin/CoinMessage.hpp
 	"CoinMessageHandler.hpp"
 
-1517570627 /usr//include/coin/CglKnapsackCover.hpp
+1517835114 /usr//include/coin/CglKnapsackCover.hpp
 	<string>
 	"CglCutGenerator.hpp"
 	"CglTreeInfo.hpp"
 
-1517570627 /usr//include/coin/CglFlowCover.hpp
+1517835114 /usr//include/coin/CglFlowCover.hpp
 	<iostream>
 	"CoinError.hpp"
 	"CglCutGenerator.hpp"
 
-1517570627 /usr//include/coin/CglZeroHalf.hpp
+1517835114 /usr//include/coin/CglZeroHalf.hpp
 	<string>
 	"CglCutGenerator.hpp"
 	"CoinPackedMatrix.hpp"
 	"Cgl012cut.hpp"
 
-1517570627 /usr//include/coin/Cgl012cut.hpp
+1517835114 /usr//include/coin/Cgl012cut.hpp
 	<cstdio>
 	<cstdlib>
 	<cmath>
 
-1517570627 /usr//include/coin/CglMixedIntegerRounding.hpp
+1517835114 /usr//include/coin/CglMixedIntegerRounding.hpp
 	<iostream>
 	<fstream>
 	"CoinError.hpp"
 	"CglCutGenerator.hpp"
 
-1517570627 /usr//include/coin/CglTwomir.hpp
+1517835114 /usr//include/coin/CglTwomir.hpp
 	<string>
 	"CglCutGenerator.hpp"
 	"CoinFactorization.hpp"
@@ -1563,7 +1565,7 @@
 	<cassert>
 	<iostream.h>
 
-1517570624 /usr//include/coin/CoinFactorization.hpp
+1517835110 /usr//include/coin/CoinFactorization.hpp
 	<iostream>
 	<string>
 	<cassert>
@@ -1572,36 +1574,54 @@
 	"CoinTypes.hpp"
 	"CoinIndexedVector.hpp"
 
-1517570627 /usr//include/coin/CglLandP.hpp
+1517835114 /usr//include/coin/CglLandP.hpp
 	"CglLandPValidator.hpp"
 	"CglCutGenerator.hpp"
 	"CglParam.hpp"
 	<iostream>
 
-1517570627 /usr//include/coin/CglLandPValidator.hpp
+1517835114 /usr//include/coin/CglLandPValidator.hpp
 	"OsiSolverInterface.hpp"
 	"CglParam.hpp"
 	<vector>
 
-1517570628 /usr//include/coin/CglParam.hpp
+1517835115 /usr//include/coin/CglParam.hpp
 	"CglConfig.h"
 	"CoinFinite.hpp"
 
-1517570627 /usr//include/coin/CglConfig.h
+1517835114 /usr//include/coin/CglConfig.h
 
-1517570627 /usr//include/coin/CglRedSplit.hpp
+1517835114 /usr//include/coin/CglRedSplit.hpp
 	"CglCutGenerator.hpp"
 	"CglRedSplitParam.hpp"
 
-1517570627 /usr//include/coin/CglRedSplitParam.hpp
+1517835114 /usr//include/coin/CglRedSplitParam.hpp
 	"CglParam.hpp"
 
-1517570627 /usr//include/coin/CglGMI.hpp
+1517835114 /usr//include/coin/CglGMI.hpp
 	"CglCutGenerator.hpp"
 	"CglGMIParam.hpp"
 	"CoinWarmStartBasis.hpp"
 	"CoinFactorization.hpp"
 
-1517570627 /usr//include/coin/CglGMIParam.hpp
+1517835114 /usr//include/coin/CglGMIParam.hpp
 	"CglParam.hpp"
+
+1517834565 source:/home/samuel/Documentos/npsep/src/clique_merge.c
+	<ctype.h>
+	<stdlib.h>
+	<assert.h>
+	<time.h>
+	<string.h>
+	<float.h>
+	<omp.h>
+	"clique_merge.h"
+	"macros.h"
+	"clique_extender.h"
+	"vint_set.h"
+	"memory.h"
+
+1517834565 /home/samuel/Documentos/npsep/include/clique_merge.h
+	"cgraph.h"
+	"lp.h"
 

@@ -632,5 +632,8 @@ CGraph *build_cgraph_lp( const void *_mip )
     else
         cgraph_update_min_max_degree( cgraph );
 
+    delete[] idxs;
+    delete[] coefs;
+
     return cgraph;
 }
