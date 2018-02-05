@@ -12,6 +12,7 @@
 #include "vectormgm.h"
 #include "macros.h"
 #include "bron_kerbosch.h"
+#include "vint_set.h"
 
 #define CLQE_DEF_MAX_CANDIDATES   256
 #define CLQE_DEF_MAX_COST         500.0

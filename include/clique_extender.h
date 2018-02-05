@@ -7,6 +7,7 @@
  **/
 
 #include "cgraph.h"
+#include "vint_set.h"
 #include "clique.h"
 
 typedef struct _CliqueExtender CliqueExtender;
