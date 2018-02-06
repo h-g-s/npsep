@@ -349,7 +349,7 @@ void merge_cliques( LinearProgram *mip, CGraph *cgraph, int maxExtensions )
     char **ivt = NULL;      // incidence vector per thread
     IntSet *currClique = NULL;  // to store the current clique
     struct CliqueSize **clqsSize = NULL; // to sort per clique size
-    int *clqSizeCap; // current capacity in number of cliques for each thread
+    int *clqSizeCap = NULL; // current capacity in number of cliques for each thread
 
     int clqSizeCapIni = 1024;
 
