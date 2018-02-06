@@ -2,11 +2,21 @@
 #include <stdlib.h>
 #include <time.h>
 #include <omp.h>
+#include <math.h>
+#include <float.h>
 #include "clique_merge.h"
 #include "lp.h"
 #include "build_cgraph.h"
 
 extern int clqMergeVerbose;
+extern double clqMergeSecsCheckClique;
+extern double clqMergeSecsExtendAndDominate;
+extern double clqMergeSecsAddAndRemove;
+extern int clqMergeNExtended;
+extern int clqMergeNDominatedFull;
+extern int clqMergeNDominatedEqPart;
+
+
 
 int main( int argc, const char **argv )
 {
@@ -38,9 +48,35 @@ int main( int argc, const char **argv )
 
     clqMergeVerbose = atoi(argv[4]);
 
+    double lb = DBL_MAX;
+    int status = lp_optimize_as_continuous( mip );
+    if (status == LP_OPTIMAL)
+        lb = lp_obj_value( mip );
+
     merge_cliques( mip, cgraph, maxExt );
     
     lp_write_lp( mip, "pp.lp" );
+    
+    double nlb = DBL_MAX;
+    status = lp_optimize_as_continuous( mip );
+    if (status == LP_OPTIMAL)
+        nlb = lp_obj_value( mip );
+     
+    char first = 0;
+    {
+        FILE *ff = fopen( "summary.csv", "r" );
+        if (ff)
+            fclose(ff);            
+        else
+            first = 1;
+    }
+        
+    FILE *f = fopen( "summary.csv", "a" );
+    if (first)
+        fprintf( f, "time discover cliques,time merge and dominate,time add and remove,nr. ext. constraints,nr. dom. constraints leq,nr. dom. constraints eq,lb,nlb\n" );
+            
+    fprintf( f, "%.4f,%.4f,%.4f,%d,%d,%d,%g,%g\n", clqMergeSecsCheckClique, clqMergeSecsExtendAndDominate, clqMergeSecsAddAndRemove, clqMergeNExtended, clqMergeNDominatedFull, clqMergeNDominatedEqPart, lb, nlb );
+    fclose( f );
 
     cgraph_free( &cgraph );
     lp_free( &mip );

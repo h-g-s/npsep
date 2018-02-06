@@ -25,6 +25,11 @@ enum CliqueType
 // global configurations and stats
 int clqMergeVerbose = 1;
 double clqMergeSecsCheckClique = 0.0;
+double clqMergeSecsExtendAndDominate = 0.0;
+double clqMergeSecsAddAndRemove = 0.0;
+int clqMergeNExtended = 0;
+int clqMergeNDominatedFull = 0;
+int clqMergeNDominatedEqPart = 0;
 
 static char dominates( int nClq1, const int clq1[], int nClq2, const int clq2[], char *iv )
 {
@@ -245,7 +250,7 @@ static void addName( char ***rNames, int *lines, int *chars, int *linesCap, int 
 {
     int len = strlen(name);
 
-    if ( (*chars) + len+1 >= (*charsCap) )
+    if ( (*chars) + len+2 >= (*charsCap) )
     {
         // line sizes must be stored to fix the pointers
         int *lsizes;
@@ -253,11 +258,11 @@ static void addName( char ***rNames, int *lines, int *chars, int *linesCap, int 
         for ( int i=0 ; i<(*lines) ; ++i )
             lsizes[i] = strlen( (*rNames)[i] );
 
-        (*charsCap) = MAX((*charsCap)*2, (*chars) + len+1);
+        (*charsCap) = MAX((*charsCap)*2, (*chars) + len+2);
 
         (*rNames)[0] = xrealloc( (*rNames)[0], sizeof(char)*(*charsCap) );
         for ( int i=1 ; i<(*lines) ; ++i )
-            *rNames[i] = (*rNames)[i-1] + lsizes[i-1] + 1;
+            (*rNames)[i] = (*rNames)[i-1] + lsizes[i-1] + 1;
 
         free( lsizes );
     }
@@ -274,6 +279,7 @@ static void addName( char ***rNames, int *lines, int *chars, int *linesCap, int 
     strcpy( (*rNames)[*lines], name );
 
     ++(*lines);
+    (*chars) += len+1;
 }
 
 void addRow( 
@@ -377,7 +383,7 @@ void merge_cliques( LinearProgram *mip, CGraph *cgraph, int maxExtensions )
     int nrnLines = 0;
     int nrnChars = 0;
     int nrnLinesCap = 4096;
-    int nrnCharsCap = 64*4096;
+    int nrnCharsCap = 64*nrnLinesCap;
     ALLOCATE_VECTOR( nrNames, char *, nrnLinesCap );
     ALLOCATE_VECTOR_INI( nrNames[0], char , nrnCharsCap );
 
@@ -428,6 +434,7 @@ void merge_cliques( LinearProgram *mip, CGraph *cgraph, int maxExtensions )
         ALLOCATE_VECTOR_INI( ivt[i], char, lp_cols(mip)*2 );
     }
 
+    clock_t startExtend = clock();
 #pragma omp parallel for
     for ( int iclq=0 ; iclq<nCliques ; ++iclq )
     {
@@ -458,6 +465,7 @@ void merge_cliques( LinearProgram *mip, CGraph *cgraph, int maxExtensions )
                         char rname[256] = "";
                         printf("-> constraint %s extended: \n", lp_row_name(mip, row, rname) );
                     }
+                    ++clqMergeNExtended;
 
                     // to sort cliques found per size
                     struct CliqueSize *clqbs = clqsSize[thread];
@@ -542,7 +550,10 @@ void merge_cliques( LinearProgram *mip, CGraph *cgraph, int maxExtensions )
             }
         } // non dominated clique constraints
     } // all clique constraints
+    
+    clqMergeSecsExtendAndDominate = ((double)clock()-(double)startExtend)/((double)CLOCKS_PER_SEC);
 
+    clock_t startRemAdd = clock();
     /* removing dominated cliques */
     {
         int nToRemove = 0;
@@ -555,6 +566,7 @@ void merge_cliques( LinearProgram *mip, CGraph *cgraph, int maxExtensions )
             {
                 if (sense[i]=='E')
                 {
+                    ++clqMergeNDominatedEqPart;
                     // adding >= part, <= part will be added separately
                     int nz = lp_row( mip, i, idx, coef );
                     double rhs = lp_rhs( mip, i );
@@ -564,6 +576,10 @@ void merge_cliques( LinearProgram *mip, CGraph *cgraph, int maxExtensions )
                     sprintf( nrname, "%sEp", rname );
                     addRow(  &nrRows, &nrCapRows, &nrNz, &nrCapNz, &nrStart, &nrIdx, &nrCoef, &nrSense, &nrRhs,
                         nz, idx, coef, 'G', rhs, nrname, &nrNames, &nrnLines, &nrnLinesCap, &nrnChars, &nrnCharsCap );
+                }
+                else
+                {
+                    ++clqMergeNDominatedFull;
                 }
                 toRemove[nToRemove++] = i;
             }
@@ -605,7 +621,9 @@ void merge_cliques( LinearProgram *mip, CGraph *cgraph, int maxExtensions )
                 clqNames[ic], &nrNames, &nrnLines, &nrnLinesCap, &nrnChars, &nrnCharsCap );
         }
     }
-
+    
+    clqMergeSecsAddAndRemove = ((double)clock()-(double)startRemAdd)/((double)CLOCKS_PER_SEC);
+    
     /* flushing rows */
     lp_add_rows( mip, nrRows, nrStart, nrIdx, nrCoef, nrSense, nrRhs, (const char**) nrNames );
 
