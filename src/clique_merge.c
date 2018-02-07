@@ -81,6 +81,8 @@ static void add_clique(
 
         if (dominates(size, el, sizeRows[rowClique], elRows[rowClique], iv ))
         {
+#pragma omp critical
+{
             cliqueState[rowClique] = Dominated;
             if (clqMergeVerbose>=2)
             {
@@ -89,6 +91,8 @@ static void add_clique(
                 printf("\t\tdominates %s\n", domname );
 
             }
+            
+}
         }
     }
 #pragma omp critical
@@ -300,7 +304,7 @@ void addRow(
     {
         (*nrCapNz) = MAX( (*nrCapNz)*2, ((*nrNz)+nz) );
         (*nrIdx) = xrealloc( (*nrIdx), sizeof(int)*(*nrCapNz) );
-        (*nrCoef) = xrealloc( (*nrCoef), sizeof(int)*(*nrCapNz) );
+        (*nrCoef) = xrealloc( (*nrCoef), sizeof(double)*(*nrCapNz) );
     }
 
     /* adding */
@@ -327,8 +331,8 @@ void merge_cliques( LinearProgram *mip, CGraph *cgraph, int maxExtensions )
     int *cliques;       // list of rows which are cliques
     int *rc = NULL;               // reduced costs (dummy values by now)
 
-    int *idx = NULL;              // temporary area
-    double *coef = NULL;          // to get indexes from rows
+    int **idx = NULL;              // temporary area
+    double **coef = NULL;          // to get indexes from rows
 
     ALLOCATE_VECTOR( cliques, int, lp_rows(mip) );
     ALLOCATE_VECTOR( cliqueState, enum CliqueType, lp_rows(mip) );
@@ -406,8 +410,6 @@ void merge_cliques( LinearProgram *mip, CGraph *cgraph, int maxExtensions )
     ALLOCATE_VECTOR( rc, int, lp_cols(mip)*2 );
     FILL( rc, 0, lp_cols(mip)*2, 1.0 );
 
-    ALLOCATE_VECTOR( idx, int, lp_cols(mip) );
-    ALLOCATE_VECTOR( coef, double, lp_cols(mip) );
 
     /* allocating structures for threads */
 
@@ -415,11 +417,15 @@ void merge_cliques( LinearProgram *mip, CGraph *cgraph, int maxExtensions )
 #ifdef _OPENMP
 #pragma omp parallel
 {
-    nthreads = omp_get_num_threads();
+    if (omp_get_thread_num()==0)
+        nthreads = omp_get_num_threads();
 }
 #endif
     assert( nthreads>= 1);
-
+    
+    ALLOCATE_VECTOR( idx, int *, nthreads );
+    ALLOCATE_VECTOR( coef, double *, nthreads );
+    
     ALLOCATE_VECTOR( currClique, IntSet, nthreads );
     ALLOCATE_VECTOR_INI( clqsSize, struct CliqueSize *, nthreads );
     ALLOCATE_VECTOR_INI( clqSizeCap, int, nthreads );
@@ -432,6 +438,8 @@ void merge_cliques( LinearProgram *mip, CGraph *cgraph, int maxExtensions )
         vint_set_init( &currClique[i] );
         ALLOCATE_VECTOR( clqsSize[i], struct CliqueSize, clqSizeCap[i] );
         ALLOCATE_VECTOR_INI( ivt[i], char, lp_cols(mip)*2 );
+        ALLOCATE_VECTOR( idx[i], int, lp_cols(mip) );
+        ALLOCATE_VECTOR( coef[i], double, lp_cols(mip) );
     }
 
     clock_t startExtend = clock();
@@ -445,16 +453,21 @@ void merge_cliques( LinearProgram *mip, CGraph *cgraph, int maxExtensions )
 #endif
         int row = cliques[iclq];
 
+        int *cidx = idx[thread];
+        double *ccoef = coef[thread];
         if ( cliqueState[row] != Dominated )
         {
-            int nz = lp_row( mip, row, idx, coef );
+            int nz = lp_row( mip, row, cidx, ccoef );
             IntSet *clq = &currClique[thread];
             vint_set_clear( clq );
-            vint_set_add( clq, idx, nz );
+            vint_set_add( clq, cidx, nz );
 
             /* extending */
             {
                 CliqueExtender *clqe = clqe_create();
+//                printf("aaa cgraph: %p\n", cgraph ); fflush(stdout); fflush(stderr);
+//                printf("rc %p cgraph size %d\n", (void*) rc, cgraph_size(cgraph) ); fflush(stdout); fflush(stderr);
+                clqe_set_max_it_bk( clqe, 9999 );
                 clqe_set_costs( clqe, rc, cgraph_size(cgraph) );
 
                 int status = clqe_extend( clqe, cgraph, clq, lp_cols(mip), CLQEM_EXACT );
@@ -510,7 +523,7 @@ void merge_cliques( LinearProgram *mip, CGraph *cgraph, int maxExtensions )
 
                         char *iv = ivt[thread];
                         add_clique( mip, newCliques, size, el, cliqueState, nCliques, cliques,(const int **) elRow, sizeRow, iv );
-    #pragma omp critical
+#pragma omp critical
                         {
                             char origrname[256] = "";
                             lp_row_name( mip, row, origrname );
@@ -568,14 +581,14 @@ void merge_cliques( LinearProgram *mip, CGraph *cgraph, int maxExtensions )
                 {
                     ++clqMergeNDominatedEqPart;
                     // adding >= part, <= part will be added separately
-                    int nz = lp_row( mip, i, idx, coef );
+                    int nz = lp_row( mip, i, idx[0], coef[0] );
                     double rhs = lp_rhs( mip, i );
                     char rname[256];
                     lp_row_name( mip, i, rname );
                     char nrname[512];
                     sprintf( nrname, "%sEp", rname );
                     addRow(  &nrRows, &nrCapRows, &nrNz, &nrCapNz, &nrStart, &nrIdx, &nrCoef, &nrSense, &nrRhs,
-                        nz, idx, coef, 'G', rhs, nrname, &nrNames, &nrnLines, &nrnLinesCap, &nrnChars, &nrnCharsCap );
+                        nz, idx[0], coef[0], 'G', rhs, nrname, &nrNames, &nrnLines, &nrnLinesCap, &nrnChars, &nrnCharsCap );
                 }
                 else
                 {
@@ -605,19 +618,19 @@ void merge_cliques( LinearProgram *mip, CGraph *cgraph, int maxExtensions )
             {
                 if (el[i]>=lp_cols(mip))
                 {
-                    coef[i] = -1.0;
+                    coef[0][i] = -1.0;
                     rhs -= 1.0;
-                    idx[i] = el[i]-lp_cols(mip);
+                    idx[0][i] = el[i]-lp_cols(mip);
                 }
                 else
                 {
-                    idx[i] = el[i];
-                    coef[i] = 1.0;
+                    idx[0][i] = el[i];
+                    coef[0][i] = 1.0;
                 }
             }
             // adding
             addRow(  &nrRows, &nrCapRows, &nrNz, &nrCapNz, &nrStart, &nrIdx, &nrCoef, &nrSense, &nrRhs,
-                size, idx, coef, 'L', rhs,
+                size, idx[0], coef[0], 'L', rhs,
                 clqNames[ic], &nrNames, &nrnLines, &nrnLinesCap, &nrnChars, &nrnCharsCap );
         }
     }
@@ -658,9 +671,17 @@ TERMINATE:
     if (rc)
         free( rc );
     if (idx)
+    {
+        for ( int i=0 ; (i<nthreads) ; ++i )
+            free( idx[i] );
         free( idx );
+    }
     if (coef)
+    {
+        for ( int i=0 ; (i<nthreads) ; ++i )
+            free( coef[i] );
         free( coef );
+    }
     if (currClique)
     {
         for ( int i=0 ; (i<nthreads) ; ++i )
