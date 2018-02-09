@@ -1,4 +1,5 @@
 #include <ctype.h>
+#include <limits.h>
 #include <stdlib.h>
 #include <assert.h>
 #include <time.h>
@@ -20,7 +21,7 @@ enum CliqueType
     Dominated = 2
 };
 
-#define MAX_SIZE_CLIQUE_TO_BE_EXTENDED 1024
+#define MAX_SIZE_CLIQUE_TO_BE_EXTENDED 128
 
 // global configurations and stats
 int clqMergeVerbose = 1;
@@ -66,18 +67,57 @@ static char dominates( int nClq1, const int clq1[], int nClq2, const int clq2[],
 static void add_clique(
         LinearProgram *mip,
         CliqueSet *newCliques,      // new cliques
-        int size, const int *el,  // clique being added
-        enum CliqueType cliqueState[], int nCliques, const int clqRow[],  // which are the clique rows and their state
+        int size, const int el[],  // clique being added
+        enum CliqueType cliqueState[], const int clqRow[],  // which are the clique rows and their state
         const int **elRows, const int sizeRows[],  // cliques in original problem
-        char *iv // temporary incidence vector
+        char *iv, // temporary incidence vector
+        char *ivrt, // temporary incidence vector
+        int *rtc, // list of rows checked
+        const int **colClqs, // column cliques
+        const int nColClqs[] // number of cliques of a column
         )
 {
-    // checking which cliques are dominated
-    for ( int i=0 ; i<nCliques ; ++i )
+#ifdef DEBUG
+    for ( int i=0 ; (i<lp_cols(mip)) ; ++i )
     {
-        int rowClique = clqRow[i];
-        if (cliqueState[rowClique]==Dominated)
-            continue;
+        assert( iv[i] == False );
+    }
+    for ( int i=0 ; (i<lp_rows(mip)) ; ++i )
+    {
+        assert( ivrt[i] == False );
+    }
+
+#endif
+    int nrtc = 0;
+    for ( int i=0 ; (i<size) ; ++i )
+    {
+        int col = el[i];
+        if (col >= lp_cols(mip)) // complimetary variable
+            col -= lp_cols(mip);
+#ifdef DEBUG            
+        assert( col >= 0 && col<lp_cols(mip) );
+#endif        
+        // checking non-dominated cliques that column appear
+        for ( int j=0 ; (j<nColClqs[col]) ; ++j )
+        {
+            int ir = colClqs[col][j];
+#ifdef DEBUG
+            assert( cliqueState[ir]!=NotAClique );
+#endif
+            
+            // skipping already dominated, already included or larger rows (cannot be dominated by this one )
+            if ( cliqueState[ir]==Dominated || ivrt[ir] || sizeRows[ir]>size )
+                continue;
+
+            ivrt[ir] = True;
+            rtc[nrtc++] = ir;;
+        }
+    }
+
+    for ( int i=0 ; (i<nrtc) ; ++i )
+    {
+        int rowClique = rtc[i];
+        ivrt[rowClique] = False;
 
         if (dominates(size, el, sizeRows[rowClique], elRows[rowClique], iv ))
         {
@@ -89,12 +129,12 @@ static void add_clique(
                 char domname[256]="";
                 lp_row_name( mip, rowClique, domname );
                 printf("\t\tdominates %s\n", domname );
-
             }
             
-}
-        }
-    }
+} // critical
+        } // dominates 
+    } // all rows to check
+ 
 #pragma omp critical
     {
         clq_set_add( newCliques, size, el, size );
@@ -114,6 +154,10 @@ static int check_cliques( LinearProgram *mip, enum CliqueType cliqueState[], int
     ALLOCATE_VECTOR( idx, int, lp_cols(mip) );
     double *coef;
     ALLOCATE_VECTOR( coef, double, lp_cols(mip) );
+    
+    int minClqSize = INT_MAX;
+    int maxClqSize = 0;
+    double avClgSize = 0.0;
 
     for ( int i=0 ; (i<rows) ; ++i )
     {
@@ -167,7 +211,10 @@ static int check_cliques( LinearProgram *mip, enum CliqueType cliqueState[], int
             sizeRow[i] = nz;
             memcpy( elRow[i], idx, sizeof(int)*nz );
             allEl += nz;
-
+            
+            minClqSize = MIN( minClqSize, nz );
+            maxClqSize = MAX( maxClqSize, nz );
+            avClgSize += nz;
         } // found a clique candidate
         else
         {
@@ -184,7 +231,9 @@ static int check_cliques( LinearProgram *mip, enum CliqueType cliqueState[], int
                         idx[j] += lp_cols(mip);
                 }
                 allEl += nz;
-
+                minClqSize = MIN( minClqSize, nz );
+                maxClqSize = MAX( maxClqSize, nz );
+                avClgSize += nz;
             }
         }
 
@@ -230,7 +279,7 @@ static int check_cliques( LinearProgram *mip, enum CliqueType cliqueState[], int
     clqMergeSecsCheckClique = ((double)clock()-startcq) / ((double)CLOCKS_PER_SEC);
 
     if (clqMergeVerbose>=1)
-        printf("model checked in %.4f seconds. %d candidate cliques for extension/merging.\n", clqMergeSecsCheckClique, nCliques );
+        printf("model checked in %.4f seconds. %d candidate cliques for extension/merging. clique sizes range:[%d...%d], av %.2f.\n", clqMergeSecsCheckClique, nCliques, minClqSize, maxClqSize, avClgSize/((double)nCliques) );
 
     return nCliques;
 }
@@ -345,17 +394,23 @@ void merge_cliques( LinearProgram *mip, CGraph *cgraph, int maxExtensions )
     int *allEl = NULL;   // to store all non-zeros
     int nAllEl = 0;      // total number of non zeros in cliques
 
+    int *nColClqs = NULL;    // number of cliques that a column is involved
+    int *allCollClqs = NULL; // contiguous vector to store column cliques
+    int **colClqs = NULL;    // cliques that a column is involved
+
     ALLOCATE_VECTOR_INI( elRow, int *, lp_rows(mip) );
     ALLOCATE_VECTOR_INI( sizeRow, int, lp_rows(mip) );
     ALLOCATE_VECTOR( allEl, int, lp_nz(mip) );
 
     /* working variables of each thread */
     char **ivt = NULL;      // incidence vector per thread
+    char **ivrt = NULL;     // incidence vector per thread
+    int **rtc = NULL;       // rows to check per thread
     IntSet *currClique = NULL;  // to store the current clique
     struct CliqueSize **clqsSize = NULL; // to sort per clique size
     int *clqSizeCap = NULL; // current capacity in number of cliques for each thread
 
-    int clqSizeCapIni = 1024;
+    int clqSizeCapIni = 4096;
 
     char *sense = NULL; // row senses
     ALLOCATE_VECTOR( sense, char, lp_rows(mip) );
@@ -365,8 +420,8 @@ void merge_cliques( LinearProgram *mip, CGraph *cgraph, int maxExtensions )
     char **clqNames;
     int clqnLines = 0;
     int clqnChars = 0;
-    int clqnLinesCap = 4096;
-    int clqnCharsCap = 64*4096;
+    int clqnLinesCap = 8191;
+    int clqnCharsCap = 64*clqnLinesCap;
 
     ALLOCATE_VECTOR( clqNames, char *, clqnLinesCap );
     ALLOCATE_VECTOR_INI( clqNames[0], char , clqnCharsCap );
@@ -386,7 +441,7 @@ void merge_cliques( LinearProgram *mip, CGraph *cgraph, int maxExtensions )
     char **nrNames;
     int nrnLines = 0;
     int nrnChars = 0;
-    int nrnLinesCap = 4096;
+    int nrnLinesCap = 8192;
     int nrnCharsCap = 64*nrnLinesCap;
     ALLOCATE_VECTOR( nrNames, char *, nrnLinesCap );
     ALLOCATE_VECTOR_INI( nrNames[0], char , nrnCharsCap );
@@ -395,6 +450,42 @@ void merge_cliques( LinearProgram *mip, CGraph *cgraph, int maxExtensions )
     const int nCliques = check_cliques( mip, cliqueState, cliques, elRow, sizeRow, allEl, &nAllEl, sense );
     if ( nCliques == 0 )
         goto TERMINATE;
+
+    /* filling cliques per col */
+    {
+        int totnz = 0;
+        ALLOCATE_VECTOR_INI( nColClqs, int, lp_cols(mip) );
+        for ( int i=0 ; (i<nCliques) ; ++i )
+        {
+            int ir = cliques[i];
+            assert( sizeRow[ir] >= 2 );
+            for ( int j=0 ; (j<sizeRow[ir]) ; ++j )
+            {
+                int col = elRow[ir][j];
+                ++nColClqs[col];
+                ++totnz;
+            }
+        }
+        ALLOCATE_VECTOR( allCollClqs, int, totnz );
+        ALLOCATE_VECTOR( colClqs, int *, lp_cols(mip) );
+        // start of each column
+        colClqs[0] = allCollClqs;
+        for ( int i=1 ; i<lp_cols(mip) ; ++i )
+            colClqs[i] = colClqs[i-1] + nColClqs[i-1];
+
+        FILL( nColClqs, 0, lp_cols(mip), 0 );
+        // filling cliques of each col
+        for ( int i=0 ; (i<nCliques) ; ++i )
+        {
+            int ir = cliques[i];
+            assert( sizeRow[ir] >= 2 );
+            for ( int j=0 ; (j<sizeRow[ir]) ; ++j )
+            {
+                int col = elRow[ir][j];
+                colClqs[col][nColClqs[col]++] = ir;
+            }
+        }
+    }
 
 
     nrCapRows = nCliques*MIN(maxExtensions,5) + 1024;
@@ -432,12 +523,18 @@ void merge_cliques( LinearProgram *mip, CGraph *cgraph, int maxExtensions )
     FILL( clqSizeCap, 0, nthreads, clqSizeCapIni );
 
     ALLOCATE_VECTOR( ivt, char * , nthreads );
+    /* incidence vector for rows to check */
+    ALLOCATE_VECTOR( ivrt, char * , nthreads );
+    /* vector of rows to check */
+    ALLOCATE_VECTOR( rtc, int * , nthreads );
 
     for ( int i=0 ; (i<nthreads) ; ++i )
     {
         vint_set_init( &currClique[i] );
         ALLOCATE_VECTOR( clqsSize[i], struct CliqueSize, clqSizeCap[i] );
         ALLOCATE_VECTOR_INI( ivt[i], char, lp_cols(mip)*2 );
+        ALLOCATE_VECTOR_INI( ivrt[i], char, lp_rows(mip) );
+        ALLOCATE_VECTOR_INI( rtc[i], int, lp_rows(mip) );
         ALLOCATE_VECTOR( idx[i], int, lp_cols(mip) );
         ALLOCATE_VECTOR( coef[i], double, lp_cols(mip) );
     }
@@ -467,7 +564,7 @@ void merge_cliques( LinearProgram *mip, CGraph *cgraph, int maxExtensions )
                 CliqueExtender *clqe = clqe_create();
 //                printf("aaa cgraph: %p\n", cgraph ); fflush(stdout); fflush(stderr);
 //                printf("rc %p cgraph size %d\n", (void*) rc, cgraph_size(cgraph) ); fflush(stdout); fflush(stderr);
-                clqe_set_max_it_bk( clqe, 9999 );
+                clqe_set_max_it_bk( clqe, 999999 );
                 clqe_set_costs( clqe, rc, cgraph_size(cgraph) );
 
                 int status = clqe_extend( clqe, cgraph, clq, lp_cols(mip), CLQEM_EXACT );
@@ -522,7 +619,9 @@ void merge_cliques( LinearProgram *mip, CGraph *cgraph, int maxExtensions )
                         const int *el = clq_set_clique_elements( clqs, idxclique );
 
                         char *iv = ivt[thread];
-                        add_clique( mip, newCliques, size, el, cliqueState, nCliques, cliques,(const int **) elRow, sizeRow, iv );
+                        char *ivr = ivrt[thread];
+                        int *rtct = rtc[thread];
+                        add_clique( mip, newCliques, size, el, cliqueState, cliques,(const int **) elRow, sizeRow, iv, ivr, rtct, (const int **) colClqs, nColClqs );
 #pragma omp critical
                         {
                             char origrname[256] = "";
@@ -710,8 +809,27 @@ TERMINATE:
             free(ivt[i]);
         free( ivt );
     }
+    if (ivrt)
+    {
+        for ( int i=0 ; (i<nthreads) ; ++i )
+            free(ivrt[i]);
+        free( ivrt );
+    }
+    if (rtc)
+    {
+        for ( int i=0 ; (i<nthreads) ; ++i )
+            free(rtc[i]);
+        free( rtc );
+    }
 
     if (clqSizeCap)
         free(clqSizeCap);
+
+    if (nColClqs)
+        free(nColClqs);
+    if (allCollClqs )
+        free(allCollClqs);
+    if (colClqs)
+        free( colClqs);
 }
 

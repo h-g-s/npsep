@@ -4715,26 +4715,32 @@ void lp_save_mip_start( LinearProgram *lp, const char *fileName )
 
 void lp_remove_rows( LinearProgram *lp, int nRows, int *rows )
 {
+#ifdef DEBUG_LP
     assert( lp );
     for ( int i=0 ; (i<nRows); ++i )
     {
         LP_CHECK_ROW_INDEX( lp, rows[i] );
     }
+#endif
 
     // making sure that rows to be deleted are sorted
     // makes updating row names easier
     std::sort( rows, rows+nRows );
 
 #ifdef NEED_OWN_INDEX
+    int minR = rows[0];
+#ifdef DEBUG_LP
+    assert( rows[0] <= rows[nRows-1] );
+#endif
     {
-        // updating row index
+        // removing names of removed rows
         char rName[256] = "";
         for ( int i=0 ; (i<nRows) ; ++i )
         {
             lp_row_name( lp, rows[i], rName );
             map< string, int >::iterator mIt = (*lp->rowNameIdx).find( string(rName) );
-            assert( mIt != (*lp->rowNameIdx).end() );
-            (*lp->rowNameIdx).erase( mIt );
+            if (mIt != (*lp->rowNameIdx).end())
+                (*lp->rowNameIdx).erase( mIt );
         }
     }
 #endif
@@ -4757,6 +4763,8 @@ void lp_remove_rows( LinearProgram *lp, int nRows, int *rows )
     int grbError =
         GRBdelconstrs( lp->lp, nRows, rows );
     lp_check_for_grb_error( LPgrbDefaultEnv, grbError, __FILE__, __LINE__ );
+
+    lp->nModelChanges++;
 #endif
 #ifdef CPX
     int *rset = (int*) calloc( sizeof(int), lp_rows(lp) );
@@ -4768,16 +4776,20 @@ void lp_remove_rows( LinearProgram *lp, int nRows, int *rows )
     free( rset );
 #endif
 #ifdef GLPK
-    fprintf( stderr, "Call not implemented in LP yet.\n");
-    abort();
+    for ( int i=0 ; (i<nRows) ; ++i )
+        ++rows[i];
+    glp_del_rows( lp->_lp, nRows, rows-1 );
+    for ( int i=0 ; (i<nRows) ; ++i )
+        --rows[i];
 #endif
 
 #ifdef NEED_OWN_INDEX
     // updating index of all columns after removed columns
-    for ( map< string, int >::iterator it=(*lp->rowNameIdx).begin() ; it!=(*lp->rowNameIdx).end() ; ++it )
-        for ( int ir=0 ; (ir<nRows) ; ++ir )
-            if (it->second>=rows[ir])
-                --it->second;
+    {
+        char rowName[256];
+        for ( int i=minR ; i<lp_rows(lp) ; ++i )
+            (*lp->rowNameIdx)[lp_row_name(lp, i, rowName)] = i;
+    }
 #endif
 }
 
