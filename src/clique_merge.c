@@ -28,6 +28,7 @@ int clqMergeVerbose = 1;
 double clqMergeSecsCheckClique = 0.0;
 double clqMergeSecsExtendAndDominate = 0.0;
 double clqMergeSecsAddAndRemove = 0.0;
+double clqMergeSecsExtend = 0.0;
 int clqMergeNExtended = 0;
 int clqMergeNDominatedFull = 0;
 int clqMergeNDominatedEqPart = 0;
@@ -296,7 +297,7 @@ static int cmp_clq_size( const void *v1, const void *v2 )
     const struct CliqueSize *cs1 = (const struct CliqueSize *) v1;
     const struct CliqueSize *cs2 = (const struct CliqueSize *) v2;
 
-    return cs1->size-cs2->size;
+    return cs2->size-cs1->size;
 }
 
 static void addName( char ***rNames, int *lines, int *chars, int *linesCap, int *charsCap, const char *name  )
@@ -567,7 +568,9 @@ void merge_cliques( LinearProgram *mip, CGraph *cgraph, int maxExtensions )
                 clqe_set_max_it_bk( clqe, 999999 );
                 clqe_set_costs( clqe, rc, cgraph_size(cgraph) );
 
+                clock_t startext = clock();
                 int status = clqe_extend( clqe, cgraph, clq, lp_cols(mip), CLQEM_EXACT );
+                clqMergeSecsExtend = ((double)clock()-startext)/(double)CLOCKS_PER_SEC;
                 if (status>0)
                 {
                     if (clqMergeVerbose>=2)
@@ -609,6 +612,7 @@ void merge_cliques( LinearProgram *mip, CGraph *cgraph, int maxExtensions )
                             /* maybe needed to sort cliques */
 
                             qsort( clqbs, clq_set_number_of_cliques(clqs), sizeof(struct CliqueSize), cmp_clq_size );
+                            //printf( "from %d to %d\n", clqbs[0].size, clqbs[clq_set_number_of_cliques(clqs)-1].size );
                         }
                     }
 
@@ -616,6 +620,7 @@ void merge_cliques( LinearProgram *mip, CGraph *cgraph, int maxExtensions )
                     {
                         int idxclique = clqbs[ic].clqIdx;
                         int size = clq_set_clique_size( clqs, idxclique );
+                        //printf("   adding %d\n", size );
                         const int *el = clq_set_clique_elements( clqs, idxclique );
 
                         char *iv = ivt[thread];

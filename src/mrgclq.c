@@ -11,6 +11,7 @@
 extern int clqMergeVerbose;
 extern double clqMergeSecsCheckClique;
 extern double clqMergeSecsExtendAndDominate;
+extern double clqMergeSecsExtend;
 extern double clqMergeSecsAddAndRemove;
 extern int clqMergeNExtended;
 extern int clqMergeNDominatedFull;
@@ -62,20 +63,21 @@ int main( int argc, const char **argv )
     if (status == LP_OPTIMAL)
         nlb = lp_obj_value( mip );
      
-    char first = 0;
+    char first = 1;
     {
         FILE *ff = fopen( "summary.csv", "r" );
         if (ff)
+        {
             fclose(ff);            
-        else
-            first = 1;
+            first = 0;        
+        }
     }
         
     FILE *f = fopen( "summary.csv", "a" );
     if (first)
-        fprintf( f, "time discover cliques,time merge and dominate,time add and remove,nr. ext. constraints,nr. dom. constraints leq,nr. dom. constraints eq,lb,nlb\n" );
+        fprintf( f, "time discover cliques,time ext merge and dominate,time ext,time add and remove,nr. ext. constraints,nr. dom. constraints leq,nr. dom. constraints eq,lb,nlb\n" );
             
-    fprintf( f, "%.4f,%.4f,%.4f,%d,%d,%d,%g,%g\n", clqMergeSecsCheckClique, clqMergeSecsExtendAndDominate, clqMergeSecsAddAndRemove, clqMergeNExtended, clqMergeNDominatedFull, clqMergeNDominatedEqPart, lb, nlb );
+    fprintf( f, "%.4f,%.4f,%.4f,%.4f,%d,%d,%d,%g,%g\n", clqMergeSecsCheckClique, clqMergeSecsExtendAndDominate, clqMergeSecsExtend, clqMergeSecsAddAndRemove, clqMergeNExtended, clqMergeNDominatedFull, clqMergeNDominatedEqPart, lb, nlb );
     fclose( f );
 
     cgraph_free( &cgraph );
