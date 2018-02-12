@@ -16,6 +16,7 @@ extern double clqMergeSecsAddAndRemove;
 extern int clqMergeNExtended;
 extern int clqMergeNDominatedFull;
 extern int clqMergeNDominatedEqPart;
+double nlb = DBL_MAX;
 
 
 
@@ -54,15 +55,17 @@ int main( int argc, const char **argv )
     if (status == LP_OPTIMAL)
         lb = lp_obj_value( mip );
 
-    merge_cliques( mip, cgraph, maxExt );
-    
-    lp_write_lp( mip, "pp.lp" );
-    
-    double nlb = DBL_MAX;
-    status = lp_optimize_as_continuous( mip );
-    if (status == LP_OPTIMAL)
-        nlb = lp_obj_value( mip );
-     
+    if (cgraph)
+    {
+        merge_cliques( mip, cgraph, maxExt );
+        
+        lp_write_lp( mip, "pp.lp" );
+        
+        status = lp_optimize_as_continuous( mip );
+        if (status == LP_OPTIMAL)
+            nlb = lp_obj_value( mip );
+         
+    }
     char first = 1;
     {
         FILE *ff = fopen( "summary.csv", "r" );
@@ -71,7 +74,7 @@ int main( int argc, const char **argv )
             fclose(ff);            
             first = 0;        
         }
-    }
+    }        
         
     FILE *f = fopen( "summary.csv", "a" );
     if (first)

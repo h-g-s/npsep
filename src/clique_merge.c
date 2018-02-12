@@ -565,7 +565,7 @@ void merge_cliques( LinearProgram *mip, CGraph *cgraph, int maxExtensions )
                 CliqueExtender *clqe = clqe_create();
 //                printf("aaa cgraph: %p\n", cgraph ); fflush(stdout); fflush(stderr);
 //                printf("rc %p cgraph size %d\n", (void*) rc, cgraph_size(cgraph) ); fflush(stdout); fflush(stderr);
-                clqe_set_max_it_bk( clqe, 999999 );
+                clqe_set_max_it_bk( clqe, 99999 );
                 clqe_set_costs( clqe, rc, cgraph_size(cgraph) );
 
                 clock_t startext = clock();
