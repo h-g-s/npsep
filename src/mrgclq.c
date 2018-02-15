@@ -22,9 +22,9 @@ double nlb = DBL_MAX;
 
 int main( int argc, const char **argv )
 {
-    if (argc<5)
+    if (argc<6)
     {
-        fprintf( stderr, "usage: lpFileName maxExtensions threads verbose\n");
+        fprintf( stderr, "usage: lpFileName maxExtensions threads verbose maxItBk\n");
         exit( EXIT_FAILURE );
     }
 
@@ -50,6 +50,8 @@ int main( int argc, const char **argv )
 
     clqMergeVerbose = atoi(argv[4]);
 
+    int maxItBk = atoi(argv[5]);
+
     double lb = DBL_MAX;
     int status = lp_optimize_as_continuous( mip );
     if (status == LP_OPTIMAL)
@@ -57,7 +59,7 @@ int main( int argc, const char **argv )
 
     if (cgraph)
     {
-        merge_cliques( mip, cgraph, maxExt );
+        merge_cliques( mip, cgraph, maxExt, maxItBk );
         
         lp_write_lp( mip, "pp.lp" );
         

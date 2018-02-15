@@ -375,7 +375,7 @@ void addRow(
 
 /* tries to extend every clique in mip using
  * conflict graph cgraph, dominated cliques are removed */
-void merge_cliques( LinearProgram *mip, CGraph *cgraph, int maxExtensions )
+void merge_cliques( LinearProgram *mip, CGraph *cgraph, int maxExtensions, int maxItBk )
 {
     enum CliqueType *cliqueState; // if it is a clique or not and if it is dominated
     int *cliques;       // list of rows which are cliques
@@ -565,12 +565,12 @@ void merge_cliques( LinearProgram *mip, CGraph *cgraph, int maxExtensions )
                 CliqueExtender *clqe = clqe_create();
 //                printf("aaa cgraph: %p\n", cgraph ); fflush(stdout); fflush(stderr);
 //                printf("rc %p cgraph size %d\n", (void*) rc, cgraph_size(cgraph) ); fflush(stdout); fflush(stderr);
-                clqe_set_max_it_bk( clqe, 99999 );
+                clqe_set_max_it_bk( clqe, maxItBk );
                 clqe_set_costs( clqe, rc, cgraph_size(cgraph) );
 
                 clock_t startext = clock();
                 int status = clqe_extend( clqe, cgraph, clq, lp_cols(mip), CLQEM_EXACT );
-                clqMergeSecsExtend = ((double)clock()-startext)/(double)CLOCKS_PER_SEC;
+                clqMergeSecsExtend += ((double)clock()-startext)/(double)CLOCKS_PER_SEC;
                 if (status>0)
                 {
                     if (clqMergeVerbose>=2)
