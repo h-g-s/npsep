@@ -18,10 +18,11 @@ enum CliqueType
 {
     NotAClique = 0,
     NotDominated = 1,
-    Dominated = 2
+    Dominated = 2,
+    MoreThanAClique = 3 // do not try to dominate this constraint
 };
 
-#define MAX_SIZE_CLIQUE_TO_BE_EXTENDED 128
+#define MAX_SIZE_CLIQUE_TO_BE_EXTENDED 256
 
 // global configurations and stats
 int clqMergeVerbose = 1;
@@ -89,6 +90,16 @@ static void add_clique(
     }
 
 #endif
+    int add = 0;
+#pragma omp critical
+    {
+        int add = 
+            clq_set_add( newCliques, size, el, size );
+    }
+    if (add==0)
+        return;
+
+
     int nrtc = 0;
     for ( int i=0 ; (i<size) ; ++i )
     {
@@ -136,10 +147,6 @@ static void add_clique(
         } // dominates 
     } // all rows to check
  
-#pragma omp critical
-    {
-        clq_set_add( newCliques, size, el, size );
-    }
 }
 
 static int check_cliques( LinearProgram *mip, enum CliqueType cliqueState[], int cliques[], int **elRow, int *sizeRow, int *allEl, int *nAllEl, const char *_sense )
@@ -220,9 +227,12 @@ static int check_cliques( LinearProgram *mip, enum CliqueType cliqueState[], int
         else
         {
             // checking for clique involving normal variables and complementary variables
-            if ( (nOnes+nMinusOne==nz) && (fabs(rhs-1.0-nMinusOne)<=1e-8) )
+            if ( (nOnes+nMinusOne==nz) && (fabs(rhs-(1.0-nMinusOne))<=1e-8) )
             {
                 cliqueState[i]=NotDominated;
+                
+                cliques[nCliques++] = i;
+
                 elRow[i] = allEl;
                 sizeRow[i] = nz;
                 memcpy( elRow[i], idx, sizeof(int)*nz );
@@ -281,6 +291,7 @@ static int check_cliques( LinearProgram *mip, enum CliqueType cliqueState[], int
 
     if (clqMergeVerbose>=1)
         printf("model checked in %.4f seconds. %d candidate cliques for extension/merging. clique sizes range:[%d...%d], av %.2f.\n", clqMergeSecsCheckClique, nCliques, minClqSize, maxClqSize, avClgSize/((double)nCliques) );
+        
 
     return nCliques;
 }
@@ -557,6 +568,9 @@ void merge_cliques( LinearProgram *mip, CGraph *cgraph, int maxExtensions, int m
         {
             int nz = lp_row( mip, row, cidx, ccoef );
             IntSet *clq = &currClique[thread];
+            for ( int ii=0 ; (ii<nz) ; ++ii )
+                if (ccoef[ii]<=-1e-5)
+                    cidx[ii] += lp_cols(mip);
             vint_set_clear( clq );
             vint_set_add( clq, cidx, nz );
 
@@ -743,6 +757,13 @@ void merge_cliques( LinearProgram *mip, CGraph *cgraph, int maxExtensions, int m
     
     /* flushing rows */
     lp_add_rows( mip, nrRows, nrStart, nrIdx, nrCoef, nrSense, nrRhs, (const char**) nrNames );
+    
+    
+    if (clqMergeVerbose)
+    {
+        printf("%d extended, %d dom full, %d dom eq.\n", clqMergeNExtended, clqMergeNDominatedFull, clqMergeNDominatedEqPart );
+        fflush( stdout );
+    }
 
 TERMINATE:
     if (nrStart)
@@ -836,5 +857,7 @@ TERMINATE:
         free(allCollClqs);
     if (colClqs)
         free( colClqs);
+        
+        
 }
 
